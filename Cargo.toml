@@ -1,0 +1,18 @@
+[package]
+name = "gfx-rs"
+version = "0.1.0"
+authors = ["shuto"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[[bin]]
+name = "example"
+path = "Examples/main.rs"
+
+[lib]
+name = "sjgfx_rs"
+path = "Sources/lib.rs"
+crate-type = ["lib"]
