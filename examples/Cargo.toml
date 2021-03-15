@@ -1,0 +1,9 @@
+[package]
+name = "examples"
+version = "0.1.0"
+edition = "2018"
+authors = ["Pierre Krieger <pierre.krieger1708@gmail.com>"]
+publish = false
+
+[dependencies]
+sj = { path = "../sj" }
