@@ -8,7 +8,7 @@ pub struct Device
 
 impl Device
 {
-    pub fn new(info: DeviceInfo) -> Device
+    pub fn new(_info: &DeviceInfo) -> Device
     {
 	let required_extensions = vulkano_win::required_extensions();
 	let instance = vulkano::instance::Instance::new(None, &required_extensions, None).unwrap();
@@ -39,25 +39,21 @@ impl Device
 	    queue_impl: queues.next().unwrap(),
 	}
     }
+
+    pub fn get_device_impl(&self) -> std::sync::Arc<vulkano::device::Device>
+    {
+	self.device_impl.clone()
+    }
+    
+    pub fn get_queue(&self) -> std::sync::Arc<vulkano::device::Queue>
+    {
+	self.queue_impl.clone()
+    }
 }
 
 impl Drop for Device
 {
     fn drop(&mut self)
     {
-    }
-}
-
-pub trait DeviceAccessor
-{
-    fn get_queue(&self) -> std::sync::Arc<vulkano::device::Queue>;
-}
-
-
-impl DeviceAccessor for Device
-{
-    fn get_queue(&self) -> std::sync::Arc<vulkano::device::Queue>
-    {
-	return self.queue_impl.clone()
     }
 }
