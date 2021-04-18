@@ -1,23 +1,21 @@
-use super::device_wgpu::Device;
+use super::super::queue_api::QueueInfo;
+use super::super::Device;
 use super::command_buffer_wgpu::CommandBuffer;
-use super::super::queue_info::QueueInfo;
 
-pub struct Queue<'a>
-{
-	queue: &'a wgpu::Queue,
+pub struct QueueImpl<'a> {
+    queue: &'a wgpu::Queue,
 }
 
-impl<'a> Queue<'a>
-{
-	pub fn new(device: &'a mut Device, _info : &QueueInfo) -> Queue<'a>
-	{		
-		let queue = device.get_queue();
-		Queue{ queue }
-	}
+impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
+    fn new(device: &'a mut Device, _info: &QueueInfo) -> Self {
+        let queue = device.to_data().get_queue();
+        QueueImpl { queue }
+    }
+}
 
-	pub fn execute(&self, command_buffer: &mut CommandBuffer)
-	{
-		let command_buffer = command_buffer.get_command_buffer();
-		self.queue.submit(Some(command_buffer));
-	}
+impl<'a> QueueImpl<'a> {
+    pub fn execute(&self, command_buffer: &mut CommandBuffer) {
+        let command_buffer = command_buffer.get_command_buffer();
+        self.queue.submit(Some(command_buffer));
+    }
 }
