@@ -1,8 +1,16 @@
 [package]
 name = "sj"
+edition = "2018"
 version = "0.21.0"
 
+[features]
+default = ["backend_wgpu"]
+backend_vulkano = ["vulkano", "vulkano-win"]
+backend_wgpu = ["wgpu"]
+
 [dependencies]
-vulkano = "*"
-vulkano-win = "*"
 winit = "0.24.0"
+vulkano =  {version = "*", optional = true}
+vulkano-win = {version = "*", optional = true}
+wgpu = {version = "*", optional = true}
+futures = "0.3.1"
