@@ -1,6 +1,11 @@
-mod device_info;
-mod queue_info;
+mod command_buffer_api;
+mod device_api;
+mod queue_api;
 mod swap_chain;
+
+use self::command_buffer_api::TCommandBufferInterface;
+use self::device_api::TDeviceInterface;
+use self::queue_api::TQueueInterface;
 
 #[cfg(feature = "backend_vulkano")]
 mod vk;
@@ -9,25 +14,32 @@ mod vk;
 mod wgpu;
 
 
-// Device ---------------------------------------------------------------------
-pub use self::device_info::DeviceInfo as DeviceInfo;
+// CommandBuffer -----------------------------------------------------
+pub use self::command_buffer_api::CommandBufferInfo as CommandBufferInfo;
+
+#[cfg(feature = "backend_wgpu")]
+pub type CommandBuffer<'a> = TCommandBufferInterface<'a, self::wgpu::command_buffer_wgpu::CommandBuffer<'a>>;
+// -------------------------------------------------------------------
+
+// Device --------------------------------------------------------------------
+pub use self::device_api::DeviceInfo as DeviceInfo;
 
 #[cfg(feature = "backend_vulkano")]
 pub use self::vk::device_vk::Device as Device;
 
 #[cfg(feature = "backend_wgpu")]
-pub use self::wgpu::device_wgpu::Device as Device;
+pub type Device = TDeviceInterface<self::wgpu::device_wgpu::DeviceImpl>;
 //-----------------------------------------------------------------------------
 
 
 // Queue
-pub use self::queue_info::QueueInfo as QueueInfo;
+pub use self::queue_api::QueueInfo as QueueInfo;
 
 #[cfg(feature = "backend_vulkano")]
 pub use self::vk::queue_vk::Queue as Queue;
     
 #[cfg(feature = "backend_wgpu")]
-pub use self::wgpu::queue_wgpu::Queue as Queue;
+pub type Queue<'a> = TQueueInterface<'a, self::wgpu::queue_wgpu::QueueImpl<'a>>;
 //--------------------------------------------------------------------
 
 // SwapChain
