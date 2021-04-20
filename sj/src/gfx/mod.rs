@@ -1,8 +1,10 @@
+mod buffer_api;
 mod command_buffer_api;
 mod device_api;
 mod queue_api;
 mod swap_chain;
 
+use self::buffer_api::TBufferInterface;
 use self::command_buffer_api::TCommandBufferInterface;
 use self::device_api::TDeviceInterface;
 use self::queue_api::TQueueInterface;
@@ -12,6 +14,13 @@ mod vk;
 
 #[cfg(feature = "backend_wgpu")]
 mod wgpu;
+
+
+// Buffer  -----------------------------------------------------------
+pub use self::buffer_api::BufferInfo;
+pub type Buffer<'a> = TBufferInterface<'a, self::wgpu::buffer_wgpu::BufferImpl<'a>>;
+// -------------------------------------------------------------------
+
 
 
 // CommandBuffer -----------------------------------------------------
