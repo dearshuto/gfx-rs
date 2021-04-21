@@ -10,7 +10,7 @@ impl CommandBufferInfo {
 }
 
 pub trait ICommandBufferImpl<'a> {
-    fn new(device: &'a mut Device, info: &CommandBufferInfo) -> Self;
+    fn new(device: &'a Device, info: &CommandBufferInfo) -> Self;
 }
 
 pub struct TCommandBufferInterface<'a, T: 'a>
@@ -22,10 +22,15 @@ where
 }
 
 impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
-    pub fn new(device: &'a mut Device, info: &CommandBufferInfo) -> Self {
+    pub fn new(device: &'a Device, info: &CommandBufferInfo) -> Self {
         Self {
             command_buffer_impl: T::new(device, info),
             _marker: PhantomData,
         }
     }
+
+	pub fn to_data(&'a mut self) -> &'a mut T
+	{	
+		&mut self.command_buffer_impl
+	}
 }

@@ -20,7 +20,7 @@ impl<'a> PipelineInfo<'a>
 }
 
 pub trait IPipelineImpl<'a> {
-	fn new(device: &'a mut Device, info: &PipelineInfo) -> Self;
+	fn new(device: &'a Device, info: &PipelineInfo) -> Self;
 }
 
 pub struct TPipelineInterface<'a, T: 'a>
@@ -32,7 +32,7 @@ pub struct TPipelineInterface<'a, T: 'a>
 
 impl<'a, T: IPipelineImpl<'a>> TPipelineInterface<'a, T>	
 {
-	pub fn new(device: &'a mut Device, info: &PipelineInfo) -> Self
+	pub fn new(device: &'a Device, info: &PipelineInfo) -> Self
 	{
 		Self{
 			pipeline_impl: T::new(device, info),

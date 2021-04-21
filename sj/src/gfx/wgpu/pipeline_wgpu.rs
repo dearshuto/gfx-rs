@@ -10,7 +10,7 @@ pub struct Pipeline<'a>
 }
 
 impl<'a> IPipelineImpl<'a> for Pipeline<'a>{
-	fn new(device: &'a mut Device, info: &PipelineInfo) -> Self
+	fn new(device: &'a Device, info: &PipelineInfo) -> Self
 	{
 		let shader = info.get_shader().to_data().get_impl();
 		let compute_pipeline = Some(device.to_data().get_device().create_compute_pipeline(
@@ -25,7 +25,7 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a>{
 		Self
 		{
 			render_pipeline_impl: None,
-			compute_pipeline_impl: None,
+			compute_pipeline_impl: compute_pipeline,
 			_marker: PhantomData,
 		}
 	}

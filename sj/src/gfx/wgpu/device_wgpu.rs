@@ -31,11 +31,11 @@ impl super::super::device_api::TDeviceImpl for DeviceImpl {
 }
 
 impl DeviceImpl {
-	pub fn get_device(&mut self) -> &mut wgpu::Device{
-		&mut self.device_impl
+	pub fn get_device(&self) -> &wgpu::Device{
+		&self.device_impl
 	}
 	
-    pub fn get_queue(&mut self) -> &mut wgpu::Queue {
-        &mut self.queue_impl
+    pub fn get_queue(&self) -> &wgpu::Queue {
+        &self.queue_impl
     }
 }

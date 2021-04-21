@@ -10,7 +10,7 @@ impl BufferInfo {
 }
 
 pub trait IBufferImpl<'a> {
-    fn new(device: &'a mut Device, info: &BufferInfo) -> Self;
+    fn new(device: &'a Device, info: &BufferInfo) -> Self;
 }
 
 pub struct TBufferInterface<'a, T: 'a>
@@ -22,7 +22,7 @@ where
 }
 
 impl<'a, T: IBufferImpl<'a>> TBufferInterface<'a, T> {
-    pub fn new(device: &'a mut Device, info: &BufferInfo) -> Self {
+    pub fn new(device: &'a Device, info: &BufferInfo) -> Self {
         Self {
             buffer_impl: T::new(device, info),
             _marker: PhantomData,

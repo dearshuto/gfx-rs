@@ -12,7 +12,7 @@ impl ShaderInfo{
 
 pub trait IShaderImpl<'a>
 {
-	fn new(device: &'a mut Device, info: &ShaderInfo) -> Self;
+	fn new(device: &'a Device, info: &ShaderInfo) -> Self;
 }
 
 pub struct TShaderInterface<'a, T: 'a>
@@ -24,7 +24,7 @@ pub struct TShaderInterface<'a, T: 'a>
 
 impl<'a, T: IShaderImpl<'a>> TShaderInterface<'a, T>
 {
-	pub fn new(device: &'a mut Device, info: &ShaderInfo) -> Self
+	pub fn new(device: &'a Device, info: &ShaderInfo) -> Self
 	{
 		Self{
 			shader_impl: T::new(device, info),

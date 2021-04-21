@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 use super::super::Device;
 use super::super::shader_api::ShaderInfo;
 use super::super::shader_api::IShaderImpl;
-use wgpu::util::DeviceExt;
 
 pub struct ShaderImpl<'a>
 {
@@ -20,7 +19,7 @@ impl<'a> ShaderImpl<'a>
 
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a>
 {
-	fn new(device: &'a mut Device, info: &ShaderInfo) -> Self
+	fn new(device: &'a Device, info: &ShaderInfo) -> Self
 	{
 		let a = wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed("shader.wgsl"));
 		let flags = wgpu::ShaderFlags::VALIDATION;		
