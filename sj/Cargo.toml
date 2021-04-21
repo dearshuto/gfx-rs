@@ -4,7 +4,7 @@ edition = "2018"
 version = "0.21.0"
 
 [features]
-default = ["backend_wgpu"]
+default = ["backend_vulkano"]
 backend_vulkano = ["vulkano", "vulkano-win"]
 backend_wgpu = ["wgpu"]
 

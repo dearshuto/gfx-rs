@@ -1,15 +1,27 @@
-use super::super::buffer_info::BufferInfo;
+use std::marker::PhantomData;
+use super::super::Device;
+use super::super::buffer_api::{BufferInfo, IBufferImpl};
 
-pub struct Buffer
+pub struct BufferImpl<'a>
 {
-
+	_marker: PhantomData<&'a i32>,
 }
 
-impl Buffer
+impl<'a> IBufferImpl<'a> for BufferImpl<'a>
 {
-    pub fn new(device: &super::device_vk::Device, info: &BufferInfo) -> Buffer
-    {
-	vulkano::buffer::CpuAccessibleBuffer::uninitialized_array(device.clone(), 124, vulkano::buffer::BufferUsage::all(), false);
-	Buffer{}	
-    }
+	fn new(device: &'a Device, info: &BufferInfo) -> Self
+	{
+		Self{
+			_marker: PhantomData,
+		}
+	}
 }
+
+// impl BufferImpl<'a>
+// {
+//     pub fn new(device: &super::device_vk::Device, info: &BufferInfo) -> Self
+//     {
+// 	vulkano::buffer::CpuAccessibleBuffer::uninitialized_array(device.clone(), 124, vulkano::buffer::BufferUsage::all(), false);
+// 		Self{}	
+//     }
+// }

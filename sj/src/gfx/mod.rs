@@ -22,7 +22,14 @@ mod wgpu;
 
 // Buffer  -----------------------------------------------------------
 pub use self::buffer_api::BufferInfo;
-pub type Buffer<'a> = TBufferInterface<'a, self::wgpu::buffer_wgpu::BufferImpl<'a>>;
+
+#[cfg(feature = "backend_vulkano")]
+type BufferImpl<'a> = self::vk::buffer_vk::BufferImpl<'a>;
+
+#[cfg(feature = "backend_wgpu")]
+type BufferImpl = self::wgpu::buffer_wgpu::BufferImpl<'a>;
+
+pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
 // -------------------------------------------------------------------
 
 
@@ -30,27 +37,36 @@ pub type Buffer<'a> = TBufferInterface<'a, self::wgpu::buffer_wgpu::BufferImpl<'
 // CommandBuffer -----------------------------------------------------
 pub use self::command_buffer_api::CommandBufferInfo as CommandBufferInfo;
 
+#[cfg(feature = "backend_vulkano")]
+type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferImpl<'a>;
+
 #[cfg(feature = "backend_wgpu")]
-pub type CommandBuffer<'a> = TCommandBufferInterface<'a, self::wgpu::command_buffer_wgpu::CommandBuffer<'a>>;
+type CommandBufferImpl = self::wgpu::command_buffer_wgpu::CommandBuffer<'a>;
+
+pub type CommandBuffer<'a> = TCommandBufferInterface<'a, CommandBufferImpl<'a>>;
 // -------------------------------------------------------------------
+
+
 
 // Device --------------------------------------------------------------------
 pub use self::device_api::DeviceInfo as DeviceInfo;
 
 #[cfg(feature = "backend_vulkano")]
-pub use self::vk::device_vk::Device as Device;
+type DeviceImpl = self::vk::device_vk::DeviceImpl;
 
 #[cfg(feature = "backend_wgpu")]
-pub type Device = TDeviceInterface<self::wgpu::device_wgpu::DeviceImpl>;
+type DeviceImpl = self::wgpu::device_wgpu::DeviceImpl;
+
+pub type Device = TDeviceInterface<DeviceImpl>;
 //-----------------------------------------------------------------------------
 
 
 
 //
-pub use self::pipeline_api::PipelineInfo;
+//pub use self::pipeline_api::PipelineInfo;
 
-#[cfg(feature = "backend_wgpu")]
-pub type Pipeline<'a> = TPipelineInterface<'a, self::wgpu::pipeline_wgpu::Pipeline<'a>>;
+//#[cfg(feature = "backend_wgpu")]
+//pub type Pipeline<'a> = TPipelineInterface<'a, self::wgpu::pipeline_wgpu::Pipeline<'a>>;
 //-----------------------------------------------------------------------------
 
 
@@ -59,10 +75,12 @@ pub type Pipeline<'a> = TPipelineInterface<'a, self::wgpu::pipeline_wgpu::Pipeli
 pub use self::queue_api::QueueInfo as QueueInfo;
 
 #[cfg(feature = "backend_vulkano")]
-pub use self::vk::queue_vk::Queue as Queue;
+type QueueImpl<'a> =  self::vk::queue_vk::QueueImpl<'a>;
     
 #[cfg(feature = "backend_wgpu")]
-pub type Queue<'a> = TQueueInterface<'a, self::wgpu::queue_wgpu::QueueImpl<'a>>;
+type QueueImpl<'a> = self::wgpu::queue_wgpu::QueueImpl<'a>;
+
+pub type Queue<'a> = TQueueInterface<'a, QueueImpl<'a>>;
 //--------------------------------------------------------------------
 
 
@@ -70,14 +88,19 @@ pub type Queue<'a> = TQueueInterface<'a, self::wgpu::queue_wgpu::QueueImpl<'a>>;
 // Shader ------------------------------------------------------------
 pub use self::shader_api::ShaderInfo as ShaderInfo;
 
+#[cfg(feature = "backend_vulkano")]
+type ShaderImpl<'a> = self::vk::shader_vk::ShaderImpl<'a>;
+
 #[cfg(feature = "backend_wgpu")]
-pub type Shader<'a> = TShaderInterface<'a, self::wgpu::shader_wgpu::ShaderImpl<'a>>;
+type ShaderImpl = self::wgpu::shader_wgpu::ShaderImpl<'a>;
+
+pub type Shader<'a> = TShaderInterface<'a, ShaderImpl<'a>>;
 //--------------------------------------------------------------------
 
 
 
 // SwapChain
-pub use self::swap_chain::SwapChainInfo as SwapChainInfo;
+//pub use self::swap_chain::SwapChainInfo as SwapChainInfo;
 
-#[cfg(feature = "backend_vulkano")]
-pub use self::vk::swap_chain_vk::SwapChain as SwapChain;
+//#[cfg(feature = "backend_vulkano")]
+//pub use self::vk::swap_chain_vk::SwapChain as SwapChain;

@@ -13,7 +13,7 @@ impl<'a> PipelineInfo<'a>
 		PipelineInfo{shader}
 	}
 
-	pub fn get_shader(&self) -> &Shader
+	pub fn get_shader(&self) -> &'a Shader
 	{
 		self.shader
 	}
