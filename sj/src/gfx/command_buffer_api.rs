@@ -29,8 +29,8 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         }
     }
 
-	pub fn to_data(&'a mut self) -> &'a mut T
+	pub fn to_data(&'a self) -> &'a T
 	{	
-		&mut self.command_buffer_impl
+		&self.command_buffer_impl
 	}
 }
