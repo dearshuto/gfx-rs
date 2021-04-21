@@ -14,7 +14,7 @@ impl<'a> BufferImpl<'a> {
 }
 
 impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
-    fn new(device: &'a mut Device, info: &BufferInfo) -> Self {
+    fn new(device: &'a Device, info: &BufferInfo) -> Self {
         let slice_size = 1024 * std::mem::size_of::<u32>();
         let size = slice_size as wgpu::BufferAddress;
         let buffer = device

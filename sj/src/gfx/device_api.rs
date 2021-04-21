@@ -24,7 +24,7 @@ impl<T: TDeviceImpl> TDeviceInterface<T> {
         }
     }
 
-    pub fn to_data(&mut self) -> &mut T {
-        &mut self.device_impl
+    pub fn to_data(&self) -> &T {
+        &self.device_impl
     }
 }
