@@ -2,11 +2,26 @@ use super::Device;
 use std::marker::PhantomData;
 
 
-pub struct ShaderInfo{}
+pub struct ShaderInfo<'a> {
+	_shader_binary: Option<&'a [u8]>,
+}
 
-impl ShaderInfo{
+impl<'a> ShaderInfo<'a>{
 	pub fn new() -> Self{
-		Self{}
+		Self{
+			_shader_binary: None,
+		}
+	}
+
+	pub fn get_shader_binary(&self) -> &'a[u8]
+	{
+		self._shader_binary.unwrap()
+	}
+	
+	pub fn set_shader_binary(mut self, shader_binary: &'a [u8]) -> Self
+	{
+		self._shader_binary = Some(shader_binary);
+		self
 	}
 }
 

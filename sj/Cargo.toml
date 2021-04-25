@@ -4,13 +4,16 @@ edition = "2018"
 version = "0.21.0"
 
 [features]
-default = ["backend_wgpu"]
+default = ["backend_ash"]
 backend_vulkano = ["vulkano", "vulkano-win"]
 backend_wgpu = ["wgpu"]
+backend_ash = ["ash", "spirv-reflect"]
 
 [dependencies]
 winit = "0.24.0"
 vulkano =  {version = "*", optional = true}
 vulkano-win = {version = "*", optional = true}
 wgpu = {version = "*", optional = true}
+ash = {version = "0.32.1", optional = true}
 futures = "0.3.1"
+spirv-reflect = { version = "0.2.3", optional = true }
