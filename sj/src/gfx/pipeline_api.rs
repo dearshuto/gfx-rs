@@ -39,4 +39,9 @@ impl<'a, T: IPipelineImpl<'a>> TPipelineInterface<'a, T>
 			_marker: PhantomData,
 		}
 	}
+
+	pub fn to_data(&self) -> &T
+	{
+		&self.pipeline_impl
+	}
 }

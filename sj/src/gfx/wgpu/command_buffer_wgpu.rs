@@ -1,35 +1,62 @@
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::Device;
+use super::super::Pipeline;
 
-pub struct CommandBuffer<'a> {
+pub struct CommandBuffer<'a>
+{
     device: &'a wgpu::Device,
-    command_encoder: Option<wgpu::CommandEncoder>,
+	commands: Vec<Box<ICommand>>,
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
-    fn new(device: &'a Device, info: &CommandBufferInfo) -> Self {
+    fn new(device: &'a Device, _info: &CommandBufferInfo) -> Self {
         CommandBuffer {
             device: device.to_data().get_device(),
-            command_encoder: None,
+			commands: Vec::new(),
         }
     }
 }
 
 impl<'a> CommandBuffer<'a> {
     pub fn begin(&mut self) {
-        let command_encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-        self.command_encoder = Some(command_encoder);
-    }
-	
+    }	
 
     pub fn end(&mut self) {
-        self.command_encoder = None;
     }
 
-    pub fn get_command_buffer(&'a mut self) -> wgpu::CommandBuffer {
-        let command_encoder = std::mem::replace(&mut self.command_encoder, None);
-        command_encoder.unwrap().finish()
+	pub fn set_pipeline(&self, pipeline: &'a Pipeline)
+	{
+		let a : &super::pipeline_wgpu::Pipeline = pipeline.to_data();
+	}
+	
+    pub fn get_command_buffer(&self) -> wgpu::CommandBuffer {
+		let mut command_encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+		{
+			let mut compute_pass = command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{label: None});
+			// for item in &self.commands {
+			// 	item.push(&mut command_encoder);
+			// }
+		}
+		
+		command_encoder.finish()
     }
+}
+
+trait ICommand
+{
+	fn push(&self, command_encoder: &mut wgpu::CommandEncoder);
+}
+
+struct SetPipelineCommand<'a>
+{
+	compute_pipeline: &'a wgpu::ComputePipeline,
+}
+
+impl<'a> SetPipelineCommand<'a> {
+	fn push(&self, command_encoder: &mut wgpu::RenderPipeline, compute_pass: &'a mut wgpu::ComputePass<'a>)
+	{
+		compute_pass.set_pipeline(self.compute_pipeline);
+	}
 }
