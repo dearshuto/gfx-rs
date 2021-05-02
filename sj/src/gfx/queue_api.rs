@@ -12,19 +12,19 @@ impl QueueInfo {
 
 pub trait IQueueImpl<'a> {
     fn new(device: &'a Device, info: &QueueInfo) -> Self;
-
+	
 //	fn present(&self, swap_chain: &impl super::swap_chain::TSwapChain);
 
 	fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>);
 	
-    fn flush(&self);
+    fn flush(&mut self);
     
     fn sync(&self);
 }
 
 pub struct TQueueInterface<'a, T: 'a>
 where
-    T: IQueueImpl<'a>,
+    T: IQueueImpl<'a>
 {
     queue_impl: T,
     _marker: PhantomData<&'a T>,

@@ -9,9 +9,6 @@ fn main()
     let queue_info = sj::gfx::QueueInfo::new();
     let mut queue = sj::gfx::Queue::new(&device, &queue_info);
 
-	let command_buffer_info = sj::gfx::CommandBufferInfo::new();
-	let mut command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
-
 	let shader_info = sj::gfx::ShaderInfo::new();
 	let shader = sj::gfx::Shader::new(&device, &shader_info);
 
@@ -34,10 +31,6 @@ fn main()
 		
 	let command_buffer_info = sj::gfx::CommandBufferInfo::new();
 	let mut command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
-
-	queue.execute(&command_buffer);
-	queue.flush();
-	queue.sync();
 
 	for _i in 0..2
 	{

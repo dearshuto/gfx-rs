@@ -3,7 +3,7 @@ extern crate winit;
 pub struct Display
 {
     event_loop: winit::event_loop::EventLoop<()>,
-    window : winit::window::Window,
+    _window : winit::window::Window,
 }
 
 impl Display
@@ -16,7 +16,7 @@ impl Display
             .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))
             .build(&event_loop)
             .unwrap();
-	Display{event_loop, window}
+	Display{event_loop, _window: window}
     }
 
     pub fn get_event_loop(&self) -> &winit::event_loop::EventLoop<()>

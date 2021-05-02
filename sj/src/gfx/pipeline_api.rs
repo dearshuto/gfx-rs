@@ -1,26 +1,33 @@
+use std::marker::PhantomData;
 use super::Device;
 use super::Shader;
-use std::marker::PhantomData;
 
-pub struct PipelineInfo<'a>
+pub struct ComputePipelineInfo<'a>
 {
-	shader: &'a Shader<'a>,
+	_shader: Option<&'a Shader<'a>>,
 }
 
-impl<'a> PipelineInfo<'a>
+impl<'a> ComputePipelineInfo<'a>
 {
-	pub fn new(shader: &'a Shader) -> Self{
-		PipelineInfo{shader}
+	pub fn new() -> Self{
+		ComputePipelineInfo{
+			_shader: None,
+		}
 	}
 
-	pub fn get_shader(&self) -> &Shader
+	pub fn get_shader(&self) -> &'a Shader<'a>
 	{
-		self.shader
+		self._shader.unwrap()
+	}
+
+	pub fn set_shader(mut self, shader: &'a Shader<'a>) -> Self{
+		self._shader = Some(shader);
+		self
 	}
 }
 
 pub trait IPipelineImpl<'a> {
-	fn new(device: &'a Device, info: &PipelineInfo) -> Self;
+	fn new_as_compute(device: &'a Device, info: ComputePipelineInfo<'a>) -> Self;
 }
 
 pub struct TPipelineInterface<'a, T: 'a>
@@ -30,12 +37,12 @@ pub struct TPipelineInterface<'a, T: 'a>
 	_marker: PhantomData<&'a T>
 }
 
-impl<'a, T: IPipelineImpl<'a>> TPipelineInterface<'a, T>	
+impl<'a, T: IPipelineImpl<'a>> TPipelineInterface<'a, T>
 {
-	pub fn new(device: &'a Device, info: &PipelineInfo) -> Self
+	pub fn new_as_compute(device: &'a Device, info: ComputePipelineInfo<'a>) -> Self
 	{
 		Self{
-			pipeline_impl: T::new(device, info),
+			pipeline_impl: T::new_as_compute(device, info),
 			_marker: PhantomData,
 		}
 	}
