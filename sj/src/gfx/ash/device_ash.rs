@@ -7,25 +7,25 @@ pub struct DeviceImpl {
     _debug_utils: ash::extensions::ext::DebugUtils,
     _debug_utils_messanger: ash::vk::DebugUtilsMessengerEXT,
     pub _device: ash::Device,
-	_physical_device: ash::vk::PhysicalDevice,
+    _physical_device: ash::vk::PhysicalDevice,
     _queue: ash::vk::Queue,
     _queue_family_index: u32,
     _queue_family_properties: Vec<ash::vk::QueueFamilyProperties>,
 }
 
 impl DeviceImpl {
-	pub fn get_instance(&self) -> &ash::Instance {
-		&self._instance
-	}
-	
+    pub fn get_instance(&self) -> &ash::Instance {
+        &self._instance
+    }
+
     pub fn get_device(&self) -> &ash::Device {
         &self._device
     }
 
-	pub fn get_physical_device(&self) -> &ash::vk::PhysicalDevice {
-		&self._physical_device
-	}
-	
+    pub fn get_physical_device(&self) -> &ash::vk::PhysicalDevice {
+        &self._physical_device
+    }
+
     pub fn get_queue_family_index(&self) -> u32 {
         self._queue_family_index
     }
@@ -140,7 +140,7 @@ impl TDeviceImpl for DeviceImpl {
                 _debug_utils_messanger: debug_utils_messanger,
                 _device: device,
                 _queue: queue,
-				_physical_device: physical_device,
+                _physical_device: physical_device,
                 _queue_family_index: queue_family_index,
                 _queue_family_properties: queue_family_properties,
             }

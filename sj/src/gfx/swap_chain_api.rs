@@ -46,7 +46,7 @@ impl<'a, 'ref_layer: 'a, 'layer: 'ref_layer, T: ISwapChainImpl<'a, 'ref_layer, '
         }
     }
 
-	// モジュール内に隠蔽したい
+    // モジュール内に隠蔽したい
     pub fn update(&mut self) {
         self.to_data_mut().update();
     }

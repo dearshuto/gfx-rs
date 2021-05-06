@@ -6,7 +6,8 @@ fn main() {
     let device_info = sj::gfx::DeviceInfo::new();
     let device = sj::gfx::Device::new(&device_info);
 
-    let memory_pool = sj::gfx::MemoryPool::new(&device, &sj::gfx::MemoryPoolInfo::new());
+    let memory_pool =
+        sj::gfx::MemoryPool::new(&device, &sj::gfx::MemoryPoolInfo::new().set_size(1024));
 
     let source = include_bytes!("../resources/shaders/hello_compute.spv");
     let shader_info = sj::gfx::ShaderInfo::new().set_shader_binary(source);
@@ -15,24 +16,34 @@ fn main() {
     let pipeline_info = sj::gfx::ComputePipelineInfo::new().set_shader(&shader);
     let pipeline = sj::gfx::Pipeline::new_as_compute(&device, pipeline_info);
 
-    let buffer = sj::gfx::Buffer::new(&device, &sj::gfx::BufferInfo::new(), &memory_pool, 0, 16);
+    let buffer_info = sj::gfx::BufferInfo::new().set_size(64);
+    let required_alignment = sj::gfx::Buffer::get_required_alignment(&device, &buffer_info);
+    let buffer = sj::gfx::Buffer::new(
+        &device,
+        &buffer_info,
+        &memory_pool,
+        required_alignment as i64,
+        buffer_info.get_size(),
+    );
 
-	let command_buffer_info = sj::gfx::CommandBufferInfo::new();
+    let command_buffer_info = sj::gfx::CommandBufferInfo::new();
     let mut command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
-	
+
     let queue_info = sj::gfx::QueueInfo::new();
     let mut queue = sj::gfx::Queue::new(&device, &queue_info);
 
-	command_buffer.begin();
+    let gpu_address = sj::gfx::GpuAddress::new(&buffer);
+    command_buffer.begin();
     command_buffer.set_pipeline(&pipeline);
-    command_buffer.set_buffer(&buffer);
+    command_buffer.set_unordered_access_buffer(0, sj::gfx::ShaderStage::Compute, &gpu_address, 64);
     command_buffer.dispatch(1, 1, 1);
-	command_buffer.end();
-	
+    command_buffer.end();
+
     queue.execute(&command_buffer);
     queue.flush();
     queue.sync();
 
+    //buffer.invalidate_mapped_range(0, 64);
     let mapped_data = buffer.map::<IntData>();
     println!("{}", mapped_data.value);
     buffer.unmap();

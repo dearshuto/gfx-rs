@@ -6,6 +6,7 @@ mod command_buffer_api;
 mod depth_stencil_state_api;
 //mod descriptor_pool_api;
 mod device_api;
+mod gpu_address_api;
 mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
@@ -19,10 +20,11 @@ use self::command_buffer_api::TCommandBufferInterface;
 use self::depth_stencil_state_api::TDepthStencilState;
 //use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
+use self::gpu_address_api::TGpuAddressInterface;
 use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
-use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::queue_api::TQueueInterface;
+use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
 
@@ -35,18 +37,14 @@ mod wgpu;
 #[cfg(feature = "backend_ash")]
 mod ash;
 
-
-
 // BlendState
-pub use self::blend_state_api::BlendStateInfo as BlendStateInfo;
+pub use self::blend_state_api::BlendStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type BlendStateImpl = self::ash::blend_state_ash::BlendStateImpl;
 
 pub type BlendState = TBlendState<BlendStateImpl>;
 //
-
-
 
 // Buffer  -----------------------------------------------------------
 pub use self::buffer_api::BufferInfo;
@@ -63,10 +61,8 @@ type BufferImpl<'a> = self::ash::buffer_ash::BufferImpl<'a>;
 pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
 // -------------------------------------------------------------------
 
-
-
 // CommandBuffer -----------------------------------------------------
-pub use self::command_buffer_api::CommandBufferInfo as CommandBufferInfo;
+pub use self::command_buffer_api::CommandBufferInfo;
 
 #[cfg(feature = "backend_vulkano")]
 type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferImpl<'a>;
@@ -80,17 +76,13 @@ type CommandBufferImpl<'a> = self::ash::command_buffer_ash::CommandBufferImpl<'a
 pub type CommandBuffer<'a> = TCommandBufferInterface<'a, CommandBufferImpl<'a>>;
 // -------------------------------------------------------------------
 
-
-
 //
 //type DescriptorPoolImpl = self::wgpu::descriptor_pool_wgpu::DescriptorPoolImpl;
 //pub type DescriptorPool = TDescriptorInterface<DescriptorPoolImpl>;
 //
 
-
-
 // Device --------------------------------------------------------------------
-pub use self::device_api::DeviceInfo as DeviceInfo;
+pub use self::device_api::DeviceInfo;
 
 #[cfg(feature = "backend_vulkano")]
 type DeviceImpl = self::vk::device_vk::DeviceImpl;
@@ -104,10 +96,8 @@ type DeviceImpl = self::ash::device_ash::DeviceImpl;
 pub type Device = TDeviceInterface<DeviceImpl>;
 //-----------------------------------------------------------------------------
 
-
-
 // DepthStencilState
-pub use self::depth_stencil_state_api::DepthStencilStateInfo as DepthStencilStateInfo;
+pub use self::depth_stencil_state_api::DepthStencilStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilStateImpl;
@@ -115,10 +105,15 @@ type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilSta
 pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
 //
 
+//
+#[cfg(feature = "backend_ash")]
+type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
 
+pub type GpuAddress<'a> = TGpuAddressInterface<'a, GpuAddressImpl<'a>>;
+//
 
 // MemoryPool
-pub use self::memory_pool_api::MemoryPoolInfo as MemoryPoolInfo;
+pub use self::memory_pool_api::MemoryPoolInfo;
 
 #[cfg(feature = "backend_ash")]
 type MemoryPoolImpl<'a> = self::ash::memory_pool_ash::MemoryPoolImpl<'a>;
@@ -126,10 +121,8 @@ type MemoryPoolImpl<'a> = self::ash::memory_pool_ash::MemoryPoolImpl<'a>;
 pub type MemoryPool<'a> = TMemoryPoolInterface<'a, MemoryPoolImpl<'a>>;
 // -------------------------------------------------------------------
 
-
-
 //
-pub use self::pipeline_api::ComputePipelineInfo as ComputePipelineInfo;
+pub use self::pipeline_api::ComputePipelineInfo;
 
 #[cfg(feature = "backend_wgpu")]
 type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline<'a>;
@@ -140,14 +133,12 @@ type PipelineImpl<'a> = self::ash::pipeline_ash::PipelineImpl<'a>;
 pub type Pipeline<'a> = TPipelineInterface<'a, PipelineImpl<'a>>;
 //-----------------------------------------------------------------------------
 
-
-
 // Queue
-pub use self::queue_api::QueueInfo as QueueInfo;
+pub use self::queue_api::QueueInfo;
 
 #[cfg(feature = "backend_vulkano")]
-type QueueImpl<'a> =  self::vk::queue_vk::QueueImpl<'a>;
-    
+type QueueImpl<'a> = self::vk::queue_vk::QueueImpl<'a>;
+
 #[cfg(feature = "backend_wgpu")]
 type QueueImpl<'a> = self::wgpu::queue_wgpu::QueueImpl<'a>;
 
@@ -157,10 +148,8 @@ type QueueImpl<'a> = self::ash::queue_ash::QueueImpl<'a>;
 pub type Queue<'a> = TQueueInterface<'a, QueueImpl<'a>>;
 //--------------------------------------------------------------------
 
-
-
 // RasterizerState
-pub use self::rasterizer_state_api::RasterizerStateInfo as RasterizerStateInfo;
+pub use self::rasterizer_state_api::RasterizerStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
@@ -168,10 +157,8 @@ type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
 pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
 //
 
-
-
 // Shader ------------------------------------------------------------
-pub use self::shader_api::ShaderInfo as ShaderInfo;
+pub use self::shader_api::ShaderInfo;
 
 #[cfg(feature = "backend_vulkano")]
 type ShaderImpl<'a> = self::vk::shader_vk::ShaderImpl<'a>;
@@ -185,13 +172,11 @@ type ShaderImpl<'a> = self::ash::shader_ash::ShaderImpl<'a>;
 pub type Shader<'a> = TShaderInterface<'a, ShaderImpl<'a>>;
 //--------------------------------------------------------------------
 
-
-
 // SwapChain
-pub use self::swap_chain_api::SwapChainInfo as SwapChainInfo;
+pub use self::swap_chain_api::SwapChainInfo;
 
 #[cfg(feature = "backend_vulkano")]
-pub use self::vk::swap_chain_vk::SwapChain as SwapChain;
+pub use self::vk::swap_chain_vk::SwapChain;
 
 #[cfg(feature = "backend_ash")]
 type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
@@ -204,6 +189,12 @@ bitflags! {
         const CPU_CACHED = 0x01;
         const CPU_UNCACHED = 0x02;
         const GPU_CACHED = 0x04;
-        const GPU_UNCACHED = 0x08;		 
+        const GPU_UNCACHED = 0x08;
     }
+}
+
+pub enum ShaderStage {
+    Vertex,
+    Pixel,
+    Compute,
 }

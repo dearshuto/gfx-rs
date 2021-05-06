@@ -1,8 +1,10 @@
 pub mod blend_state_ash;
 pub mod buffer_ash;
 pub mod command_buffer_ash;
+mod command_buffer_write_descriptor_set_builder;
 pub mod depth_stencil_state_ash;
 pub mod device_ash;
+pub mod gpu_address_ash;
 pub mod memory_pool_ash;
 pub mod pipeline_ash;
 pub mod queue_ash;
