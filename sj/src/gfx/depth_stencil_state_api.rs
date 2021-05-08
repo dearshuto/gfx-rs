@@ -20,7 +20,7 @@ where
 }
 
 impl<T: IDepthStencilStateImpl> TDepthStencilState<T> {
-    fn new(device: &Device, info: &DepthStencilStateInfo) -> Self {
+    pub fn new(device: &Device, info: &DepthStencilStateInfo) -> Self {
         Self {
             _impl: T::new(device, info),
         }

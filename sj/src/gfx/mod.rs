@@ -2,26 +2,27 @@ mod blend_state_api;
 mod buffer_api;
 mod command_buffer_api;
 mod depth_stencil_state_api;
-mod descriptor_pool_api;
+//mod descriptor_pool_api;
 mod device_api;
 mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
 mod rasterizer_state_api;
 mod shader_api;
-mod swap_chain;
+mod swap_chain_api;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
 use self::command_buffer_api::TCommandBufferInterface;
 use self::depth_stencil_state_api::TDepthStencilState;
-use self::descriptor_pool_api::TDescriptorInterface;
+//use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
 use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
 use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::queue_api::TQueueInterface;
 use self::shader_api::TShaderInterface;
+use self::swap_chain_api::TSwapChain;
 
 #[cfg(feature = "backend_vulkano")]
 mod vk;
@@ -104,6 +105,8 @@ pub type Device = TDeviceInterface<DeviceImpl>;
 
 
 // DepthStencilState
+pub use self::depth_stencil_state_api::DepthStencilStateInfo as DepthStencilStateInfo;
+
 #[cfg(feature = "backend_ash")]
 type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilStateImpl;
 
@@ -183,7 +186,13 @@ pub type Shader<'a> = TShaderInterface<'a, ShaderImpl<'a>>;
 
 
 // SwapChain
-//pub use self::swap_chain::SwapChainInfo as SwapChainInfo;
+pub use self::swap_chain_api::SwapChainInfo as SwapChainInfo;
 
-//#[cfg(feature = "backend_vulkano")]
-//pub use self::vk::swap_chain_vk::SwapChain as SwapChain;
+#[cfg(feature = "backend_vulkano")]
+pub use self::vk::swap_chain_vk::SwapChain as SwapChain;
+
+#[cfg(feature = "backend_ash")]
+type SwapChainImpl = self::ash::swap_chain_ash::SwapChainImpl;
+
+pub type SwapChain<'a> = TSwapChain<SwapChainImpl>;
+//

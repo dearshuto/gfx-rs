@@ -4,4 +4,5 @@ members = [
 	"examples/hello_gfx",
 	"examples/hello_compute",
 	"examples/shader_setup",
+	"examples/simple_window",
 ]
