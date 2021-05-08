@@ -6,7 +6,7 @@ pub struct DepthStencilStateImpl {
 }
 
 impl IDepthStencilStateImpl for DepthStencilStateImpl {
-    fn new(device: &Device, info: &DepthStencilStateInfo) -> Self {
+    fn new(_device: &Device, _info: &DepthStencilStateInfo) -> Self {
         Self {
             _depth_stencl_state_create_info: ash::vk::PipelineDepthStencilStateCreateInfo {
                 depth_bounds_test_enable: 1,

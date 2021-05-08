@@ -8,3 +8,4 @@ pub mod pipeline_ash;
 pub mod queue_ash;
 pub mod rasterizer_state_ash;
 pub mod shader_ash;
+pub mod swap_chain_ash;

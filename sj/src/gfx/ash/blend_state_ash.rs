@@ -6,7 +6,7 @@ pub struct BlendStateImpl {
 }
 
 impl IBlendStateImpl for BlendStateImpl {
-    fn new(device: &Device, info: &BlendStateInfo) -> Self {
+    fn new(_device: &Device, _info: &BlendStateInfo) -> Self {
         let color_blend_attachment_states = [ash::vk::PipelineColorBlendAttachmentState::builder()
             .blend_enable(true)
             .src_color_blend_factor(ash::vk::BlendFactor::SRC_COLOR)
