@@ -6,6 +6,8 @@ fn main()
 {	
     let device_info = sj::gfx::DeviceInfo::new();
     let device = sj::gfx::Device::new(&device_info);
+
+	let _rasterizer_state = sj::gfx::RasterizerState::new(&device, sj::gfx::RasterizerStateInfo::new());
 	
 	let memory_pool_info = sj::gfx::MemoryPoolInfo::new();
 	let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
