@@ -1,5 +1,6 @@
 mod buffer_api;
 mod command_buffer_api;
+mod depth_stencil_state_api;
 mod descriptor_pool_api;
 mod device_api;
 mod memory_pool_api;
@@ -11,6 +12,7 @@ mod swap_chain;
 
 use self::buffer_api::TBufferInterface;
 use self::command_buffer_api::TCommandBufferInterface;
+use self::depth_stencil_state_api::TDepthStencilState;
 use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
 use self::memory_pool_api::TMemoryPoolInterface;
@@ -83,6 +85,15 @@ type DeviceImpl = self::ash::device_ash::DeviceImpl;
 
 pub type Device = TDeviceInterface<DeviceImpl>;
 //-----------------------------------------------------------------------------
+
+
+
+// DepthStencilState
+#[cfg(feature = "backend_ash")]
+type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilStateImpl;
+
+pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
+//
 
 
 
