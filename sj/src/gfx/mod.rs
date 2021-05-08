@@ -5,6 +5,7 @@ mod device_api;
 mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
+mod rasterizer_state_api;
 mod shader_api;
 mod swap_chain;
 
@@ -14,6 +15,7 @@ use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
 use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
+use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::queue_api::TQueueInterface;
 use self::shader_api::TShaderInterface;
 
@@ -123,6 +125,17 @@ type QueueImpl<'a> = self::ash::queue_ash::QueueImpl<'a>;
 
 pub type Queue<'a> = TQueueInterface<'a, QueueImpl<'a>>;
 //--------------------------------------------------------------------
+
+
+
+// RasterizerState
+pub use self::rasterizer_state_api::RasterizerStateInfo as RasterizerStateInfo;
+
+#[cfg(feature = "backend_ash")]
+type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
+
+pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
+//
 
 
 
