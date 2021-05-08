@@ -1,3 +1,4 @@
+mod blend_state_api;
 mod buffer_api;
 mod command_buffer_api;
 mod depth_stencil_state_api;
@@ -10,6 +11,7 @@ mod rasterizer_state_api;
 mod shader_api;
 mod swap_chain;
 
+use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
 use self::command_buffer_api::TCommandBufferInterface;
 use self::depth_stencil_state_api::TDepthStencilState;
@@ -29,6 +31,19 @@ mod wgpu;
 
 #[cfg(feature = "backend_ash")]
 mod ash;
+
+
+
+// BlendState
+pub use self::blend_state_api::BlendStateInfo as BlendStateInfo;
+
+#[cfg(feature = "backend_ash")]
+type BlendStateImpl = self::ash::blend_state_ash::BlendStateImpl;
+
+pub type BlendState = TBlendState<BlendStateImpl>;
+//
+
+
 
 // Buffer  -----------------------------------------------------------
 pub use self::buffer_api::BufferInfo;
