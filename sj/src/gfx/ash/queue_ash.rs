@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use ash::version::DeviceV1_0;
-use super::super::{Device, CommandBuffer};
+use super::super::{Device, CommandBuffer, SwapChain};
 use super::super::queue_api::{QueueInfo, IQueueImpl};
 
 pub struct QueueImpl<'a>
@@ -50,6 +50,10 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a>
 		// }
 		
 		self.flush();
+	}
+
+	fn present(&self, swap_chain: &mut SwapChain, _present_interval: i32) {
+		swap_chain.to_data();
 	}
 	
     fn flush(&mut self)

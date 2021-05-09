@@ -1,5 +1,4 @@
-use super::Device;
-use super::CommandBuffer;
+use super::{Device, CommandBuffer, SwapChain};
 use std::marker::PhantomData;
 
 pub struct QueueInfo {}
@@ -16,6 +15,8 @@ pub trait IQueueImpl<'a> {
 //	fn present(&self, swap_chain: &impl super::swap_chain::TSwapChain);
 
 	fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>);
+
+	fn present(&self, _swap_chain: &mut SwapChain, _present_interval: i32);
 	
     fn flush(&mut self);
     
@@ -52,8 +53,16 @@ impl<'a, T: IQueueImpl<'a>> TQueueInterface<'a, T> {
 	{
 		self.queue_impl.sync();
 	}
+
+	pub fn present(&mut self, swap_chain: &mut SwapChain, _present_interval: i32) {
+		swap_chain.update();
+	}
+
+	pub fn to_data(&self) -> &T {
+        &self.queue_impl
+    }
 	
-    pub fn to_data(&mut self) -> &mut T {
+    pub fn to_data_mut(&mut self) -> &mut T {
         &mut self.queue_impl
     }
 }
