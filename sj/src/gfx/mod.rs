@@ -192,7 +192,7 @@ pub use self::swap_chain_api::SwapChainInfo as SwapChainInfo;
 pub use self::vk::swap_chain_vk::SwapChain as SwapChain;
 
 #[cfg(feature = "backend_ash")]
-type SwapChainImpl = self::ash::swap_chain_ash::SwapChainImpl;
+type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 
-pub type SwapChain<'a> = TSwapChain<SwapChainImpl>;
+pub type SwapChain<'a, 'b, 'c> = TSwapChain<'a, 'b, 'c, SwapChainImpl<'a>>;
 //

@@ -31,10 +31,28 @@ impl TDeviceImpl for DeviceImpl
                 .engine_version(0)
                 .api_version(vk::make_version(1, 0, 0));
 
+			let layer_names = [std::ffi::CString::new("VK_LAYER_KHRONOS_validation").unwrap()];
+            let _layers_names_raw: Vec<*const i8> = layer_names
+                .iter()
+                .map(|raw_name| raw_name.as_ptr())
+                .collect();
+			
+			let surface_extensions = vec![
+				ash::extensions::khr::Surface::name(),
+//				ash::extensions::khr::XlibSurface::name(),
+//				ash::extensions::khr::WaylandSurface::name(),
+//				ash::extensions::khr::XcbSurface::name(),
+				ash::extensions::ext::MetalSurface::name()];
+			let mut extension_names_raw = surface_extensions
+                .iter()
+                .map(|ext| ext.as_ptr())
+                .collect::<Vec<_>>();
+            extension_names_raw.push(ash::extensions::ext::DebugUtils::name().as_ptr());
+			
             let create_info = vk::InstanceCreateInfo::builder()
-                .application_info(&appinfo);
+                .application_info(&appinfo)
 //                .enabled_layer_names(&layers_names_raw)
-//                .enabled_extension_names(&extension_names_raw);
+				.enabled_extension_names(&extension_names_raw);
 
             let instance = entry
                 .create_instance(&create_info, None)

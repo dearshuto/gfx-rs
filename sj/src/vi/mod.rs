@@ -1,7 +1,7 @@
-mod vk;
+mod winit;
 
-pub use self::vk::vi::Layer as Layer;
-pub use self::vk::vi::Display as Display;
+pub use self::winit::Display;
+pub use self::winit::Layer;
 
-pub use self::vk::vi::create_display as create_display;
-pub use self::vk::vi::create_layer as create_layer;
+pub use self::winit::create_display;
+pub use self::winit::create_layer;
