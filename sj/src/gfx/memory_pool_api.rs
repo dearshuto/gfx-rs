@@ -1,18 +1,28 @@
 use std::marker::PhantomData;
-use super::Device;
+use super::super::gfx::MemoryPoolProperty;
+use super::{Device};
 
 pub struct MemoryPoolInfo
 {
-	
+	_memory_pool_property: MemoryPoolProperty,
+	_size: u64,
 }
 
 impl MemoryPoolInfo{
 	pub fn new() -> Self{
-		Self{}
+		Self{
+			_memory_pool_property : MemoryPoolProperty::CPU_CACHED | MemoryPoolProperty::GPU_CACHED,
+			_size: 0
+		}
 	}
 
 	pub fn get_size(&self) -> u64{
-		128
+		self._size
+	}
+
+	pub fn set_size(mut self, size: u64) -> Self {
+		self._size = size;
+		self
 	}
 }
 

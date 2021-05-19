@@ -37,6 +37,10 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a>
 	fn execute(&mut self, command_buffer: &CommandBuffer<'a>)
 	{
 		let command_buffer_impl = command_buffer.to_data();
+
+		// コマンドが存在しない場合は処理をすかす
+		if command_buffer_impl.get_command_count() == 0 { return; }
+		
 		let command_buffers = command_buffer_impl.get_command_buffers();
 		
 		let submit_info = ash::vk::SubmitInfo::builder()

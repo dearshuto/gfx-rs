@@ -20,6 +20,10 @@ impl<'a> CommandBufferImpl<'a>
 	{
 		&self._command_buffers
 	}
+
+	pub fn get_command_count(&self) -> i32 {
+		0 // TOO
+	}
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a>
@@ -31,12 +35,12 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a>
 			let command_pool = device_impl.create_command_pool(
 				&ash::vk::CommandPoolCreateInfo::builder()
 					.flags(ash::vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-					.queue_family_index(0)
+					.queue_family_index(device.to_data().get_queue_family_index())
 					.build()
 					, None)
-				.unwrap();
+				.expect("command pool");
 			let command_buffers = device_impl.allocate_command_buffers(&ash::vk::CommandBufferAllocateInfo::builder()
-																	   .command_buffer_count(1)
+																	   .command_buffer_count(2)
 																	   .command_pool(command_pool)
 																	   .level(ash::vk::CommandBufferLevel::PRIMARY)
 																	  .build())

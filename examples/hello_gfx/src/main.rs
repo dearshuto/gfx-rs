@@ -3,7 +3,7 @@ struct Data{
 }
 
 fn main()
-{	
+{
     let device_info = sj::gfx::DeviceInfo::new();
     let device = sj::gfx::Device::new(&device_info);
 
@@ -11,7 +11,7 @@ fn main()
 	let _depth_stencil_state = sj::gfx::DepthStencilState::new(&device, &sj::gfx::DepthStencilStateInfo::new());
 	let _blend_state = sj::gfx::BlendState::new(&device, &sj::gfx::BlendStateInfo::new());
 	
-	let memory_pool_info = sj::gfx::MemoryPoolInfo::new();
+	let memory_pool_info = sj::gfx::MemoryPoolInfo::new().set_size(1024);
 	let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
 
 	let buffer_info = sj::gfx::BufferInfo::new();
@@ -33,7 +33,7 @@ fn main()
 
 	for _i in 0..2
 	{
-	//	command_buffer.set_pipeline(&pipeline);
+//		command_buffer.set_pipeline(&pipeline);
 		queue.execute(&command_buffer);
 		
 		queue.flush();
