@@ -2,6 +2,7 @@ use bitflags;
 
 mod blend_state_api;
 mod buffer_api;
+mod color_target_view_api;
 mod command_buffer_api;
 mod depth_stencil_state_api;
 //mod descriptor_pool_api;
@@ -16,6 +17,7 @@ mod swap_chain_api;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
+use self::color_target_view_api::TColorTargetView;
 use self::command_buffer_api::TCommandBufferInterface;
 use self::depth_stencil_state_api::TDepthStencilState;
 //use self::descriptor_pool_api::TDescriptorInterface;
@@ -60,6 +62,19 @@ type BufferImpl<'a> = self::ash::buffer_ash::BufferImpl<'a>;
 
 pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
 // -------------------------------------------------------------------
+
+
+
+// ColorTargetView
+pub use self::color_target_view_api::ColorTargetViewInfo;
+
+#[cfg(feature = "backend_ash")]
+type ColorTargetViewImpl = self::ash::color_target_view_ash::ColorTargetViewImpl;
+
+pub type ColorTargetView = TColorTargetView<ColorTargetViewImpl>;
+//
+
+
 
 // CommandBuffer -----------------------------------------------------
 pub use self::command_buffer_api::CommandBufferInfo;
@@ -181,7 +196,7 @@ pub use self::vk::swap_chain_vk::SwapChain;
 #[cfg(feature = "backend_ash")]
 type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 
-pub type SwapChain<'a, 'b, 'c> = TSwapChain<'a, 'b, 'c, SwapChainImpl<'a>>;
+pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
 
 bitflags! {
