@@ -1,3 +1,5 @@
+use bitflags;
+
 mod blend_state_api;
 mod buffer_api;
 mod command_buffer_api;
@@ -196,3 +198,12 @@ type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 
 pub type SwapChain<'a, 'b, 'c> = TSwapChain<'a, 'b, 'c, SwapChainImpl<'a>>;
 //
+
+bitflags! {
+    pub struct MemoryPoolProperty: u32 {
+        const CPU_CACHED = 0x01;
+        const CPU_UNCACHED = 0x02;
+        const GPU_CACHED = 0x04;
+        const GPU_UNCACHED = 0x08;		 
+    }
+}
