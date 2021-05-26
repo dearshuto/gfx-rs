@@ -14,7 +14,7 @@ fn main()
 	let memory_pool_info = sj::gfx::MemoryPoolInfo::new().set_size(1024);
 	let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
 
-	let buffer_info = sj::gfx::BufferInfo::new();
+	let buffer_info = sj::gfx::BufferInfo::new().set_size(64);
 	let buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 64);
 
 	let mut a = buffer.map::<Data>();

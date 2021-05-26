@@ -23,23 +23,23 @@ impl<'a> IMemoryPoolImpl<'a> for MemoryPoolImpl<'a> {
         let device_impl = device.to_data().get_device();
 
         unsafe {
-			let memory_type_index = instance.get_physical_device_memory_properties(*physical_device)
-				.memory_types
-				.iter()
-				.enumerate()
-				.find_map(|(index, memory_type)| {
-					let memory_flags = ash::vk::MemoryPropertyFlags::DEVICE_LOCAL
-						| ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
-					let is_contains = memory_type.property_flags.contains(memory_flags);
+            let memory_type_index = instance
+                .get_physical_device_memory_properties(*physical_device)
+                .memory_types
+                .iter()
+                .enumerate()
+                .find_map(|(index, memory_type)| {
+                    let memory_flags = ash::vk::MemoryPropertyFlags::DEVICE_LOCAL
+                        | ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
+                    let is_contains = memory_type.property_flags.contains(memory_flags);
 
-					if is_contains {
-						Some(index)						
-					} else {
-						None
-					}
-
-				})
-				.unwrap();
+                    if is_contains {
+                        Some(index)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap();
 
             let allocate_info = ash::vk::MemoryAllocateInfo::builder()
                 .allocation_size(info.get_size())
