@@ -208,6 +208,13 @@ bitflags! {
     }
 }
 
+bitflags! {
+    pub struct BufferUsage: u32 {
+        const CONSTANT_BUFFER = 0x01;
+        const UNORDERED_ACCESS_BUFFER = 0x02;
+    }
+}
+
 pub enum ShaderStage {
     Vertex,
     Pixel,
