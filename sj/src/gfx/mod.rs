@@ -5,6 +5,7 @@ mod buffer_api;
 mod color_target_view_api;
 mod command_buffer_api;
 mod depth_stencil_state_api;
+mod depth_stencil_view_api;
 //mod descriptor_pool_api;
 mod device_api;
 mod gpu_address_api;
@@ -15,12 +16,14 @@ mod rasterizer_state_api;
 mod shader_api;
 mod swap_chain_api;
 mod texture_api;
+mod vertex_state_api;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
 use self::color_target_view_api::TColorTargetView;
 use self::command_buffer_api::TCommandBufferInterface;
 use self::depth_stencil_state_api::TDepthStencilState;
+use self::depth_stencil_view_api::TDepthStencilView;
 //use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
 use self::gpu_address_api::TGpuAddressInterface;
@@ -31,6 +34,7 @@ use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
 use self::texture_api::TTexture;
+use self::vertex_state_api::TVertexState;
 
 #[cfg(feature = "backend_vulkano")]
 mod vk;
@@ -43,6 +47,7 @@ mod ash;
 
 // BlendState
 pub use self::blend_state_api::BlendStateInfo;
+pub use self::blend_state_api::BlendTargetStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type BlendStateImpl = self::ash::blend_state_ash::BlendStateImpl;
@@ -69,9 +74,9 @@ pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
 pub use self::color_target_view_api::ColorTargetViewInfo;
 
 #[cfg(feature = "backend_ash")]
-type ColorTargetViewImpl = self::ash::color_target_view_ash::ColorTargetViewImpl;
+type ColorTargetViewImpl<'a> = self::ash::color_target_view_ash::ColorTargetViewImpl<'a>;
 
-pub type ColorTargetView = TColorTargetView<ColorTargetViewImpl>;
+pub type ColorTargetView<'a> = TColorTargetView<'a, ColorTargetViewImpl<'a>>;
 //
 
 // CommandBuffer -----------------------------------------------------
@@ -118,6 +123,15 @@ type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilSta
 pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
 //
 
+// DepthStencilView
+pub use self::depth_stencil_view_api::DepthStencilViewInfo;
+
+#[cfg(feature = "backend_ash")]
+type DepthStencilViewImpl = self::ash::depth_stencil_view_ash::DepthStencilViewImpl;
+
+pub type DepthStencilView = TDepthStencilView<DepthStencilViewImpl>;
+//
+
 //
 #[cfg(feature = "backend_ash")]
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
@@ -136,6 +150,7 @@ pub type MemoryPool<'a> = TMemoryPoolInterface<'a, MemoryPoolImpl<'a>>;
 
 //
 pub use self::pipeline_api::ComputePipelineInfo;
+pub use self::pipeline_api::GraphicsPipelineInfo;
 
 #[cfg(feature = "backend_wgpu")]
 type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline<'a>;
@@ -206,6 +221,17 @@ type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
 pub type Texture<'a> = TTexture<'a, TextureImpl<'a>>;
 //
 
+// VertexState
+pub use self::vertex_state_api::VertexAttributeStateInfo;
+pub use self::vertex_state_api::VertexBufferStateInfo;
+pub use self::vertex_state_api::VertexStateInfo;
+
+#[cfg(feature = "backend_ash")]
+type VertexStateImpl = self::ash::vertex_state_ash::VertexStateImpl;
+
+pub type VertexState = TVertexState<VertexStateImpl>;
+//
+
 bitflags! {
     pub struct MemoryPoolProperty: u32 {
         const CPU_CACHED = 0x01;
@@ -220,6 +246,7 @@ bitflags! {
     pub struct BufferUsage: u32 {
         const CONSTANT_BUFFER = 0x01;
         const UNORDERED_ACCESS_BUFFER = 0x02;
+        const VERTEX_BUFFER = 0x04;
     }
 }
 
@@ -230,8 +257,26 @@ bitflags! {
     }
 }
 
+pub enum ImageFormat {
+    R8G8B8A8Unorm,
+}
+
 pub enum ShaderStage {
     Vertex,
     Pixel,
     Compute,
+}
+
+pub enum AttributeFormat {
+    Float32_32,
+    Float32_32_32,
+}
+
+pub enum PrimitiveTopology {
+    PointList,
+    TriangleList,
+}
+
+pub enum IndexFormat {
+    Uint32,
 }

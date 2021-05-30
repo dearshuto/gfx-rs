@@ -1,10 +1,20 @@
 use super::Device;
 
-pub struct BlendStateInfo {}
+pub struct BlendStateInfo<'a> {
+    _target_state_info: &'a [BlendTargetStateInfo],
+}
 
-impl BlendStateInfo {
+pub struct BlendTargetStateInfo {}
+
+impl<'a> BlendStateInfo<'a> {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            _target_state_info: &[],
+        }
+    }
+
+    pub fn get_color_target_blend_state_info(&self) -> &'a [BlendTargetStateInfo] {
+        self._target_state_info
     }
 }
 

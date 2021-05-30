@@ -97,4 +97,8 @@ impl<'a, T: ITexture<'a>> TTexture<'a, T> {
             _marker: std::marker::PhantomData,
         }
     }
+
+    pub fn to_data(&self) -> &T {
+        &self._impl
+    }
 }

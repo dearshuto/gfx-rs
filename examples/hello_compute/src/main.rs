@@ -7,7 +7,9 @@ fn main() {
     let device = sj::gfx::Device::new(&device_info);
 
     let memory_pool =
-        sj::gfx::MemoryPool::new(&device, &sj::gfx::MemoryPoolInfo::new().set_size(1024));
+        sj::gfx::MemoryPool::new(&device, &sj::gfx::MemoryPoolInfo::new()
+								 .set_size(1024)
+								 .set_memory_pool_property(sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED));
 
     let source = include_bytes!("../resources/shaders/hello_compute.spv");
     let shader_info = sj::gfx::ShaderInfo::new().set_shader_binary(source);

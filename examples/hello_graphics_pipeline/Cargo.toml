@@ -1,0 +1,11 @@
+[package]
+name = "hello_graphics_pipeline"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+sj = { path = "../../sj" }
+
+[build-dependencies]
+shaderc = "0.7"

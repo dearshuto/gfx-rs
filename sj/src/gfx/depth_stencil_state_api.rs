@@ -1,10 +1,34 @@
 use super::Device;
 
-pub struct DepthStencilStateInfo {}
+pub struct DepthStencilStateInfo {
+    _is_depth_test_enabled: bool,
+    _is_depth_write_enabled: bool,
+}
 
 impl DepthStencilStateInfo {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            _is_depth_test_enabled: false,
+            _is_depth_write_enabled: false,
+        }
+    }
+
+    pub fn is_depth_test_enabled(&self) -> bool {
+        self._is_depth_test_enabled
+    }
+
+    pub fn set_depth_test_enabled(mut self, is_enabled: bool) -> Self {
+        self._is_depth_test_enabled = is_enabled;
+        self
+    }
+
+    pub fn is_depth_write_enabled(&self) -> bool {
+        self._is_depth_write_enabled
+    }
+
+    pub fn set_depth_write_enabled(mut self, is_enabled: bool) -> Self {
+        self._is_depth_write_enabled = is_enabled;
+        self
     }
 }
 

@@ -29,6 +29,10 @@ impl<'a> TextureImpl<'a> {
             .build();
         unsafe { device_ash.create_image(&image_create_info, None).unwrap() }
     }
+
+    pub fn get_image(&self) -> &ash::vk::Image {
+        &self._image
+    }
 }
 
 impl<'a> ITexture<'a> for TextureImpl<'a> {

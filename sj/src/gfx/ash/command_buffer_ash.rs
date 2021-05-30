@@ -1,6 +1,11 @@
+use crate::gfx::DepthStencilView;
 use ash::version::DeviceV1_0;
-use super::super::{Buffer, ColorTargetView, Device, GpuAddress, Pipeline, ShaderStage};
+
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
+use super::super::{
+    Buffer, ColorTargetView, Device, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology,
+    ShaderStage,
+};
 use super::command_buffer_write_descriptor_set_builder::CommandBufferWriteDescriptorSetBuilder;
 
 pub struct CommandBufferImpl<'a> {
@@ -119,6 +124,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         }
     }
 
+    fn reset(&mut self) {
+        std::unimplemented!();
+    }
+
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         self._pipeline_set_command = Some(PipelineSetCommand::new(pipeline));
 
@@ -156,8 +165,87 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         self._descriptor_set_builder.push(buffer, offset, size);
     }
 
-	fn clear_color(&mut self, _color_target_view: &mut ColorTargetView, _red: f32, _green: f32, _blue: f32, _alpha: f32) {
-	}
+    fn clear_color(
+        &mut self,
+        _color_target_view: &mut ColorTargetView,
+        _red: f32,
+        _green: f32,
+        _blue: f32,
+        _alpha: f32,
+    ) {
+        std::unimplemented!();
+    }
+
+    fn set_render_targets(
+        &mut self,
+        _color_target_views: &[&ColorTargetView],
+        _depth_stencil_state_view: Option<&DepthStencilView>,
+    ) {
+        std::unimplemented!();
+    }
+
+    fn set_vertex_buffer(&mut self, _buffer_index: i32, _gpu_address: &GpuAddress) {
+        std::unimplemented!();
+    }
+
+    fn draw(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+    ) {
+        let device_ash = self._device.to_data().get_device();
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        unsafe {
+            // TODO: primitive_topology を VertexInputAssemblyStateInfo として流し込む
+            device_ash.cmd_draw(
+                *command_buffer_ash,
+                vertex_count as u32,
+                1,
+                vertex_offset as u32,
+                0,
+            );
+        }
+    }
+
+    fn draw_instanced(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        __vertex_count: i32,
+        _vertex_offset: i32,
+        _instance_count: i32,
+        _base_instance: i32,
+    ) {
+        std::unimplemented!();
+    }
+
+    fn draw_indexed(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: IndexFormat,
+        _gpu_address: &GpuAddress,
+        _index_count: i32,
+        _base_vertex: i32,
+    ) {
+        std::unimplemented!();
+    }
+
+    fn draw_indexed_instanced(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: IndexFormat,
+        _gpu_address: &GpuAddress,
+        _index_count: i32,
+        _base_vertex: i32,
+        _instance_count: i32,
+        _base_instance: i32,
+    ) {
+        std::unimplemented!();
+    }
+
+    fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
+        std::unimplemented!();
+    }
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
         let device_impl = self._device.to_data().get_device();
