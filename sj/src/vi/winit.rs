@@ -32,6 +32,10 @@ pub fn create_display() -> Display {
 
 pub fn create_layer(_display: &mut Display) -> Layer {
 	let event_loop = winit::event_loop::EventLoop::new();
+
+	// なぜかダミーをひとつ作っとかないと Device の初期化に失敗する
+	let _event_loop = winit::event_loop::EventLoop::new();
+	
     let window = winit::window::WindowBuilder::new()
     // .with_title("Hello Window")
     // .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))

@@ -53,13 +53,11 @@ impl TDeviceImpl for DeviceImpl {
                 .map(|raw_name| raw_name.as_ptr())
                 .collect();
 
-            let surface_extensions = vec![
-                ash::extensions::khr::Surface::name(),
-                ash::extensions::khr::XlibSurface::name(),
-                //				ash::extensions::khr::WaylandSurface::name(),
-                //				ash::extensions::khr::XcbSurface::name(),
-                //				ash::extensions::ext::MetalSurface::name()
-            ];
+            let event_loop = winit::event_loop::EventLoop::new();
+            let window = winit::window::WindowBuilder::new()
+                .build(&event_loop)
+                .unwrap();
+            let surface_extensions = ash_window::enumerate_required_extensions(&window).unwrap();
             let mut extension_names_raw = surface_extensions
                 .iter()
                 .map(|ext| ext.as_ptr())
@@ -75,6 +73,9 @@ impl TDeviceImpl for DeviceImpl {
                 .create_instance(&create_info, None)
                 .expect("Instance creation error");
 
+            let surface = ash_window::create_surface(&entry, &instance, &window, None).unwrap();
+            let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
+
             let physical_devices = instance
                 .enumerate_physical_devices()
                 .expect("Physical device error");
@@ -88,7 +89,14 @@ impl TDeviceImpl for DeviceImpl {
                         .enumerate()
                         .find_map(|(index, ref info)| {
                             let supports_graphic_and_surface =
-                                info.queue_flags.contains(ash::vk::QueueFlags::GRAPHICS);
+                                info.queue_flags.contains(ash::vk::QueueFlags::GRAPHICS)
+                                    && surface_loader
+                                        .get_physical_device_surface_support(
+                                            *physical_device,
+                                            index as u32,
+                                            surface,
+                                        )
+                                        .unwrap();
                             if supports_graphic_and_surface {
                                 Some((*physical_device, index))
                             } else {
