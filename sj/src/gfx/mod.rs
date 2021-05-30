@@ -14,6 +14,7 @@ mod queue_api;
 mod rasterizer_state_api;
 mod shader_api;
 mod swap_chain_api;
+mod texture_api;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
@@ -29,6 +30,7 @@ use self::queue_api::TQueueInterface;
 use self::rasterizer_state_api::TRasterizerStateInterface;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
+use self::texture_api::TTexture;
 
 #[cfg(feature = "backend_vulkano")]
 mod vk;
@@ -63,8 +65,6 @@ type BufferImpl<'a> = self::ash::buffer_ash::BufferImpl<'a>;
 pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
 // -------------------------------------------------------------------
 
-
-
 // ColorTargetView
 pub use self::color_target_view_api::ColorTargetViewInfo;
 
@@ -73,8 +73,6 @@ type ColorTargetViewImpl = self::ash::color_target_view_ash::ColorTargetViewImpl
 
 pub type ColorTargetView = TColorTargetView<ColorTargetViewImpl>;
 //
-
-
 
 // CommandBuffer -----------------------------------------------------
 pub use self::command_buffer_api::CommandBufferInfo;
@@ -199,12 +197,22 @@ type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
 
+// Texture
+pub use self::texture_api::TextureInfo;
+
+#[cfg(feature = "backend_ash")]
+type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
+
+pub type Texture<'a> = TTexture<'a, TextureImpl<'a>>;
+//
+
 bitflags! {
     pub struct MemoryPoolProperty: u32 {
         const CPU_CACHED = 0x01;
         const CPU_UNCACHED = 0x02;
         const GPU_CACHED = 0x04;
         const GPU_UNCACHED = 0x08;
+        const CPU_INVISIBLE = 0x16;
     }
 }
 
@@ -212,6 +220,13 @@ bitflags! {
     pub struct BufferUsage: u32 {
         const CONSTANT_BUFFER = 0x01;
         const UNORDERED_ACCESS_BUFFER = 0x02;
+    }
+}
+
+bitflags! {
+    pub struct TextureUsage: u32 {
+        const TEXTURE = 0x01;
+        const IMAGE = 0x02;
     }
 }
 

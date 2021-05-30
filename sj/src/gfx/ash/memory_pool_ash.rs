@@ -2,7 +2,7 @@ use ash::version::{DeviceV1_0, InstanceV1_0};
 use std::marker::PhantomData;
 
 use super::super::memory_pool_api::{IMemoryPoolImpl, MemoryPoolInfo};
-use super::super::Device;
+use super::super::{Device, MemoryPoolProperty};
 
 pub struct MemoryPoolImpl<'a> {
     _device: &'a Device,
@@ -29,8 +29,7 @@ impl<'a> IMemoryPoolImpl<'a> for MemoryPoolImpl<'a> {
                 .iter()
                 .enumerate()
                 .find_map(|(index, memory_type)| {
-                    let memory_flags = ash::vk::MemoryPropertyFlags::DEVICE_LOCAL
-                        | ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
+                    let memory_flags = info.get_memory_flags_ash();
                     let is_contains = memory_type.property_flags.contains(memory_flags);
 
                     if is_contains {
@@ -61,5 +60,22 @@ impl<'a> Drop for MemoryPoolImpl<'a> {
             let device_impl = self._device.to_data().get_device();
             device_impl.free_memory(self._memory_pool, None);
         }
+    }
+}
+
+impl MemoryPoolInfo {
+    pub fn get_memory_flags_ash(&self) -> ash::vk::MemoryPropertyFlags {
+        let memory_pool_property = self.get_memory_pool_property();
+        let mut result = ash::vk::MemoryPropertyFlags::DEVICE_LOCAL;
+
+        if memory_pool_property.contains(MemoryPoolProperty::CPU_INVISIBLE) {
+            // TODO
+        }
+
+        if memory_pool_property.contains(MemoryPoolProperty::CPU_CACHED) {
+            result |= ash::vk::MemoryPropertyFlags::HOST_VISIBLE
+        }
+
+        result
     }
 }
