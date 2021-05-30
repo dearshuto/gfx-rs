@@ -14,6 +14,10 @@ pub struct DeviceImpl {
 }
 
 impl DeviceImpl {
+    pub fn get_entry(&self) -> &ash::Entry {
+        &self._entry
+    }
+
     pub fn get_instance(&self) -> &ash::Instance {
         &self._instance
     }
@@ -51,7 +55,7 @@ impl TDeviceImpl for DeviceImpl {
 
             let surface_extensions = vec![
                 ash::extensions::khr::Surface::name(),
-                //				ash::extensions::khr::XlibSurface::name(),
+                ash::extensions::khr::XlibSurface::name(),
                 //				ash::extensions::khr::WaylandSurface::name(),
                 //				ash::extensions::khr::XcbSurface::name(),
                 //				ash::extensions::ext::MetalSurface::name()
@@ -74,7 +78,6 @@ impl TDeviceImpl for DeviceImpl {
             let physical_devices = instance
                 .enumerate_physical_devices()
                 .expect("Physical device error");
-            let _surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
 
             let (physical_device, queue_family_index) = physical_devices
                 .iter()

@@ -1,7 +1,7 @@
-use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
-use super::super::{Buffer, Device, GpuAddress, Pipeline, ShaderStage};
-use super::command_buffer_write_descriptor_set_builder::CommandBufferWriteDescriptorSetBuilder;
 use ash::version::DeviceV1_0;
+use super::super::{Buffer, ColorTargetView, Device, GpuAddress, Pipeline, ShaderStage};
+use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
+use super::command_buffer_write_descriptor_set_builder::CommandBufferWriteDescriptorSetBuilder;
 
 pub struct CommandBufferImpl<'a> {
     _device: &'a Device,
@@ -155,6 +155,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         let offset = gpu_address.to_data().get_offset();
         self._descriptor_set_builder.push(buffer, offset, size);
     }
+
+	fn clear_color(&mut self, _color_target_view: &mut ColorTargetView, _red: f32, _green: f32, _blue: f32, _alpha: f32) {
+	}
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
         let device_impl = self._device.to_data().get_device();

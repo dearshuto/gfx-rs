@@ -1,4 +1,4 @@
-use super::{Buffer, Device, GpuAddress, Pipeline, ShaderStage};
+use super::{Buffer, ColorTargetView, Device, GpuAddress, Pipeline, ShaderStage};
 use std::marker::PhantomData;
 
 pub struct CommandBufferInfo {}
@@ -28,7 +28,9 @@ pub trait ICommandBufferImpl<'a> {
         size: u64,
     );
 
-    fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32);
+	fn clear_color(&mut self,color_target_view: &mut ColorTargetView, red: f32, green: f32, blue: f32, alpha: f32);
+		
+	fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32);
 }
 
 pub struct TCommandBufferInterface<'a, T: 'a>
@@ -73,6 +75,10 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         self.command_buffer_impl
             .set_unordered_access_buffer(slot, stage, gpu_address, size);
     }
+
+	pub fn clear_color(&mut self, color_target_view: &mut ColorTargetView, red: f32, green: f32, blue: f32, alpha: f32) {
+		self.command_buffer_impl.clear_color(color_target_view, red, green, blue, alpha);
+	}
 
     pub fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
         self.command_buffer_impl

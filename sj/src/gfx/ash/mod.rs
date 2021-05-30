@@ -1,5 +1,6 @@
 pub mod blend_state_ash;
 pub mod buffer_ash;
+pub mod color_target_view_ash;
 pub mod command_buffer_ash;
 mod command_buffer_write_descriptor_set_builder;
 pub mod depth_stencil_state_ash;
