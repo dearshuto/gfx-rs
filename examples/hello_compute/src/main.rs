@@ -16,7 +16,7 @@ fn main() {
     let pipeline_info = sj::gfx::ComputePipelineInfo::new().set_shader(&shader);
     let pipeline = sj::gfx::Pipeline::new_as_compute(&device, pipeline_info);
 
-    let buffer_info = sj::gfx::BufferInfo::new().set_size(64);
+    let buffer_info = sj::gfx::BufferInfo::new().set_size(64).set_buffer_usage(sj::gfx::BufferUsage::UNORDERED_ACCESS_BUFFER);
     let required_alignment = sj::gfx::Buffer::get_required_alignment(&device, &buffer_info);
     let buffer = sj::gfx::Buffer::new(
         &device,

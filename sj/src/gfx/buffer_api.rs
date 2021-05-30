@@ -1,13 +1,17 @@
-use super::{Device, MemoryPool};
+use super::{BufferUsage, Device, MemoryPool};
 use std::marker::PhantomData;
 
 pub struct BufferInfo {
     _size: u64,
+    _buffer_usage: BufferUsage,
 }
 
 impl BufferInfo {
     pub fn new() -> Self {
-        BufferInfo { _size: 0 }
+        BufferInfo {
+            _size: 0,
+            _buffer_usage: BufferUsage::empty(),
+        }
     }
 
     pub fn get_size(&self) -> u64 {
@@ -16,6 +20,15 @@ impl BufferInfo {
 
     pub fn set_size(mut self, size: u64) -> Self {
         self._size = size;
+        self
+    }
+
+    pub fn get_buffer_usage(&self) -> BufferUsage {
+        self._buffer_usage
+    }
+
+    pub fn set_buffer_usage(mut self, buffer_usage: BufferUsage) -> Self {
+        self._buffer_usage = buffer_usage;
         self
     }
 }
@@ -35,9 +48,9 @@ pub trait IBufferImpl<'a> {
 
     fn unmap(&self);
 
-	fn flush_mapped_range(&self, offset: i64, size: u64);
+    fn flush_mapped_range(&self, offset: i64, size: u64);
 
-	fn invalidate_mapped_range(&self, offset: i64, size: u64);
+    fn invalidate_mapped_range(&self, offset: i64, size: u64);
 }
 
 pub struct TBufferInterface<'a, T: 'a>
@@ -77,16 +90,14 @@ where
         self.buffer_impl.unmap();
     }
 
-	pub fn flush_mapped_range(&self, offset: i64, size: u64)
-	{
-		self.buffer_impl.flush_mapped_range(offset, size);
-	}
+    pub fn flush_mapped_range(&self, offset: i64, size: u64) {
+        self.buffer_impl.flush_mapped_range(offset, size);
+    }
 
-	pub fn invalidate_mapped_range(&self, offset: i64, size: u64)
-	{
-		self.buffer_impl.invalidate_mapped_range(offset, size);
-	}
-	
+    pub fn invalidate_mapped_range(&self, offset: i64, size: u64) {
+        self.buffer_impl.invalidate_mapped_range(offset, size);
+    }
+
     pub fn to_data(&'a self) -> &'a T {
         &self.buffer_impl
     }
