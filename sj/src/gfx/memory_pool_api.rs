@@ -10,7 +10,7 @@ pub struct MemoryPoolInfo {
 impl MemoryPoolInfo {
     pub fn new() -> Self {
         Self {
-            _memory_pool_property: MemoryPoolProperty::CPU_CACHED | MemoryPoolProperty::GPU_CACHED,
+            _memory_pool_property: MemoryPoolProperty::empty(),
             _size: 0,
         }
     }
@@ -21,6 +21,15 @@ impl MemoryPoolInfo {
 
     pub fn set_size(mut self, size: u64) -> Self {
         self._size = size;
+        self
+    }
+
+    pub fn get_memory_pool_property(&self) -> MemoryPoolProperty {
+        self._memory_pool_property
+    }
+
+    pub fn set_memory_pool_property(mut self, memory_pool_property: MemoryPoolProperty) -> Self {
+        self._memory_pool_property = memory_pool_property;
         self
     }
 }
