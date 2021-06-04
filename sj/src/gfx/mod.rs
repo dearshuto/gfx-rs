@@ -17,6 +17,7 @@ mod shader_api;
 mod swap_chain_api;
 mod texture_api;
 mod vertex_state_api;
+mod viewport_scissor_state_api;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
@@ -35,6 +36,7 @@ use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
 use self::texture_api::TTexture;
 use self::vertex_state_api::TVertexState;
+use self::viewport_scissor_state_api::TViewportScissorState;
 
 #[cfg(feature = "backend_vulkano")]
 mod vk;
@@ -232,6 +234,17 @@ type VertexStateImpl = self::ash::vertex_state_ash::VertexStateImpl;
 pub type VertexState = TVertexState<VertexStateImpl>;
 //
 
+//
+pub use self::viewport_scissor_state_api::ScissorStateInfo;
+pub use self::viewport_scissor_state_api::ViewportScissorStateInfo;
+pub use self::viewport_scissor_state_api::ViewportStateInfo;
+
+#[cfg(feature = "backend_ash")]
+type ViewportScissorStateImpl = self::ash::viewport_scissor_state_ash::ViewportScissorStateImpl;
+
+pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl>;
+//
+
 bitflags! {
     pub struct MemoryPoolProperty: u32 {
         const CPU_CACHED = 0x01;
@@ -251,9 +264,16 @@ bitflags! {
 }
 
 bitflags! {
-    pub struct TextureUsage: u32 {
-        const TEXTURE = 0x01;
-        const IMAGE = 0x02;
+    pub struct GpuAccess: u32 {
+        const VERTEX_BUFFER = 0x01;
+        const INDEX_BUFFER = 0x02;
+        const CONSTANT_BUFFER = 0x04;
+        const TEXTURE = 0x08;
+        const UNORDERED_ACCESS_BUFFER = 0x16;
+        const COLOR_BUFFER = 0x32;
+        const DEPTH_STENCIL = 0x64;
+        const INDIRECT_BUFFER = 0x128;
+        const IMAGE = 0x4000;
     }
 }
 

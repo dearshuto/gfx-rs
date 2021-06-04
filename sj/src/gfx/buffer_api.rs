@@ -46,6 +46,10 @@ pub trait IBufferImpl<'a> {
 
     fn map<T>(&self) -> &mut T;
 
+    fn map_as_slice<U>(&self, count: usize) -> &[U];
+
+    fn map_as_slice_mut<U>(&self, count: usize) -> &mut [U];
+
     fn unmap(&self);
 
     fn flush_mapped_range(&self, offset: i64, size: u64);
@@ -84,6 +88,14 @@ where
 
     pub fn map<U>(&self) -> &mut U {
         self.buffer_impl.map()
+    }
+
+    pub fn map_as_slice<U>(&self, count: usize) -> &[U] {
+        self.buffer_impl.map_as_slice(count)
+    }
+
+    pub fn map_as_slice_mut<U>(&self, count: usize) -> &mut [U] {
+        self.buffer_impl.map_as_slice_mut(count)
     }
 
     pub fn unmap(&self) {

@@ -28,7 +28,7 @@ impl<'a> ColorTargetViewInfo<'a> {
 }
 
 pub trait IColorTargetViewImpl<'a> {
-    fn new(device: &Device, info: &'a ColorTargetViewInfo) -> Self;
+    fn new(device: &'a Device, info: &'a ColorTargetViewInfo) -> Self;
 }
 
 pub struct TColorTargetView<'a, T>
@@ -40,10 +40,14 @@ where
 }
 
 impl<'a, T: IColorTargetViewImpl<'a>> TColorTargetView<'a, T> {
-    pub fn new(device: &Device, info: &'a ColorTargetViewInfo) -> Self {
+    pub fn new(device: &'a Device, info: &'a ColorTargetViewInfo) -> Self {
         Self {
             _impl: T::new(device, info),
             _marker: std::marker::PhantomData,
         }
+    }
+
+    pub fn to_data(&self) -> &T {
+        &self._impl
     }
 }

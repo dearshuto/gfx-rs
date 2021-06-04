@@ -1,46 +1,52 @@
-use crate::gfx::DepthStencilView;
 use ash::version::DeviceV1_0;
 
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
-    Buffer, ColorTargetView, Device, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology,
-    ShaderStage,
+    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
+    PrimitiveTopology, Shader, ShaderStage,
 };
-use super::command_buffer_write_descriptor_set_builder::CommandBufferWriteDescriptorSetBuilder;
+
+use super::command_builder::{
+    ClearColorCommandBuilder, Command, DispatchParams, DrawCommandBuilder,
+    EndRenderPassCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
+    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    SetViewportScissorStateCommandBuilder,
+};
 
 pub struct CommandBufferImpl<'a> {
     _device: &'a Device,
     _command_pool: ash::vk::CommandPool,
     _command_buffers: Vec<ash::vk::CommandBuffer>,
-    _descriptor_sets: Vec<ash::vk::DescriptorSet>,
     _descriptor_pool: ash::vk::DescriptorPool,
-    _pipeline_set_command: Option<PipelineSetCommand<'a>>,
-    _descriptor_set_builder: CommandBufferWriteDescriptorSetBuilder,
+    _commands: Vec<Command<'a>>,
+    _current_shader: Option<&'a Shader<'a>>,
+    _current_descriptor_set: Option<ash::vk::DescriptorSet>,
+    _current_render_pass: Option<ash::vk::RenderPass>,
 }
 
 impl<'a> CommandBufferImpl<'a> {
     pub fn get_command_buffers(&self) -> &Vec<ash::vk::CommandBuffer> {
+        ash::vk::BufferUsageFlags::empty();
         &self._command_buffers
     }
 
     pub fn get_command_count(&self) -> i32 {
-        if self._pipeline_set_command.is_none() {
-            0
-        } else {
-            1
-        }
+        self._commands.len() as i32
     }
 
     pub fn get_descriptor_pool(&self) -> &ash::vk::DescriptorPool {
         &self._descriptor_pool
     }
 
-    pub fn get_descriptor_set(&self) -> &ash::vk::DescriptorSet {
-        &self._descriptor_sets[0]
+    fn is_render_pass_begining(&self) -> bool {
+        self._current_render_pass.is_some()
     }
 
-    pub fn get_descriptor_set_mut(&mut self) -> &mut ash::vk::DescriptorSet {
-        &mut self._descriptor_sets[0]
+    fn push_end_render_pass_command(&mut self) {
+        let command_buffer = self._command_buffers.iter().next().unwrap();
+        let builder = EndRenderPassCommandBuilder::new(self._device, *command_buffer);
+        let command = Command::EndRenderTargets(builder);
+        self._commands.push(command);
     }
 }
 
@@ -87,16 +93,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
                 )
                 .unwrap();
 
-            let descriptor_sets = Vec::new();
-
             Self {
                 _device: device,
                 _command_pool: command_pool,
                 _command_buffers: command_buffers,
-                _descriptor_sets: descriptor_sets,
                 _descriptor_pool: descriptor_pool,
-                _pipeline_set_command: None,
-                _descriptor_set_builder: CommandBufferWriteDescriptorSetBuilder::new(),
+                _commands: Vec::<Command>::new(),
+                _current_shader: None,
+                _current_descriptor_set: None,
+                _current_render_pass: None,
             }
         }
     }
@@ -116,38 +121,58 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     }
 
     fn end(&mut self) {
-        let device_impl = self._device.to_data().get_device();
-        let command_buffer = self._command_buffers.iter().next().unwrap();
+        // レンダーパスが存在する場合は終了する
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        // コマンドバッファの構築
+        for command in &self._commands {
+            command.build();
+        }
 
         unsafe {
+            let device_impl = self._device.to_data().get_device();
+            let command_buffer = self._command_buffers.iter().next().unwrap();
             device_impl.end_command_buffer(*command_buffer).expect("");
         }
     }
 
     fn reset(&mut self) {
-        std::unimplemented!();
+        self._commands.clear();
+    }
+
+    fn set_viewport_scissor_state(
+        &mut self,
+        viewport_scissor_state: &'a crate::gfx::ViewportScissorState,
+    ) {
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = SetViewportScissorStateCommandBuilder::new(
+            self._device,
+            viewport_scissor_state,
+            *command_buffer_ash,
+        );
+        let command = Command::SetViewportScissorState(builder);
+        self._commands.push(command);
     }
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-        self._pipeline_set_command = Some(PipelineSetCommand::new(pipeline));
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
 
-        let layout = pipeline
-            .to_data()
-            .get_shader()
-            .to_data()
-            .get_descriptor_set_layout();
-        let device_impl = self._device.to_data().get_device();
-        unsafe {
-            let descriptor_set = device_impl
-                .allocate_descriptor_sets(
-                    &ash::vk::DescriptorSetAllocateInfo::builder()
-                        .set_layouts(&[*layout])
-                        .descriptor_pool(self._descriptor_pool)
-                        .build(),
-                )
-                .unwrap();
-            self._descriptor_sets.push(descriptor_set[0]);
-        }
+        if pipeline.to_data().is_graphics_pipeline() {}
+        let set_pipelie_params = SetPipelineParams::new(
+            self._device,
+            pipeline,
+            *command_buffer_ash,
+            self._descriptor_pool,
+            Some(*self._current_render_pass.as_ref().unwrap()),
+        );
+
+        self._current_shader = Some(pipeline.to_data().get_shader());
+        self._current_descriptor_set = Some(*set_pipelie_params.get_descriptor_set());
+
+        let command = Command::SetPipeline(set_pipelie_params);
+        self._commands.push(command);
     }
 
     // 使ってないコード
@@ -155,68 +180,113 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn set_unordered_access_buffer(
         &mut self,
-        _slot: i32,
+        slot: i32,
         _stage: ShaderStage,
         gpu_address: &GpuAddress,
         size: u64,
     ) {
-        let buffer = gpu_address.to_data().get_buffer().get_buffer();
-        let offset = gpu_address.to_data().get_offset();
-        self._descriptor_set_builder.push(buffer, offset, size);
+        let buffer_ash = gpu_address.to_data().get_buffer().get_buffer();
+        let offset = gpu_address.to_data().get_offset() as u64;
+        let params = SetUnorderedAccessBufferParams::new(
+            self._device,
+            self._current_descriptor_set.unwrap(),
+            buffer_ash,
+            slot,
+            offset,
+            size,
+        );
+        let command = Command::SetUnorderedAccessBuffer(params);
+        self._commands.push(command);
     }
 
     fn clear_color(
         &mut self,
         _color_target_view: &mut ColorTargetView,
-        _red: f32,
-        _green: f32,
-        _blue: f32,
-        _alpha: f32,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
     ) {
-        std::unimplemented!();
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = ClearColorCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            red,
+            green,
+            blue,
+            alpha,
+        );
+        let command = Command::ClearColorCommand(builder);
+        self._commands.push(command);
     }
 
     fn set_render_targets(
         &mut self,
-        _color_target_views: &[&ColorTargetView],
-        _depth_stencil_state_view: Option<&DepthStencilView>,
+        color_target_views: &[&ColorTargetView],
+        depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-        std::unimplemented!();
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = SetRenderTargetsCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            color_target_views,
+            depth_stencil_state_view,
+        );
+
+        // いったん RenderPass は取っておく
+        self._current_render_pass = Some(*builder.get_render_pass());
+
+        let command = Command::SetRenderTargets(builder);
+        self._commands.push(command);
     }
 
-    fn set_vertex_buffer(&mut self, _buffer_index: i32, _gpu_address: &GpuAddress) {
-        std::unimplemented!();
+    fn set_vertex_buffer(&mut self, _buffer_index: i32, gpu_address: &GpuAddress) {
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let buffer = gpu_address.to_data().get_buffer().get_buffer();
+
+        let params = SetVertexBufferCommandBuilder::new(self._device, *command_buffer_ash, buffer);
+        let command = Command::SetVertexBuffer(params);
+        self._commands.push(command);
     }
 
     fn draw(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
+        primitive_topology: PrimitiveTopology,
         vertex_count: i32,
         vertex_offset: i32,
     ) {
-        let device_ash = self._device.to_data().get_device();
-        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
-        unsafe {
-            // TODO: primitive_topology を VertexInputAssemblyStateInfo として流し込む
-            device_ash.cmd_draw(
-                *command_buffer_ash,
-                vertex_count as u32,
-                1,
-                vertex_offset as u32,
-                0,
-            );
-        }
+        self.draw_instanced(
+            primitive_topology,
+            vertex_count,
+            vertex_offset,
+            1, /*instance count*/
+            0, /*base instance*/
+        );
     }
 
     fn draw_instanced(
         &mut self,
         _primitive_topology: PrimitiveTopology,
-        __vertex_count: i32,
-        _vertex_offset: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        vertex_count: i32,
+        vertex_offset: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        std::unimplemented!();
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let params = DrawCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            vertex_count as u32,
+            instance_count as u32,
+            vertex_offset as u32,
+            base_instance as u32,
+        );
+        let command = Command::Draw(params);
+        self._commands.push(command);
     }
 
     fn draw_indexed(
@@ -248,80 +318,37 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     }
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
-        let device_impl = self._device.to_data().get_device();
-        let command_buffer_impl = self._command_buffers.iter().next().unwrap();
-
-        // パイプラインをセット
-        let c = self._pipeline_set_command.as_ref().unwrap();
-        c.bind(device_impl, command_buffer_impl);
-
-        // デスクリプタたちをセット
-        let write_descriptor_sets = self
-            ._descriptor_set_builder
-            .build(self.get_descriptor_set());
-        unsafe {
-            device_impl.update_descriptor_sets(&write_descriptor_sets, &[]);
-
-            device_impl.cmd_bind_descriptor_sets(
-                *command_buffer_impl,
-                ash::vk::PipelineBindPoint::COMPUTE,
-                *c.get_pipeline(),
-                0, /*first_point*/
-                &[*self.get_descriptor_set()],
-                &[], /*dynamic_offset*/
-            );
-        }
-
-        // ディスパッチ
-        unsafe {
-            device_impl.cmd_dispatch(
-                *command_buffer_impl,
-                group_count_x,
-                group_count_y,
-                group_count_z,
-            );
-        }
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let descriptor_set = self._current_descriptor_set.unwrap();
+        let pipeline_layout = self
+            ._current_shader
+            .unwrap()
+            .to_data()
+            .get_pipeline_layout();
+        let params = DispatchParams::new(
+            self._device,
+            *command_buffer_ash,
+            *pipeline_layout,
+            descriptor_set,
+            group_count_x,
+            group_count_y,
+            group_count_z,
+        );
+        let command = Command::Dispatch(params);
+        self._commands.push(command);
     }
 }
 
 impl<'a> Drop for CommandBufferImpl<'a> {
     fn drop(&mut self) {
+        // 各コマンド内で Vulkan オブジェクトを生成している場合もあるのでちゃんと破棄しておく
+        self._commands.clear();
+
         let device_impl = self._device.to_data().get_device();
         unsafe {
             device_impl.destroy_descriptor_pool(self._descriptor_pool, None);
             device_impl.free_command_buffers(self._command_pool, &self._command_buffers);
             device_impl.destroy_command_pool(self._command_pool, None);
         }
-    }
-}
-
-struct PipelineSetCommand<'a> {
-    _pipeline: &'a Pipeline<'a>,
-}
-
-impl<'a> PipelineSetCommand<'a> {
-    pub fn new(pipeline: &'a Pipeline) -> Self {
-        Self {
-            _pipeline: pipeline,
-        }
-    }
-
-    pub fn bind(&self, device: &ash::Device, command_buffer: &ash::vk::CommandBuffer) {
-        let pipeline = self._pipeline.to_data().get_pipeline();
-        unsafe {
-            device.cmd_bind_pipeline(
-                *command_buffer,
-                ash::vk::PipelineBindPoint::COMPUTE,
-                *pipeline,
-            );
-        }
-    }
-
-    pub fn get_pipeline(&self) -> &ash::vk::PipelineLayout {
-        self._pipeline
-            .to_data()
-            .get_shader()
-            .to_data()
-            .get_pipeline_layout()
     }
 }

@@ -4,8 +4,6 @@ pub struct BlendStateInfo<'a> {
     _target_state_info: &'a [BlendTargetStateInfo],
 }
 
-pub struct BlendTargetStateInfo {}
-
 impl<'a> BlendStateInfo<'a> {
     pub fn new() -> Self {
         Self {
@@ -15,6 +13,23 @@ impl<'a> BlendStateInfo<'a> {
 
     pub fn get_color_target_blend_state_info(&self) -> &'a [BlendTargetStateInfo] {
         self._target_state_info
+    }
+
+    pub fn get_target_state_info(&self) -> &'a [BlendTargetStateInfo] {
+        self._target_state_info
+    }
+
+    pub fn set_target_state_info(mut self, target_state_info: &'a [BlendTargetStateInfo]) -> Self {
+        self._target_state_info = target_state_info;
+        self
+    }
+}
+
+pub struct BlendTargetStateInfo {}
+
+impl BlendTargetStateInfo {
+    pub fn new() -> Self {
+        Self {}
     }
 }
 

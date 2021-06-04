@@ -1,6 +1,6 @@
 use super::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, ShaderStage,
+    PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -20,6 +20,8 @@ pub trait ICommandBufferImpl<'a> {
     fn end(&mut self);
 
     fn reset(&mut self);
+
+    fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState);
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>);
 
@@ -113,6 +115,11 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn end(&mut self) {
         self.command_buffer_impl.end();
+    }
+
+    pub fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
+        self.command_buffer_impl
+            .set_viewport_scissor_state(viewport_scissor_state);
     }
 
     pub fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
