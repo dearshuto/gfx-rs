@@ -9,13 +9,20 @@ pub struct ShaderImpl<'a> {
     _shader: [Option<ash::vk::ShaderModule>; 6],
     _descriptor_set_layout: ash::vk::DescriptorSetLayout,
     _pipeline_layout: ash::vk::PipelineLayout,
-    _compute_pipeline: Option<ash::vk::Pipeline>,
     _marker: PhantomData<&'a u32>,
 }
 
 impl<'a> ShaderImpl<'a> {
-    pub fn get_compute_shader_modules(&self) -> &ash::vk::ShaderModule {
+    pub fn get_vertex_shader_module(&self) -> &ash::vk::ShaderModule {
         &self._shader[0].as_ref().unwrap()
+    }
+
+    pub fn get_pixel_shader_module(&self) -> &ash::vk::ShaderModule {
+        &self._shader[4].as_ref().unwrap()
+    }
+
+    pub fn get_compute_shader_modules(&self) -> &ash::vk::ShaderModule {
+        &self._shader[5].as_ref().unwrap()
     }
 
     pub fn get_descriptor_set_layout(&self) -> &ash::vk::DescriptorSetLayout {
@@ -26,8 +33,113 @@ impl<'a> ShaderImpl<'a> {
         &self._pipeline_layout
     }
 
-    pub fn get_compute_pipeline(&self) -> &ash::vk::Pipeline {
-        &self._compute_pipeline.as_ref().unwrap()
+    fn new_as_compute_shader(device: &'a Device, info: &ShaderInfo) -> Self {
+        let shader_modiles = [
+            None, // Vertex
+            None, // Hull
+            None, // Domain
+            None, // Geometry
+            None, // Pixel
+            ShaderImpl::create_shader_module(device, info.get_compute_shader_binary()),
+        ];
+
+        let device_impl = device.to_data().get_device();
+        let descriptor_set_layout_bindings =
+            Self::create_descriptor_set_layout_bindings(info.get_shader_binary());
+        unsafe {
+            let descriptor_set_layout = device_impl
+                .create_descriptor_set_layout(
+                    &ash::vk::DescriptorSetLayoutCreateInfo::builder()
+                        .bindings(descriptor_set_layout_bindings.as_slice())
+                        .build(),
+                    None,
+                )
+                .unwrap();
+            let pipeline_layout = device_impl
+                .create_pipeline_layout(
+                    &ash::vk::PipelineLayoutCreateInfo::builder()
+                        .set_layouts(&[descriptor_set_layout])
+                        .build(),
+                    None,
+                )
+                .unwrap();
+
+            Self {
+                _device: device,
+                _shader: shader_modiles,
+                _descriptor_set_layout: descriptor_set_layout,
+                _pipeline_layout: pipeline_layout,
+                _marker: PhantomData,
+            }
+        }
+    }
+
+    fn new_as_graphics_shader(device: &'a Device, info: &ShaderInfo) -> Self {
+        let shader_modiles = [
+            Self::create_shader_module(device, info.get_vertex_shader_binary()), // Vertex
+            None,                                                                // Hull
+            None,                                                                // Domain
+            None,                                                                // Geometry
+            Self::create_shader_module(device, info.get_pixel_shader_binary()),  // Pixel
+            None,                                                                // Compute
+        ];
+
+        let device_impl = device.to_data().get_device();
+        let vertex_descriptor_set_layout_bindings =
+            Self::create_descriptor_set_layout_bindings(info.get_vertex_shader_binary().unwrap());
+        unsafe {
+            let descriptor_set_layout = device_impl
+                .create_descriptor_set_layout(
+                    &ash::vk::DescriptorSetLayoutCreateInfo::builder()
+                        .bindings(vertex_descriptor_set_layout_bindings.as_slice())
+                        .build(),
+                    None,
+                )
+                .unwrap();
+            let pipeline_layout = device_impl
+                .create_pipeline_layout(
+                    &ash::vk::PipelineLayoutCreateInfo::builder()
+                        .set_layouts(&[descriptor_set_layout])
+                        .build(),
+                    None,
+                )
+                .unwrap();
+
+            Self {
+                _device: device,
+                _shader: shader_modiles,
+                _descriptor_set_layout: descriptor_set_layout,
+                _pipeline_layout: pipeline_layout,
+                _marker: PhantomData,
+            }
+        }
+    }
+
+    fn create_shader_module(
+        device: &Device,
+        shader_binary_opt: &Option<&[u8]>,
+    ) -> Option<ash::vk::ShaderModule> {
+        match shader_binary_opt {
+            Some(shader_binary) => {
+                let device_impl = device.to_data().get_device();
+                let mut compute_shader_binary = std::io::Cursor::new(shader_binary);
+                let compute_shader_code =
+                    ash::util::read_spv(&mut compute_shader_binary).expect("");
+                let compute_shader_module_create_info = ash::vk::ShaderModuleCreateInfo::builder()
+                    .code(&compute_shader_code)
+                    .build();
+
+                unsafe {
+                    let shader_module_result =
+                        device_impl.create_shader_module(&compute_shader_module_create_info, None);
+                    match shader_module_result {
+                        Ok(result) => Some(result),
+                        Err(_message) => None,
+                    }
+                }
+            }
+            None => None,
+        }
     }
 
     fn create_descriptor_set_layout_bindings(
@@ -62,73 +174,10 @@ impl<'a> ShaderImpl<'a> {
 
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self {
-        let device_impl = device.to_data().get_device();
-        let mut compute_shader_binary = std::io::Cursor::new(info.get_shader_binary());
-        let compute_shader_code = ash::util::read_spv(&mut compute_shader_binary).expect("");
-        let compute_shader_module_create_info = ash::vk::ShaderModuleCreateInfo::builder()
-            .code(&compute_shader_code)
-            .build();
-
-        unsafe {
-            //let vertex_shader = device_impl.create_shader_module(&vertex_shader_module_create_info, None).unwrap();
-            //let pixel_shader = device_impl.create_shader_module(&pixel_shader_module_create_info, None).unwrap();
-            let compute_shader_module = device_impl
-                .create_shader_module(&compute_shader_module_create_info, None)
-                .unwrap();
-            let shader_modiles = [
-                None, //Some(vertex_shader),
-                None, // Hull
-                None, // Domain
-                None, // Geometry
-                None, //Some(pixel_shader),
-                Some(compute_shader_module),
-            ];
-
-            let descriptor_set_layout_bindings =
-                ShaderImpl::create_descriptor_set_layout_bindings(info.get_shader_binary());
-            let descriptor_set_layout = device_impl
-                .create_descriptor_set_layout(
-                    &ash::vk::DescriptorSetLayoutCreateInfo::builder()
-                        .bindings(descriptor_set_layout_bindings.as_slice())
-                        .build(),
-                    None,
-                )
-                .unwrap();
-            let pipeline_layout = device_impl
-                .create_pipeline_layout(
-                    &ash::vk::PipelineLayoutCreateInfo::builder()
-                        .set_layouts(&[descriptor_set_layout])
-                        .build(),
-                    None,
-                )
-                .unwrap();
-
-            let shader_entry_name = std::ffi::CString::new("main").unwrap();
-            let shader_stage_create_info = ash::vk::PipelineShaderStageCreateInfo::builder()
-                .module(compute_shader_module)
-                .name(&shader_entry_name)
-                .stage(ash::vk::ShaderStageFlags::COMPUTE)
-                .build();
-            let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::builder()
-                .stage(shader_stage_create_info)
-                .layout(pipeline_layout)
-                .build();
-            let pipelines = device_impl
-                .create_compute_pipelines(
-                    ash::vk::PipelineCache::null(),
-                    &[compute_pipeline_create_info],
-                    None,
-                )
-                .unwrap();
-
-            Self {
-                _device: device,
-                _shader: shader_modiles,
-                _descriptor_set_layout: descriptor_set_layout,
-                _pipeline_layout: pipeline_layout,
-                _compute_pipeline: Some(pipelines[0]),
-                _marker: PhantomData,
-            }
+        if info.get_compute_shader_binary().is_some() {
+            Self::new_as_compute_shader(device, info)
+        } else {
+            Self::new_as_graphics_shader(device, info)
         }
     }
 }
@@ -136,13 +185,6 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
 impl<'a> Drop for ShaderImpl<'a> {
     fn drop(&mut self) {
         let device_impl = self._device.to_data().get_device();
-
-        // パイプラインの破棄
-        if let Some(pipeline) = self._compute_pipeline {
-            unsafe {
-                device_impl.destroy_pipeline(pipeline, None);
-            }
-        }
 
         // パイプラインレイアウトの破棄
         unsafe {

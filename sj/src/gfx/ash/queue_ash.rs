@@ -45,11 +45,6 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a> {
             .build();
         self._queue_submit_infos.push(submit_info);
 
-        // let device_impl = self._device.to_data().get_device();
-        // for item in command_buffer_impl.get_internal_commands() {
-        // 	item.execute(&device_impl, &self._queue);
-        // }
-
         self.flush();
     }
 
