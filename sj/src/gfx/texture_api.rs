@@ -1,10 +1,11 @@
-use super::{Device, MemoryPool, TextureUsage};
+use super::{Device, GpuAccess, ImageFormat, MemoryPool};
 
 pub struct TextureInfo {
     _width: i32,
     _height: i32,
     _depth: i32,
-    _texture_usage: TextureUsage,
+    _gpu_access: GpuAccess,
+    _image_format: ImageFormat,
 }
 
 impl TextureInfo {
@@ -13,7 +14,8 @@ impl TextureInfo {
             _width: 1,
             _height: 1,
             _depth: 1,
-            _texture_usage: TextureUsage::empty(),
+            _gpu_access: GpuAccess::empty(),
+            _image_format: ImageFormat::R8G8B8A8Unorm,
         }
     }
 
@@ -44,12 +46,21 @@ impl TextureInfo {
         self
     }
 
-    pub fn get_texture_usage(&self) -> TextureUsage {
-        self._texture_usage
+    pub fn get_gpu_access(&self) -> &GpuAccess {
+        &self._gpu_access
     }
 
-    pub fn set_texture_usage(mut self, texture_usage: TextureUsage) -> Self {
-        self._texture_usage = texture_usage;
+    pub fn set_gpu_access(mut self, gpu_access: GpuAccess) -> Self {
+        self._gpu_access = gpu_access;
+        self
+    }
+
+    pub fn get_image_format(&self) -> &ImageFormat {
+        &self._image_format
+    }
+
+    pub fn set_image_format(mut self, image_format: ImageFormat) -> Self {
+        self._image_format = image_format;
         self
     }
 }

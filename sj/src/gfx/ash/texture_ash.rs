@@ -1,11 +1,13 @@
 use ash::version::DeviceV1_0;
 
 use super::super::texture_api::{ITexture, TextureInfo};
-use super::super::{Device, MemoryPool, TextureUsage};
+use super::super::{Device, GpuAccess, ImageFormat, MemoryPool};
 
 pub struct TextureImpl<'a> {
     _device: &'a Device,
     _image: ash::vk::Image,
+    _width: i32,
+    _height: i32,
 }
 
 impl<'a> TextureImpl<'a> {
@@ -14,7 +16,7 @@ impl<'a> TextureImpl<'a> {
 
         let image_create_info = ash::vk::ImageCreateInfo::builder()
             .image_type(ash::vk::ImageType::TYPE_2D)
-            .format(ash::vk::Format::R8G8B8A8_UNORM)
+            .format(info.get_image_format_as_ash())
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE)
             .extent(ash::vk::Extent3D {
                 width: info.get_width() as u32,
@@ -32,6 +34,14 @@ impl<'a> TextureImpl<'a> {
 
     pub fn get_image(&self) -> &ash::vk::Image {
         &self._image
+    }
+
+    pub fn get_width(&self) -> i32 {
+        self._width
+    }
+
+    pub fn get_height(&self) -> i32 {
+        self._height
     }
 }
 
@@ -81,6 +91,8 @@ impl<'a> ITexture<'a> for TextureImpl<'a> {
             Self {
                 _device: device,
                 _image: image,
+                _width: info.get_width(),
+                _height: info.get_height(),
             }
         }
     }
@@ -103,15 +115,27 @@ impl TextureInfo {
     pub fn get_usage_as_ash(&self) -> ash::vk::ImageUsageFlags {
         let mut result = ash::vk::ImageUsageFlags::empty();
 
-        if self.get_texture_usage().contains(TextureUsage::TEXTURE) {
+        if self.get_gpu_access().contains(GpuAccess::TEXTURE) {
             result |= ash::vk::ImageUsageFlags::TRANSFER_DST;
             result |= ash::vk::ImageUsageFlags::SAMPLED;
         }
-        if self.get_texture_usage().contains(TextureUsage::IMAGE) {
+        if self.get_gpu_access().contains(GpuAccess::IMAGE) {
             // TODO
             //result |= ash::vk::ImageUsageFlags::STORAGE;
         }
+        if self.get_gpu_access().contains(GpuAccess::COLOR_BUFFER) {
+            result |= ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
+        }
+        if self.get_gpu_access().contains(GpuAccess::DEPTH_STENCIL) {
+            result |= ash::vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
+        }
 
         result
+    }
+
+    pub fn get_image_format_as_ash(&self) -> ash::vk::Format {
+        match self.get_image_format() {
+            ImageFormat::R8G8B8A8Unorm => ash::vk::Format::R8G8B8A8_UNORM,
+        }
     }
 }

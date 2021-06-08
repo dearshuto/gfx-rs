@@ -49,7 +49,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         let memory_pool_impl = memory_pool.to_data().get_memory_pool();
         let buffer_create_info = ash::vk::BufferCreateInfo::builder()
             .size(info.get_size())
-            .usage(ash::vk::BufferUsageFlags::STORAGE_BUFFER)
+            .usage(info.get_usage_as_ash())
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE);
 
         unsafe {
@@ -98,6 +98,40 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         }
     }
 
+    fn map_as_slice<T>(&self, count: usize) -> &[T] {
+        let device_impl = self._device.to_data().get_device();
+        let device_memory = self._memory_pool.to_data().get_memory_pool();
+
+        unsafe {
+            let mapped_data = device_impl
+                .map_memory(
+                    device_memory,
+                    self._offset as DeviceSize,
+                    self._size,
+                    ash::vk::MemoryMapFlags::empty(),
+                )
+                .unwrap();
+            std::slice::from_raw_parts(mapped_data as *mut T, count)
+        }
+    }
+
+    fn map_as_slice_mut<T>(&self, count: usize) -> &mut [T] {
+        let device_impl = self._device.to_data().get_device();
+        let device_memory = self._memory_pool.to_data().get_memory_pool();
+
+        unsafe {
+            let mapped_data = device_impl
+                .map_memory(
+                    device_memory,
+                    self._offset as DeviceSize,
+                    self._size,
+                    ash::vk::MemoryMapFlags::empty(),
+                )
+                .unwrap();
+            std::slice::from_raw_parts_mut(mapped_data as *mut T, count)
+        }
+    }
+
     fn unmap(&self) {
         let device_impl = self._device.to_data().get_device();
         let device_memory = self._memory_pool.to_data().get_memory_pool();
@@ -143,5 +177,22 @@ impl<'a> Drop for BufferImpl<'a> {
         unsafe {
             device.destroy_buffer(self._buffer, None);
         }
+    }
+}
+
+impl BufferInfo {
+    pub fn get_usage_as_ash(&self) -> ash::vk::BufferUsageFlags {
+        let mut result = ash::vk::BufferUsageFlags::empty();
+
+        if self
+            .get_buffer_usage()
+            .contains(BufferUsage::UNORDERED_ACCESS_BUFFER)
+        {
+            result |= ash::vk::BufferUsageFlags::STORAGE_BUFFER;
+        } else if self.get_buffer_usage().contains(BufferUsage::VERTEX_BUFFER) {
+            result |= ash::vk::BufferUsageFlags::VERTEX_BUFFER;
+        }
+
+        result
     }
 }
