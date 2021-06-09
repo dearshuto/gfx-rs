@@ -4,7 +4,7 @@ edition = "2018"
 version = "0.21.0"
 
 [features]
-default = ["backend_ash"]
+default = ["backend_wgpu"]
 backend_vulkano = ["vulkano", "vulkano-win"]
 backend_wgpu = ["wgpu"]
 backend_ash = ["ash", "ash-window", "raw-window-handle", "spirv-reflect"]
@@ -15,9 +15,9 @@ winit = "0.24.0"
 libloading = "0.7"
 vulkano =  {version = "*", optional = true}
 vulkano-win = {version = "*", optional = true}
-wgpu = {version = "*", optional = true}
+wgpu = {version = "0.6.2", optional = true}
 ash = {version = "0.32.1", optional = true}
 raw-window-handle = { version = "0.3", optional = true}
 ash-window = {version = "*", optional = true}	
-futures = "0.3.1"
+futures = "*"
 spirv-reflect = { version = "0.2.3", optional = true }
