@@ -64,7 +64,7 @@ impl<'a> ISwapChainImpl<'a> for SwapChainImpl<'a> {
         }
     }
 
-    fn get_scan_buffer_views_mut(&mut self) -> &'a mut [ColorTargetView] {
+    fn get_scan_buffer_views_mut(&'a mut self) -> &'a mut [ColorTargetView] {
         &mut self._scan_buffer_views
     }
 
