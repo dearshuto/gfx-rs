@@ -4,7 +4,7 @@ use super::super::{ColorTargetView, Device};
 pub struct SwapChainWgpu {}
 
 impl<'a> ISwapChainImpl<'a> for SwapChainWgpu {
-    fn new(device: &Device, info: &'a mut SwapChainInfo<'a>) -> Self {
+    fn new(_device: &Device, _info: &'a mut SwapChainInfo<'a>) -> Self {
         todo!();
     }
 
@@ -24,8 +24,8 @@ impl<'a> ISwapChainImpl<'a> for SwapChainWgpu {
 
     fn acquire_next_scan_buffer_index(
         &mut self,
-        semaphore: Option<&mut crate::gfx::Semaphore>,
-        fence: Option<&mut crate::gfx::Fence>,
+        _semaphore: Option<&mut crate::gfx::Semaphore>,
+        _fence: Option<&mut crate::gfx::Fence>,
     ) -> i32 {
         todo!()
     }

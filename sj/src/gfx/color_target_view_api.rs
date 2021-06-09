@@ -57,3 +57,21 @@ impl<'a, T: IColorTargetViewImpl<'a>> TColorTargetView<'a, T> {
         &self._impl
     }
 }
+
+pub struct TRenderTargetSlice<'a, T>
+where
+    T: IColorTargetViewImpl<'a>,
+{
+    _color_target_views: &'a [TColorTargetView<'a, T>],
+}
+
+impl<'a, T> TRenderTargetSlice<'a, T>
+where
+    T: IColorTargetViewImpl<'a>,
+{
+    pub fn new(color_target_views: &'a [TColorTargetView<'a, T>]) -> Self {
+        Self {
+            _color_target_views: color_target_views,
+        }
+    }
+}
