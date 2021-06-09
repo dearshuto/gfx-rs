@@ -18,7 +18,7 @@ impl<'a> SwapChainInfo<'a> {
 pub trait ISwapChainImpl<'a> {
     fn new(device: &Device, info: &'a mut SwapChainInfo<'a>) -> Self;
 
-    fn get_scan_buffer_views_mut(&mut self) -> &mut [ColorTargetView];
+    fn get_scan_buffer_views_mut(&'a mut self) -> &'a mut [ColorTargetView];
 
     fn update(&mut self);
 }
@@ -39,7 +39,7 @@ impl<'a, T: ISwapChainImpl<'a>> TSwapChain<'a, T> {
         }
     }
 
-    pub fn get_scan_buffer_views_mut(&mut self) -> &mut [ColorTargetView] {
+    pub fn get_scan_buffer_views_mut(&'a mut self) -> &'a mut [ColorTargetView] {
         self._impl.get_scan_buffer_views_mut()
     }
 
