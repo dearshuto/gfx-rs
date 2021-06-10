@@ -2,13 +2,15 @@ use ash::version::DeviceV1_0;
 
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
-    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, Shader, ShaderStage,
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAccess,
+    GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, Shader, ShaderStage,
+    Texture, TextureState, TextureSubresourceRange,
 };
 
 use super::command_builder::{
-    ClearColorCommandBuilder, Command, DispatchParams, DrawCommandBuilder,
-    EndRenderPassCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
+    ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
+    DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
+    SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
     SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
     SetViewportScissorStateCommandBuilder,
 };
@@ -47,6 +49,7 @@ impl<'a> CommandBufferImpl<'a> {
         let builder = EndRenderPassCommandBuilder::new(self._device, *command_buffer);
         let command = Command::EndRenderTargets(builder);
         self._commands.push(command);
+        self._current_render_pass = None;
     }
 }
 
@@ -206,7 +209,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn clear_color(
         &mut self,
-        _color_target_view: &mut ColorTargetView,
+        color_target_view: &mut ColorTargetView,
         red: f32,
         green: f32,
         blue: f32,
@@ -216,6 +219,11 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         let builder = ClearColorCommandBuilder::new(
             self._device,
             *command_buffer_ash,
+            *color_target_view
+                .to_data()
+                .get_texture()
+                .to_data()
+                .get_image(),
             red,
             green,
             blue,
@@ -340,6 +348,66 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             group_count_z,
         );
         let command = Command::Dispatch(params);
+        self._commands.push(command);
+    }
+
+    fn set_texture_state_transition(
+        &mut self,
+        texture: &Texture,
+        range: &TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
+    ) {
+        // イメージのコピーはレンダーパス外じゃないとできない
+        // TODO: レンダーターゲットの設定を復元する？
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = SetTextureStateTransitionCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            texture,
+            range,
+            old_state,
+            old_stage_bit,
+            new_state,
+            new_stage_bit,
+        );
+        let command = Command::SetTextureStateTransition(builder);
+        self._commands.push(command);
+    }
+
+    fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    ) {
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = CopyImageToBufferCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            dst_buffer,
+            src_texture,
+            copy_region,
+        );
+        let command = Command::CopyImageToBuffer(builder);
+        self._commands.push(command);
+    }
+
+    fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder =
+            FlushMemoryCommandBuilder::new(self._device, *command_buffer_ash, &gpu_access_flags);
+        let command = Command::FlushMemory(builder);
         self._commands.push(command);
     }
 }

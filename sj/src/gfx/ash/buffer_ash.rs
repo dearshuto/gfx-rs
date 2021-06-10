@@ -2,7 +2,7 @@ use ash::version::DeviceV1_0;
 use ash::vk::DeviceSize;
 use std::marker::PhantomData;
 
-use super::super::buffer_api::{BufferInfo, IBufferImpl};
+use super::super::buffer_api::{BufferInfo, IBufferImpl, MappedData};
 use super::super::{Device, GpuAccess, MemoryPool};
 
 pub struct BufferImpl<'a> {
@@ -11,6 +11,7 @@ pub struct BufferImpl<'a> {
     _buffer: ash::vk::Buffer,
     _offset: i64,
     _size: u64,
+    _mapped_buffer: Vec<u8>,
     _marker: PhantomData<&'a u32>,
 }
 
@@ -53,6 +54,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
                 _offset: offset,
                 _size: size,
                 _buffer: buffer,
+                _mapped_buffer: vec![],
                 _marker: PhantomData,
             }
         }
@@ -102,7 +104,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         }
     }
 
-    fn map_as_slice_mut<T>(&self, count: usize) -> &mut [T] {
+    fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
         let device_impl = self._device.to_data().get_device();
         let device_memory = self._memory_pool.to_data().get_memory_pool();
 
@@ -115,7 +117,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
                     ash::vk::MemoryMapFlags::empty(),
                 )
                 .unwrap();
-            std::slice::from_raw_parts_mut(mapped_data as *mut T, count)
+            MappedData::<U>::new(mapped_data, count)
         }
     }
 
@@ -176,16 +178,24 @@ impl BufferInfo {
             .contains(GpuAccess::UNORDERED_ACCESS_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::STORAGE_BUFFER;
-        } else if self
+        }
+        if self
             .get_gpu_access_flags()
             .contains(GpuAccess::VERTEX_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::VERTEX_BUFFER;
-        } else if self
+        }
+        if self
             .get_gpu_access_flags()
             .contains(GpuAccess::CONSTANT_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::UNIFORM_BUFFER;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::READ) {
+            result |= ash::vk::BufferUsageFlags::TRANSFER_SRC;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::WRITE) {
+            result |= ash::vk::BufferUsageFlags::TRANSFER_DST;
         }
 
         result

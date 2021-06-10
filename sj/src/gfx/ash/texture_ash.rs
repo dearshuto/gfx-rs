@@ -23,6 +23,7 @@ impl<'a> TextureImpl<'a> {
                 height: info.get_height() as u32,
                 depth: info.get_depth() as u32,
             })
+            .initial_layout(ash::vk::ImageLayout::UNDEFINED)
             .mip_levels(1)
             .array_layers(1)
             .samples(ash::vk::SampleCountFlags::TYPE_1)
@@ -134,6 +135,12 @@ impl TextureInfo {
             .contains(GpuAccess::DEPTH_STENCIL)
         {
             result |= ash::vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::READ) {
+            result |= ash::vk::ImageUsageFlags::TRANSFER_SRC;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::WRITE) {
+            result |= ash::vk::ImageUsageFlags::TRANSFER_DST;
         }
 
         result

@@ -48,7 +48,7 @@ pub trait IBufferImpl<'a> {
 
     fn map_as_slice<U>(&self, count: usize) -> &[U];
 
-    fn map_as_slice_mut<U>(&self, count: usize) -> &mut [U];
+    fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U>;
 
     fn unmap(&self);
 
@@ -94,8 +94,8 @@ where
         self.buffer_impl.map_as_slice(count)
     }
 
-    pub fn map_as_slice_mut<U>(&self, count: usize) -> &mut [U] {
-        self.buffer_impl.map_as_slice_mut(count)
+    pub fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
+        self.buffer_impl.map_as_slice_mut::<U>(count)
     }
 
     pub fn unmap(&self) {
@@ -112,5 +112,46 @@ where
 
     pub fn to_data(&'a self) -> &'a T {
         &self.buffer_impl
+    }
+}
+
+pub struct MappedData<'a, T> {
+    _raw_ptr: *mut std::ffi::c_void,
+    _aligned_data: &'a mut [T],
+}
+
+impl<'a, T> MappedData<'a, T> {
+    pub fn new(raw_ptr: *mut std::ffi::c_void, count: usize) -> Self {
+        unsafe {
+            Self {
+                _raw_ptr: raw_ptr,
+                _aligned_data: std::slice::from_raw_parts_mut(raw_ptr as *mut T, count),
+            }
+        }
+    }
+}
+
+impl<'a, T> std::ops::Index<usize> for MappedData<'a, T> {
+    type Output = T;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self._aligned_data[index]
+    }
+}
+
+impl<'a, T> std::ops::IndexMut<usize> for MappedData<'a, T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self._aligned_data[index]
+    }
+}
+
+impl<'a, T> Drop for MappedData<'a, T> {
+    fn drop(&mut self) {
+        unsafe {
+            std::ptr::copy(
+                self._aligned_data.as_ptr(),
+                self._raw_ptr as *mut T,
+                self._aligned_data.len(),
+            );
+        }
     }
 }
