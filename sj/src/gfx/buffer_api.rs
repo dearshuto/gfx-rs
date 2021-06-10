@@ -1,16 +1,16 @@
-use super::{BufferUsage, Device, MemoryPool};
+use super::{Device, GpuAccess, MemoryPool};
 use std::marker::PhantomData;
 
 pub struct BufferInfo {
     _size: u64,
-    _buffer_usage: BufferUsage,
+    _gpu_access_flags: GpuAccess,
 }
 
 impl BufferInfo {
     pub fn new() -> Self {
         BufferInfo {
             _size: 0,
-            _buffer_usage: BufferUsage::empty(),
+            _gpu_access_flags: GpuAccess::empty(),
         }
     }
 
@@ -23,12 +23,12 @@ impl BufferInfo {
         self
     }
 
-    pub fn get_buffer_usage(&self) -> BufferUsage {
-        self._buffer_usage
+    pub fn get_gpu_access_flags(&self) -> GpuAccess {
+        self._gpu_access_flags
     }
 
-    pub fn set_buffer_usage(mut self, buffer_usage: BufferUsage) -> Self {
-        self._buffer_usage = buffer_usage;
+    pub fn set_gpu_access_flags(mut self, buffer_usage: GpuAccess) -> Self {
+        self._gpu_access_flags = buffer_usage;
         self
     }
 }
