@@ -66,7 +66,7 @@ fn main() {
         .set_width(640)
         .set_height(480)
         .set_depth(1)
-        .set_gpu_access(sj::gfx::GpuAccess::COLOR_BUFFER)
+        .set_gpu_access_flags(sj::gfx::GpuAccess::COLOR_BUFFER)
         .set_image_format(sj::gfx::ImageFormat::R8G8B8A8Unorm);
     let texture = sj::gfx::Texture::new(&device, &texture_info, &texture_memory_pool, 0, 0);
 
@@ -75,7 +75,7 @@ fn main() {
     let color_target_view = sj::gfx::ColorTargetView::new(&device, &color_target_view_info);
 
     let buffer_info = sj::gfx::BufferInfo::new()
-        .set_buffer_usage(sj::gfx::BufferUsage::VERTEX_BUFFER)
+        .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
     let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
 

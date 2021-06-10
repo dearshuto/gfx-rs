@@ -33,7 +33,7 @@ fn main() {
     let texture_info = sj::gfx::TextureInfo::new()
         .set_width(128)
         .set_height(128)
-        .set_gpu_access(sj::gfx::GpuAccess::TEXTURE);
+        .set_gpu_access_flags(sj::gfx::GpuAccess::TEXTURE);
     let texture_required_size = sj::gfx::Texture::calculate_required_size(&device, &texture_info);
     let texture_memory_pool_offset = 0;
     let _texture = sj::gfx::Texture::new(

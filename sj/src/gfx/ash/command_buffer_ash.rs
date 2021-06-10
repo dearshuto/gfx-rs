@@ -158,6 +158,11 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let render_pass = if pipeline.to_data().is_graphics_pipeline() {
+            Some(*self._current_render_pass.as_ref().unwrap())
+        } else {
+            None
+        };
 
         if pipeline.to_data().is_graphics_pipeline() {}
         let set_pipelie_params = SetPipelineParams::new(
@@ -165,7 +170,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             pipeline,
             *command_buffer_ash,
             self._descriptor_pool,
-            Some(*self._current_render_pass.as_ref().unwrap()),
+            render_pass,
         );
 
         self._current_shader = Some(pipeline.to_data().get_shader());

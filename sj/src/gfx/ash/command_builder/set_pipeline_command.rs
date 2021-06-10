@@ -90,7 +90,10 @@ impl<'a> Drop for SetPipelineParams<'a> {
         let device_ash = self._device.to_data().get_device();
 
         unsafe {
-            device_ash.destroy_pipeline(self._pipeline, None);
+            // グラフィックスパイプラインはコマンド内で作っているので破棄が必要
+            if self.is_graphics() {
+                device_ash.destroy_pipeline(self._pipeline, None);
+            }
         }
 
         // 明示的に開放するとむしろエラーがでたのでコメントアウトしておく
