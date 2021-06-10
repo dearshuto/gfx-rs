@@ -1,6 +1,6 @@
 use super::{
-    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, ShaderStage, ViewportScissorState,
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAddress,
+    IndexFormat, Pipeline, PrimitiveTopology, ShaderStage, Texture, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -91,6 +91,13 @@ pub trait ICommandBufferImpl<'a> {
     fn draw_indirect(&mut self, gpu_address: &GpuAddress);
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32);
+
+    fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    );
 }
 
 pub struct TCommandBufferInterface<'a, T: 'a>
@@ -239,6 +246,16 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
         self.command_buffer_impl.draw_indirect(gpu_address);
+    }
+
+    pub fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    ) {
+        self.command_buffer_impl
+            .copy_image_to_buffer(dst_buffer, src_texture, copy_region);
     }
 
     pub fn to_data(&'a self) -> &'a T {

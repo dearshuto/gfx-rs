@@ -135,6 +135,12 @@ impl TextureInfo {
         {
             result |= ash::vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
         }
+        if self.get_gpu_access_flags().contains(GpuAccess::READ) {
+            result |= ash::vk::ImageUsageFlags::TRANSFER_SRC;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::WRITE) {
+            result |= ash::vk::ImageUsageFlags::TRANSFER_DST;
+        }
 
         result
     }

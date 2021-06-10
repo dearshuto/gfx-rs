@@ -215,7 +215,10 @@ pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
 
 // Texture
+pub use self::texture_api::BufferTextureCopyRegion;
+pub use self::texture_api::TextureCopyRegion;
 pub use self::texture_api::TextureInfo;
+pub use self::texture_api::TextureSubResource;
 
 #[cfg(feature = "backend_ash")]
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
@@ -264,6 +267,8 @@ bitflags! {
         const UNORDERED_ACCESS_BUFFER = 0x16;
         const COLOR_BUFFER = 0x32;
         const DEPTH_STENCIL = 0x64;
+        const READ = 0x128;
+        const WRITE = 0x256;
         const INDIRECT_BUFFER = 0x128;
         const IMAGE = 0x4000;
     }

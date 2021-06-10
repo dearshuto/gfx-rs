@@ -1,5 +1,6 @@
 mod clear_color_command_builder;
 mod command;
+mod copy_image_to_buffer_command_builder;
 mod dispatch_command;
 mod draw_command_builder;
 mod set_pipeline_command;
@@ -10,6 +11,7 @@ mod set_viewport_scissor_state_command_builder;
 
 pub use self::clear_color_command_builder::ClearColorCommandBuilder;
 pub use self::command::Command;
+pub use self::copy_image_to_buffer_command_builder::CopyImageToBufferCommandBuilder;
 pub use self::dispatch_command::DispatchParams;
 pub use self::draw_command_builder::DrawCommandBuilder;
 pub use self::set_pipeline_command::SetPipelineParams;

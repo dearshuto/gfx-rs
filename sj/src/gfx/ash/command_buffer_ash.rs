@@ -2,14 +2,14 @@ use ash::version::DeviceV1_0;
 
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
-    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, Shader, ShaderStage,
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAddress,
+    IndexFormat, Pipeline, PrimitiveTopology, Shader, ShaderStage, Texture,
 };
 
 use super::command_builder::{
-    ClearColorCommandBuilder, Command, DispatchParams, DrawCommandBuilder,
-    EndRenderPassCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
-    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
+    DrawCommandBuilder, EndRenderPassCommandBuilder, SetPipelineParams,
+    SetRenderTargetsCommandBuilder, SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
     SetViewportScissorStateCommandBuilder,
 };
 
@@ -47,6 +47,7 @@ impl<'a> CommandBufferImpl<'a> {
         let builder = EndRenderPassCommandBuilder::new(self._device, *command_buffer);
         let command = Command::EndRenderTargets(builder);
         self._commands.push(command);
+        self._current_render_pass = None;
     }
 }
 
@@ -340,6 +341,30 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             group_count_z,
         );
         let command = Command::Dispatch(params);
+        self._commands.push(command);
+    }
+
+    fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    ) {
+        // イメージのコピーはレンダーパス外じゃないとできない
+        // TODO: レンダーターゲットの設定を復元する？
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = CopyImageToBufferCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            dst_buffer,
+            src_texture,
+            copy_region,
+        );
+        let command = Command::CopyImageToBuffer(builder);
         self._commands.push(command);
     }
 }

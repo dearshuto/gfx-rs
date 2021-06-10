@@ -176,16 +176,24 @@ impl BufferInfo {
             .contains(GpuAccess::UNORDERED_ACCESS_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::STORAGE_BUFFER;
-        } else if self
+        }
+        if self
             .get_gpu_access_flags()
             .contains(GpuAccess::VERTEX_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::VERTEX_BUFFER;
-        } else if self
+        }
+        if self
             .get_gpu_access_flags()
             .contains(GpuAccess::CONSTANT_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::UNIFORM_BUFFER;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::READ) {
+            result |= ash::vk::BufferUsageFlags::TRANSFER_SRC;
+        }
+        if self.get_gpu_access_flags().contains(GpuAccess::WRITE) {
+            result |= ash::vk::BufferUsageFlags::TRANSFER_DST;
         }
 
         result

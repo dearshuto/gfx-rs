@@ -1,7 +1,8 @@
 use super::{
-    ClearColorCommandBuilder, DispatchParams, DrawCommandBuilder, EndRenderPassCommandBuilder,
-    SetPipelineParams, SetRenderTargetsCommandBuilder, SetUnorderedAccessBufferParams,
-    SetVertexBufferCommandBuilder, SetViewportScissorStateCommandBuilder,
+    ClearColorCommandBuilder, CopyImageToBufferCommandBuilder, DispatchParams, DrawCommandBuilder,
+    EndRenderPassCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
+    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    SetViewportScissorStateCommandBuilder,
 };
 
 pub enum Command<'a> {
@@ -14,6 +15,7 @@ pub enum Command<'a> {
     SetVertexBuffer(SetVertexBufferCommandBuilder<'a>),
     Draw(DrawCommandBuilder<'a>),
     Dispatch(DispatchParams<'a>),
+    CopyImageToBuffer(CopyImageToBufferCommandBuilder<'a>),
 }
 
 impl<'a> Command<'a> {
@@ -28,6 +30,7 @@ impl<'a> Command<'a> {
             Self::SetVertexBuffer(ref builder) => builder.build(),
             Self::Draw(ref builder) => builder.build(),
             Self::Dispatch(ref params) => params.build(),
+            Self::CopyImageToBuffer(ref builder) => builder.build(),
         }
     }
 }

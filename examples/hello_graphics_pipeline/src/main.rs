@@ -66,7 +66,7 @@ fn main() {
         .set_width(640)
         .set_height(480)
         .set_depth(1)
-        .set_gpu_access_flags(sj::gfx::GpuAccess::COLOR_BUFFER)
+        .set_gpu_access_flags(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::READ)
         .set_image_format(sj::gfx::ImageFormat::R8G8B8A8Unorm);
     let texture = sj::gfx::Texture::new(&device, &texture_info, &texture_memory_pool, 0, 0);
 
@@ -89,6 +89,16 @@ fn main() {
     println!("{}", value);
     vertex_buffer.unmap();
 
+    let mut dst_buffer = sj::gfx::Buffer::new(
+        &device,
+        &sj::gfx::BufferInfo::new()
+            .set_size(1024)
+            .set_gpu_access_flags(sj::gfx::GpuAccess::WRITE),
+        &memory_pool,
+        0,
+        1024,
+    );
+
     let command_buffer_info = sj::gfx::CommandBufferInfo::new();
     let mut command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
 
@@ -110,6 +120,12 @@ fn main() {
             vertex_count,
             vertex_offset,
         );
+
+        let region = sj::gfx::BufferTextureCopyRegion::new()
+            .set_image_width(16)
+            .set_image_height(16)
+            .edit_texture_copy_region(|region| region.set_width(16).set_height(16));
+        command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
     }
     command_buffer.end();
 
