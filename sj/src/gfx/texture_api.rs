@@ -4,7 +4,7 @@ pub struct TextureInfo {
     _width: i32,
     _height: i32,
     _depth: i32,
-    _gpu_access: GpuAccess,
+    _gpu_access_flags: GpuAccess,
     _image_format: ImageFormat,
 }
 
@@ -14,7 +14,7 @@ impl TextureInfo {
             _width: 1,
             _height: 1,
             _depth: 1,
-            _gpu_access: GpuAccess::empty(),
+            _gpu_access_flags: GpuAccess::empty(),
             _image_format: ImageFormat::R8G8B8A8Unorm,
         }
     }
@@ -46,12 +46,12 @@ impl TextureInfo {
         self
     }
 
-    pub fn get_gpu_access(&self) -> &GpuAccess {
-        &self._gpu_access
+    pub fn get_gpu_access_flags(&self) -> &GpuAccess {
+        &self._gpu_access_flags
     }
 
-    pub fn set_gpu_access(mut self, gpu_access: GpuAccess) -> Self {
-        self._gpu_access = gpu_access;
+    pub fn set_gpu_access_flags(mut self, gpu_access: GpuAccess) -> Self {
+        self._gpu_access_flags = gpu_access;
         self
     }
 

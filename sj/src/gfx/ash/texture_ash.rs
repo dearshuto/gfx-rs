@@ -115,18 +115,24 @@ impl TextureInfo {
     pub fn get_usage_as_ash(&self) -> ash::vk::ImageUsageFlags {
         let mut result = ash::vk::ImageUsageFlags::empty();
 
-        if self.get_gpu_access().contains(GpuAccess::TEXTURE) {
+        if self.get_gpu_access_flags().contains(GpuAccess::TEXTURE) {
             result |= ash::vk::ImageUsageFlags::TRANSFER_DST;
             result |= ash::vk::ImageUsageFlags::SAMPLED;
         }
-        if self.get_gpu_access().contains(GpuAccess::IMAGE) {
+        if self.get_gpu_access_flags().contains(GpuAccess::IMAGE) {
             // TODO
             //result |= ash::vk::ImageUsageFlags::STORAGE;
         }
-        if self.get_gpu_access().contains(GpuAccess::COLOR_BUFFER) {
+        if self
+            .get_gpu_access_flags()
+            .contains(GpuAccess::COLOR_BUFFER)
+        {
             result |= ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
         }
-        if self.get_gpu_access().contains(GpuAccess::DEPTH_STENCIL) {
+        if self
+            .get_gpu_access_flags()
+            .contains(GpuAccess::DEPTH_STENCIL)
+        {
             result |= ash::vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT
         }
 

@@ -3,7 +3,7 @@ use ash::vk::DeviceSize;
 use std::marker::PhantomData;
 
 use super::super::buffer_api::{BufferInfo, IBufferImpl};
-use super::super::{BufferUsage, Device, MemoryPool};
+use super::super::{Device, GpuAccess, MemoryPool};
 
 pub struct BufferImpl<'a> {
     _device: &'a Device,
@@ -15,19 +15,6 @@ pub struct BufferImpl<'a> {
 }
 
 impl<'a> BufferImpl<'a> {
-    pub fn convert_usage(buffer_usage: BufferUsage) -> ash::vk::BufferUsageFlags {
-        let mut result = ash::vk::BufferUsageFlags::empty();
-
-        if buffer_usage.contains(BufferUsage::CONSTANT_BUFFER) {
-            result |= ash::vk::BufferUsageFlags::UNIFORM_BUFFER;
-        }
-        if buffer_usage.contains(BufferUsage::UNORDERED_ACCESS_BUFFER) {
-            result |= ash::vk::BufferUsageFlags::STORAGE_BUFFER
-        }
-
-        result
-    }
-
     pub fn get_buffer(&self) -> ash::vk::Buffer {
         self._buffer
     }
@@ -185,12 +172,20 @@ impl BufferInfo {
         let mut result = ash::vk::BufferUsageFlags::empty();
 
         if self
-            .get_buffer_usage()
-            .contains(BufferUsage::UNORDERED_ACCESS_BUFFER)
+            .get_gpu_access_flags()
+            .contains(GpuAccess::UNORDERED_ACCESS_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::STORAGE_BUFFER;
-        } else if self.get_buffer_usage().contains(BufferUsage::VERTEX_BUFFER) {
+        } else if self
+            .get_gpu_access_flags()
+            .contains(GpuAccess::VERTEX_BUFFER)
+        {
             result |= ash::vk::BufferUsageFlags::VERTEX_BUFFER;
+        } else if self
+            .get_gpu_access_flags()
+            .contains(GpuAccess::CONSTANT_BUFFER)
+        {
+            result |= ash::vk::BufferUsageFlags::UNIFORM_BUFFER;
         }
 
         result

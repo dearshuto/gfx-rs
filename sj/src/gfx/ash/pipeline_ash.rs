@@ -353,5 +353,13 @@ impl BlendTargetStateInfo {
 }
 
 impl<'a> Drop for PipelineImpl<'a> {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        if self.is_compute_pipeline() {
+            let device_ash = self._device.to_data().get_device();
+
+            unsafe {
+                device_ash.destroy_pipeline(self._compute_pipeline.unwrap(), None);
+            }
+        }
+    }
 }

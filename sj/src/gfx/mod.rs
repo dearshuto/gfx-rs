@@ -256,14 +256,6 @@ bitflags! {
 }
 
 bitflags! {
-    pub struct BufferUsage: u32 {
-        const CONSTANT_BUFFER = 0x01;
-        const UNORDERED_ACCESS_BUFFER = 0x02;
-        const VERTEX_BUFFER = 0x04;
-    }
-}
-
-bitflags! {
     pub struct GpuAccess: u32 {
         const VERTEX_BUFFER = 0x01;
         const INDEX_BUFFER = 0x02;
