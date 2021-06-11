@@ -10,7 +10,8 @@ use super::super::{
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
     DrawCommandBuilder, EndRenderPassCommandBuilder, SetPipelineParams,
-    SetRenderTargetsCommandBuilder, SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
+    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
     SetViewportScissorStateCommandBuilder,
 };
 
@@ -347,13 +348,24 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn set_texture_state_transition(
         &mut self,
-        _texture: &Texture,
-        _range: TextureSubresourceRange,
-        _old_state: TextureState,
-        _old_stage_bit: PipelineStageBit,
-        _new_state: TextureState,
-        _new_stage_bit: PipelineStageBit,
+        texture: &Texture,
+        range: TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
     ) {
+        let command_buffer_ash = self._commands.iter().next().unwrap();
+        let builder = SetTextureStateTransitionCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            texture,
+            range,
+            old_state,
+            old_stage_bit,
+            new_state,
+            new_stage_bit,
+        );
     }
 
     fn copy_image_to_buffer(
