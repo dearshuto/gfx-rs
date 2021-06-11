@@ -1,6 +1,7 @@
 use super::{
-    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAddress,
-    IndexFormat, Pipeline, PrimitiveTopology, ShaderStage, Texture, ViewportScissorState,
+    texture_api::TextureSubresourceRange, Buffer, BufferTextureCopyRegion, ColorTargetView,
+    DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline, PipelineStageBit,
+    PrimitiveTopology, ShaderStage, Texture, TextureState, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -246,6 +247,16 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
         self.command_buffer_impl.draw_indirect(gpu_address);
+    }
+
+    pub fn set_texture_state_transition(
+        texture: &Texture,
+        range: TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
+    ) {
     }
 
     pub fn copy_image_to_buffer(

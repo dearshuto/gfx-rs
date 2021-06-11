@@ -23,6 +23,7 @@ impl<'a> TextureImpl<'a> {
                 height: info.get_height() as u32,
                 depth: info.get_depth() as u32,
             })
+            .initial_layout(ash::vk::ImageLayout::UNDEFINED)
             .mip_levels(1)
             .array_layers(1)
             .samples(ash::vk::SampleCountFlags::TYPE_1)

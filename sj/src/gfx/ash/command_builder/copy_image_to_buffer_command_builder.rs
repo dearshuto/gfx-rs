@@ -30,7 +30,7 @@ impl<'a> CopyImageToBufferCommandBuilder<'a> {
             _device: device,
             _command_buffer: command_buffer,
             _image: *src_texture.to_data().get_image(),
-            _image_layout: ash::vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+            _image_layout: ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
             _buffer: dst_buffer.to_data().get_buffer(),
             _buffer_offset: copy_region.get_offset() as u64,
             _buffer_row_length: copy_region.get_image_width() as u32,
@@ -65,7 +65,35 @@ impl<'a> CopyImageToBufferCommandBuilder<'a> {
             .image_extent(self._image_extent)
             .image_subresource(self._image_subresource_layers)
             .build()];
+
+        let image_memory_bariier = ash::vk::ImageMemoryBarrier::builder()
+            .src_access_mask(ash::vk::AccessFlags::TRANSFER_READ)
+            .dst_access_mask(ash::vk::AccessFlags::TRANSFER_WRITE)
+            .old_layout(ash::vk::ImageLayout::UNDEFINED)
+            .new_layout(ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
+            .src_queue_family_index(0)
+            .dst_queue_family_index(0)
+            .image(self._image)
+            .subresource_range(
+                ash::vk::ImageSubresourceRange::builder()
+                    .aspect_mask(ash::vk::ImageAspectFlags::COLOR)
+                    .base_mip_level(0)
+                    .level_count(1)
+                    .base_array_layer(0)
+                    .layer_count(1)
+                    .build(),
+            )
+            .build();
         unsafe {
+            device_ash.cmd_pipeline_barrier(
+                self._command_buffer,
+                ash::vk::PipelineStageFlags::TRANSFER,
+                ash::vk::PipelineStageFlags::TRANSFER,
+                ash::vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &[image_memory_bariier],
+            );
             device_ash.cmd_copy_image_to_buffer(
                 self._command_buffer,
                 self._image,

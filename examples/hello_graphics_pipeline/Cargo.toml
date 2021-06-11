@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 sj = { path = "../../sj" }
+image = "*"
 
 [build-dependencies]
 shaderc = "0.7"

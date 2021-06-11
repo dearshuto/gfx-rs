@@ -274,6 +274,16 @@ bitflags! {
     }
 }
 
+bitflags! {
+    pub struct TextureState: u32 {
+        UNDEFINED = 0x01;
+        DATA_TRANSFER = 0x02;
+        COPY_SOURCE = 0x04;
+        COPY_DESTINATION = 0x08;
+        SHADER_READ = 0x16;
+    }
+}
+
 pub enum ImageFormat {
     R8G8B8A8Unorm,
 }
@@ -282,6 +292,16 @@ pub enum ShaderStage {
     Vertex,
     Pixel,
     Compute,
+}
+
+bitflags! {
+    pub struct PipelineStageBit: u32 {
+        VERTEX_INPUT = 0x01;
+        VERTEX_SHADER;
+        PIXEL_SHADER = 0x02;
+        RENDER_TARGET;
+        COMPUTE_SHDER = 0x04;
+    }
 }
 
 pub enum AttributeFormat {

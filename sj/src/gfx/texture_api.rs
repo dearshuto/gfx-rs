@@ -255,6 +255,21 @@ impl BufferTextureCopyRegion {
     }
 }
 
+pub struct TextureArrayRange {
+    _length: i32,
+    _base_index: i32,
+}
+
+pub struct MipRange {
+    _min_mip_level: i32,
+    _mip_count: i32,
+}
+
+pub struct TextureSubresourceRange {
+    _texture_array_range: TextureArrayRange,
+    _mip_range: MipRange,
+}
+
 pub trait ITexture<'a> {
     fn calculate_required_size(device: &Device, info: &TextureInfo) -> u64;
 

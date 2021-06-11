@@ -1,3 +1,6 @@
+extern crate image;
+use image::{GenericImage, Pixel};
+
 fn main() {
     let device_info = sj::gfx::DeviceInfo::new();
     let device = sj::gfx::Device::new(&device_info);
@@ -134,4 +137,23 @@ fn main() {
         queue.flush();
         queue.sync();
     }
+
+    let _data = dst_buffer.map_as_slice::<u8>(4 * 640 * 480);
+    let mut image = image::DynamicImage::new_rgb8(640, 480);
+
+    for x in 0..640 {
+        for y in 0..480 {
+            let index = 4 * (x + y * 640);
+            let red = _data[index + 0];
+            let green = _data[index + 1];
+            let blue = _data[index + 2];
+            image.put_pixel(
+                x as u32,
+                y as u32,
+                image::Rgba::from_channels(red as u8, green as u8, blue, 0),
+            );
+        }
+    }
+
+    image.save("test.png").unwrap();
 }
