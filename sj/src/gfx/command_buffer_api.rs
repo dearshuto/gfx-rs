@@ -93,6 +93,16 @@ pub trait ICommandBufferImpl<'a> {
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32);
 
+    fn set_texture_state_transition(
+        &mut self,
+        texture: &Texture,
+        range: TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
+    );
+
     fn copy_image_to_buffer(
         &mut self,
         dst_buffer: &mut Buffer,
@@ -250,6 +260,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
     }
 
     pub fn set_texture_state_transition(
+        &mut self,
         texture: &Texture,
         range: TextureSubresourceRange,
         old_state: TextureState,
@@ -257,6 +268,14 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         new_state: TextureState,
         new_stage_bit: PipelineStageBit,
     ) {
+        self.command_buffer_impl.set_texture_state_transition(
+            texture,
+            range,
+            old_state,
+            old_stage_bit,
+            new_state,
+            new_stage_bit,
+        );
     }
 
     pub fn copy_image_to_buffer(

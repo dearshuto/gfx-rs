@@ -219,6 +219,7 @@ pub use self::texture_api::BufferTextureCopyRegion;
 pub use self::texture_api::TextureCopyRegion;
 pub use self::texture_api::TextureInfo;
 pub use self::texture_api::TextureSubResource;
+pub use self::texture_api::TextureSubresourceRange;
 
 #[cfg(feature = "backend_ash")]
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;

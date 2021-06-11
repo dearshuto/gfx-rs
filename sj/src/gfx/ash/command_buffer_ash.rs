@@ -3,7 +3,8 @@ use ash::version::DeviceV1_0;
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAddress,
-    IndexFormat, Pipeline, PrimitiveTopology, Shader, ShaderStage, Texture,
+    IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, Shader, ShaderStage, Texture,
+    TextureState, TextureSubresourceRange,
 };
 
 use super::command_builder::{
@@ -342,6 +343,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         );
         let command = Command::Dispatch(params);
         self._commands.push(command);
+    }
+
+    fn set_texture_state_transition(
+        &mut self,
+        _texture: &Texture,
+        _range: TextureSubresourceRange,
+        _old_state: TextureState,
+        _old_stage_bit: PipelineStageBit,
+        _new_state: TextureState,
+        _new_stage_bit: PipelineStageBit,
+    ) {
     }
 
     fn copy_image_to_buffer(

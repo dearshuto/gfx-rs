@@ -85,9 +85,15 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
 
     pub fn build(&self) {
         let device_ash = self._device.to_data().get_device();
+        let clear_values = [ash::vk::ClearValue {
+            color: ash::vk::ClearColorValue {
+                float32: [0.2, 0.2, 0.4, 0.0],
+            },
+        }];
         let render_pass_begin_info = ash::vk::RenderPassBeginInfo::builder()
             .render_pass(self._render_pass)
             .framebuffer(self._frame_buffer)
+            .clear_values(&clear_values)
             .build();
 
         unsafe {

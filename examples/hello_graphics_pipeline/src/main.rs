@@ -53,7 +53,7 @@ fn main() {
     let pipeline = sj::gfx::Pipeline::new_as_graphics(&device, &graphics_pipeline_create_info);
 
     let memory_pool_info = sj::gfx::MemoryPoolInfo::new()
-        .set_size(1024)
+        .set_size(8 * 1024 * 1024)
         .set_memory_pool_property(
             sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
         );
@@ -95,7 +95,7 @@ fn main() {
     let mut dst_buffer = sj::gfx::Buffer::new(
         &device,
         &sj::gfx::BufferInfo::new()
-            .set_size(1024)
+            .set_size(4 * 640 * 480)
             .set_gpu_access_flags(sj::gfx::GpuAccess::WRITE),
         &memory_pool,
         0,
@@ -125,9 +125,9 @@ fn main() {
         );
 
         let region = sj::gfx::BufferTextureCopyRegion::new()
-            .set_image_width(16)
-            .set_image_height(16)
-            .edit_texture_copy_region(|region| region.set_width(16).set_height(16));
+            .set_image_width(128)
+            .set_image_height(128)
+            .edit_texture_copy_region(|region| region.set_width(128).set_height(128));
         command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
     }
     command_buffer.end();
