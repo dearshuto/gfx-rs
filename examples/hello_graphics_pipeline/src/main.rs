@@ -75,7 +75,7 @@ fn main() {
 
     let color_target_view_info = sj::gfx::ColorTargetViewInfo::new(&texture)
         .set_image_format(sj::gfx::ImageFormat::R8G8B8A8Unorm);
-    let color_target_view = sj::gfx::ColorTargetView::new(&device, &color_target_view_info);
+    let mut color_target_view = sj::gfx::ColorTargetView::new(&device, &color_target_view_info);
 
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
@@ -110,19 +110,19 @@ fn main() {
 
     command_buffer.begin();
     {
-        //		command_buffer.clear_color(&mut &mut color_target_view, 0.0, 0.0, 0.0, 0.0);
+        command_buffer.clear_color(&mut color_target_view, 0.0, 0.0, 0.0, 0.0);
         command_buffer.set_render_targets(&[&color_target_view], None);
         command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
         command_buffer.set_pipeline(&pipeline);
         command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        let vertex_count = 3;
-        let vertex_offset = 0;
-        command_buffer.draw(
-            sj::gfx::PrimitiveTopology::TriangleList,
-            vertex_count,
-            vertex_offset,
-        );
+        // let vertex_count = 3;
+        // let vertex_offset = 0;
+        // command_buffer.draw(
+        //     sj::gfx::PrimitiveTopology::TriangleList,
+        //     vertex_count,
+        //     vertex_offset,
+        // );
 
         let region = sj::gfx::BufferTextureCopyRegion::new()
             .set_image_width(640)

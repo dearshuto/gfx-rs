@@ -209,7 +209,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn clear_color(
         &mut self,
-        _color_target_view: &mut ColorTargetView,
+        color_target_view: &mut ColorTargetView,
         red: f32,
         green: f32,
         blue: f32,
@@ -219,6 +219,11 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         let builder = ClearColorCommandBuilder::new(
             self._device,
             *command_buffer_ash,
+            *color_target_view
+                .to_data()
+                .get_texture()
+                .to_data()
+                .get_image(),
             red,
             green,
             blue,
