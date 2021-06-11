@@ -276,11 +276,11 @@ bitflags! {
 
 bitflags! {
     pub struct TextureState: u32 {
-        UNDEFINED = 0x01;
-        DATA_TRANSFER = 0x02;
-        COPY_SOURCE = 0x04;
-        COPY_DESTINATION = 0x08;
-        SHADER_READ = 0x16;
+        const UNDEFINED = 0x01;
+        const DATA_TRANSFER = 0x02;
+        const COPY_SOURCE = 0x04;
+        const COPY_DESTINATION = 0x08;
+        const SHADER_READ = 0x16;
     }
 }
 
@@ -296,11 +296,11 @@ pub enum ShaderStage {
 
 bitflags! {
     pub struct PipelineStageBit: u32 {
-        VERTEX_INPUT = 0x01;
-        VERTEX_SHADER;
-        PIXEL_SHADER = 0x02;
-        RENDER_TARGET;
-        COMPUTE_SHDER = 0x04;
+        const VERTEX_INPUT = 0x01;
+        const VERTEX_SHADER = 0x02;
+        const PIXEL_SHADER = 0x04;
+        const RENDER_TARGET = 0x08;
+        const COMPUTE_SHDER = 0x16;
     }
 }
 
