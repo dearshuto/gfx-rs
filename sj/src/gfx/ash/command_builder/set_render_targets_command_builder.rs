@@ -87,7 +87,7 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
         let device_ash = self._device.to_data().get_device();
         let clear_values = [ash::vk::ClearValue {
             color: ash::vk::ClearColorValue {
-                float32: [0.2, 0.2, 0.4, 0.0],
+                float32: [0.2, 0.2, 1.0, 1.0],
             },
         }];
         let render_pass_begin_info = ash::vk::RenderPassBeginInfo::builder()
@@ -150,7 +150,7 @@ impl<'a> ColorTargetView<'a> {
         ash::vk::AttachmentDescription::builder()
             .format(format)
             .samples(ash::vk::SampleCountFlags::TYPE_1)
-            .load_op(ash::vk::AttachmentLoadOp::DONT_CARE) // CLEAR のほうがいいかも
+            .load_op(ash::vk::AttachmentLoadOp::CLEAR) // CLEAR のほうがいいかも
             .store_op(ash::vk::AttachmentStoreOp::STORE)
             .final_layout(ash::vk::ImageLayout::PRESENT_SRC_KHR)
             .build()

@@ -1,7 +1,6 @@
 use super::super::queue_api::{IQueueImpl, QueueInfo};
 use super::super::{CommandBuffer, Device, SwapChain};
 use ash::version::DeviceV1_0;
-use std::marker::PhantomData;
 
 pub struct QueueImpl<'a> {
     _device: &'a Device,
@@ -9,7 +8,7 @@ pub struct QueueImpl<'a> {
     _queue_submit_infos: Vec<ash::vk::SubmitInfo>,
     _queue_family_index: u32,
     _queue_index: u32,
-    _marker: PhantomData<&'a u32>,
+    _dst_wait_mask: [ash::vk::PipelineStageFlags; 1],
 }
 
 impl<'a> IQueueImpl<'a> for QueueImpl<'a> {
@@ -25,7 +24,7 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a> {
                 _queue_submit_infos: Vec::new(),
                 _queue_family_index: queue_family_index,
                 _queue_index: queue_index,
-                _marker: PhantomData,
+                _dst_wait_mask: [ash::vk::PipelineStageFlags::all()],
             }
         }
     }
@@ -42,6 +41,7 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a> {
 
         let submit_info = ash::vk::SubmitInfo::builder()
             .command_buffers(&command_buffers)
+            //.wait_dst_stage_mask(&self._dst_wait_mask)
             .build();
         self._queue_submit_infos.push(submit_info);
 

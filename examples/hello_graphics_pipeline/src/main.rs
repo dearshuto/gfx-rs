@@ -99,7 +99,7 @@ fn main() {
             .set_gpu_access_flags(sj::gfx::GpuAccess::WRITE),
         &memory_pool,
         0,
-        1024,
+        4 * 640 * 480,
     );
 
     let command_buffer_info = sj::gfx::CommandBufferInfo::new();
@@ -125,9 +125,19 @@ fn main() {
         );
 
         let region = sj::gfx::BufferTextureCopyRegion::new()
-            .set_image_width(128)
-            .set_image_height(128)
-            .edit_texture_copy_region(|region| region.set_width(128).set_height(128));
+            .set_image_width(640)
+            .set_image_height(480)
+            .edit_texture_copy_region(|region| region.set_width(640).set_height(480));
+
+        let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
+        command_buffer.set_texture_state_transition(
+            &texture,
+            &texture_subresource_range,
+            sj::gfx::TextureState::UNDEFINED,
+            sj::gfx::PipelineStageBit::RENDER_TARGET,
+            sj::gfx::TextureState::COPY_SOURCE,
+            sj::gfx::PipelineStageBit::RENDER_TARGET,
+        );
         command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
     }
     command_buffer.end();
@@ -139,6 +149,7 @@ fn main() {
     }
 
     let _data = dst_buffer.map_as_slice::<u8>(4 * 640 * 480);
+    dst_buffer.invalidate_mapped_range(0, 4 * 640 * 480);
     let mut image = image::DynamicImage::new_rgb8(640, 480);
 
     for x in 0..640 {

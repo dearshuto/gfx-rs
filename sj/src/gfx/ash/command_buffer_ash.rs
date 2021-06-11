@@ -349,13 +349,19 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     fn set_texture_state_transition(
         &mut self,
         texture: &Texture,
-        range: TextureSubresourceRange,
+        range: &TextureSubresourceRange,
         old_state: TextureState,
         old_stage_bit: PipelineStageBit,
         new_state: TextureState,
         new_stage_bit: PipelineStageBit,
     ) {
-        let command_buffer_ash = self._commands.iter().next().unwrap();
+        // イメージのコピーはレンダーパス外じゃないとできない
+        // TODO: レンダーターゲットの設定を復元する？
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
         let builder = SetTextureStateTransitionCommandBuilder::new(
             self._device,
             *command_buffer_ash,
@@ -366,6 +372,8 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             new_state,
             new_stage_bit,
         );
+        let command = Command::SetTextureStateTransition(builder);
+        self._commands.push(command);
     }
 
     fn copy_image_to_buffer(
@@ -374,12 +382,6 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     ) {
-        // イメージのコピーはレンダーパス外じゃないとできない
-        // TODO: レンダーターゲットの設定を復元する？
-        if self.is_render_pass_begining() {
-            self.push_end_render_pass_command();
-        }
-
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
         let builder = CopyImageToBufferCommandBuilder::new(
             self._device,

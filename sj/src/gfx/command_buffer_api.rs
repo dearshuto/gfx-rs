@@ -96,7 +96,7 @@ pub trait ICommandBufferImpl<'a> {
     fn set_texture_state_transition(
         &mut self,
         texture: &Texture,
-        range: TextureSubresourceRange,
+        range: &TextureSubresourceRange,
         old_state: TextureState,
         old_stage_bit: PipelineStageBit,
         new_state: TextureState,
@@ -262,7 +262,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
     pub fn set_texture_state_transition(
         &mut self,
         texture: &Texture,
-        range: TextureSubresourceRange,
+        range: &TextureSubresourceRange,
         old_state: TextureState,
         old_stage_bit: PipelineStageBit,
         new_state: TextureState,

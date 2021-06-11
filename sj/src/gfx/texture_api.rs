@@ -260,14 +260,98 @@ pub struct TextureArrayRange {
     _base_index: i32,
 }
 
+impl TextureArrayRange {
+    pub fn new() -> Self {
+        Self {
+            _length: 1,
+            _base_index: 0,
+        }
+    }
+
+    pub fn get_length(&self) -> i32 {
+        self._length
+    }
+
+    pub fn set_length(mut self, length: i32) -> Self {
+        self._length = length;
+        self
+    }
+
+    pub fn get_base_index(&self) -> i32 {
+        self._base_index
+    }
+
+    pub fn set_base_index(mut self, base_index: i32) -> Self {
+        self._base_index = base_index;
+        self
+    }
+}
+
 pub struct MipRange {
     _min_mip_level: i32,
     _mip_count: i32,
 }
 
+impl MipRange {
+    pub fn new() -> Self {
+        Self {
+            _min_mip_level: 1,
+            _mip_count: 1,
+        }
+    }
+
+    pub fn get_mip_level(&self) -> i32 {
+        self._min_mip_level
+    }
+
+    pub fn set_mip_level(mut self, min_mip_level: i32) -> Self {
+        self._min_mip_level = min_mip_level;
+        self
+    }
+
+    pub fn get_mip_count(&self) -> i32 {
+        self._mip_count
+    }
+
+    pub fn set_mip_count(mut self, mip_count: i32) -> Self {
+        self._mip_count = mip_count;
+        self
+    }
+}
+
 pub struct TextureSubresourceRange {
     _texture_array_range: TextureArrayRange,
     _mip_range: MipRange,
+}
+
+impl TextureSubresourceRange {
+    pub fn new() -> Self {
+        Self {
+            _texture_array_range: TextureArrayRange::new(),
+            _mip_range: MipRange::new(),
+        }
+    }
+
+    pub fn get_texture_subresource_range(&self) -> &TextureArrayRange {
+        &self._texture_array_range
+    }
+
+    pub fn edit_texture_array_range(
+        mut self,
+        updater: fn(TextureArrayRange) -> TextureArrayRange,
+    ) -> Self {
+        self._texture_array_range = updater(self._texture_array_range);
+        self
+    }
+
+    pub fn get_mip_range(&self) -> &MipRange {
+        &self._mip_range
+    }
+
+    pub fn edit_mip_range(mut self, updater: fn(MipRange) -> MipRange) -> Self {
+        self._mip_range = updater(self._mip_range);
+        self
+    }
 }
 
 pub trait ITexture<'a> {

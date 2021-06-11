@@ -1,4 +1,4 @@
-﻿use crate::gfx::{Device, Texture, TextureSubresourceRange};
+use crate::gfx::{Device, PipelineStageBit, Texture, TextureState, TextureSubresourceRange};
 use ash::version::DeviceV1_0;
 
 pub struct SetTextureStateTransitionCommandBuilder<'a> {
@@ -12,16 +12,16 @@ impl<'a> SetTextureStateTransitionCommandBuilder<'a> {
         device: &'a Device,
         command_buffer: ash::vk::CommandBuffer,
         texture: &Texture,
-        range: TextureSubresourceRange,
-        old_state: TextureState,
-        old_stage_bit: PipelineStageBit,
-        new_state: TextureState,
-        new_stage_bit: PipelineStageBit,
+        _range: &TextureSubresourceRange,
+        _old_state: TextureState,
+        _old_stage_bit: PipelineStageBit,
+        _new_state: TextureState,
+        _new_stage_bit: PipelineStageBit,
     ) -> Self {
         Self {
             _device: device,
             _command_buffer: command_buffer,
-            _iamge: texture.to_data().get_image(),
+            _image: *texture.to_data().get_image(),
         }
     }
 
