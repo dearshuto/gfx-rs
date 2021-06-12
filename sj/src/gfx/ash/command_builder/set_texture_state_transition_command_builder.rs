@@ -36,8 +36,8 @@ impl<'a> SetTextureStateTransitionCommandBuilder<'a> {
     pub fn build(&self) {
         let device_ash = self._device.to_data().get_device();
         let image_memory_bariier = ash::vk::ImageMemoryBarrier::builder()
-            .src_access_mask(ash::vk::AccessFlags::all())
-            .dst_access_mask(ash::vk::AccessFlags::all())
+            .src_access_mask(ash::vk::AccessFlags::MEMORY_READ)
+            .dst_access_mask(ash::vk::AccessFlags::MEMORY_READ)
             .old_layout(self._old_state)
             .new_layout(self._new_state)
             .src_queue_family_index(0)
@@ -57,8 +57,8 @@ impl<'a> SetTextureStateTransitionCommandBuilder<'a> {
         unsafe {
             device_ash.cmd_pipeline_barrier(
                 self._command_buffer,
-                self._old_stage_bit,
-                self._new_stage_bit,
+                ash::vk::PipelineStageFlags::TRANSFER, //self._old_stage_bit,
+                ash::vk::PipelineStageFlags::TRANSFER, //self._new_stage_bit,
                 ash::vk::DependencyFlags::empty(),
                 &[],
                 &[],
@@ -72,10 +72,12 @@ impl TextureState {
     pub fn to_ash(&self) -> ash::vk::ImageLayout {
         match self {
             &TextureState::UNDEFINED => ash::vk::ImageLayout::UNDEFINED,
+            &TextureState::DATA_TRANSFER => ash::vk::ImageLayout::GENERAL,
             &TextureState::COPY_SOURCE => ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
             &TextureState::COPY_DESTINATION => ash::vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            &TextureState::DATA_TRANSFER => ash::vk::ImageLayout::GENERAL,
             &TextureState::SHADER_READ => ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            //&TextureState::SHADER_WRITE => ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            &TextureState::CLEAR => ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
             _ => todo!(),
         }
     }

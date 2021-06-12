@@ -377,8 +377,8 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             new_state,
             new_stage_bit,
         );
-        let _command = Command::SetTextureStateTransition(builder);
-        //self._commands.push(command);
+        let command = Command::SetTextureStateTransition(builder);
+        self._commands.push(command);
     }
 
     fn copy_image_to_buffer(

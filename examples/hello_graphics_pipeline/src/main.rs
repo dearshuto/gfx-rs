@@ -129,9 +129,9 @@ fn main() {
             &texture,
             &texture_subresource_range,
             sj::gfx::TextureState::SHADER_READ,
-            sj::gfx::PipelineStageBit::PIXEL_SHADER,
-            sj::gfx::TextureState::COPY_SOURCE,
             sj::gfx::PipelineStageBit::RENDER_TARGET,
+            sj::gfx::TextureState::COPY_SOURCE,
+            sj::gfx::PipelineStageBit::all(),
         );
 
         let region = sj::gfx::BufferTextureCopyRegion::new()

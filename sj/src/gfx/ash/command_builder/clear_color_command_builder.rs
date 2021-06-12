@@ -85,10 +85,10 @@ impl<'a> ClearColorCommandBuilder<'a> {
 
         unsafe {
             let image_memory_bariier = ash::vk::ImageMemoryBarrier::builder()
-                .src_access_mask(ash::vk::AccessFlags::MEMORY_WRITE)
-                .dst_access_mask(ash::vk::AccessFlags::MEMORY_READ)
+                .src_access_mask(ash::vk::AccessFlags::TRANSFER_WRITE)
+                .dst_access_mask(ash::vk::AccessFlags::TRANSFER_READ)
                 .old_layout(ash::vk::ImageLayout::TRANSFER_DST_OPTIMAL)
-                .new_layout(ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL)
+                .new_layout(ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
                 .src_queue_family_index(0)
                 .dst_queue_family_index(0)
                 .image(self._image)
