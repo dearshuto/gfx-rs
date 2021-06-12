@@ -282,6 +282,14 @@ bitflags! {
         const COPY_SOURCE = 0x04;
         const COPY_DESTINATION = 0x08;
         const SHADER_READ = 0x16;
+        const SHADER_WRITE = 0x32;
+        const COLOR_TARGET = 0x64;
+        const DEPTH_READ = 0x128;
+        const DEPTH_WRITE = 0x256;
+        const CLEAR = 0x512;
+        const RESOLVE_SOURCE = 0x1024;
+        const RESOLVE_DESTINATION = 0x2048;
+        const PRESENT = 0x4096;
     }
 }
 
@@ -299,9 +307,12 @@ bitflags! {
     pub struct PipelineStageBit: u32 {
         const VERTEX_INPUT = 0x01;
         const VERTEX_SHADER = 0x02;
-        const PIXEL_SHADER = 0x04;
-        const RENDER_TARGET = 0x08;
-        const COMPUTE_SHDER = 0x16;
+        const HULL_SHADER = 0x04;
+        const DOMAIN_SHADER = 0x08;
+        const GEOMETRY_SHADER = 0x16;
+        const PIXEL_SHADER = 0x32;
+        const RENDER_TARGET = 0x64;
+        const COMPUTE_SHDER = 0x128;
     }
 }
 

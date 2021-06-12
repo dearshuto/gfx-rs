@@ -110,11 +110,11 @@ fn main() {
 
     command_buffer.begin();
     {
-        command_buffer.clear_color(&mut color_target_view, 0.0, 0.0, 0.0, 0.0);
-        command_buffer.set_render_targets(&[&color_target_view], None);
-        command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-        command_buffer.set_pipeline(&pipeline);
-        command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
+        command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 0.0);
+        // command_buffer.set_render_targets(&[&color_target_view], None);
+        // command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
+        // command_buffer.set_pipeline(&pipeline);
+        // command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
         // let vertex_count = 3;
         // let vertex_offset = 0;
@@ -124,20 +124,21 @@ fn main() {
         //     vertex_offset,
         // );
 
+        let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
+        command_buffer.set_texture_state_transition(
+            &texture,
+            &texture_subresource_range,
+            sj::gfx::TextureState::SHADER_READ,
+            sj::gfx::PipelineStageBit::PIXEL_SHADER,
+            sj::gfx::TextureState::COPY_SOURCE,
+            sj::gfx::PipelineStageBit::RENDER_TARGET,
+        );
+
         let region = sj::gfx::BufferTextureCopyRegion::new()
             .set_image_width(640)
             .set_image_height(480)
             .edit_texture_copy_region(|region| region.set_width(640).set_height(480));
 
-        let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
-        command_buffer.set_texture_state_transition(
-            &texture,
-            &texture_subresource_range,
-            sj::gfx::TextureState::UNDEFINED,
-            sj::gfx::PipelineStageBit::RENDER_TARGET,
-            sj::gfx::TextureState::COPY_SOURCE,
-            sj::gfx::PipelineStageBit::RENDER_TARGET,
-        );
         command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
     }
     command_buffer.end();
