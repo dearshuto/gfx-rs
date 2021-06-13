@@ -57,8 +57,8 @@ impl<'a> SetTextureStateTransitionCommandBuilder<'a> {
         unsafe {
             device_ash.cmd_pipeline_barrier(
                 self._command_buffer,
-                ash::vk::PipelineStageFlags::TRANSFER, //self._old_stage_bit,
-                ash::vk::PipelineStageFlags::TRANSFER, //self._new_stage_bit,
+                self._old_stage_bit,
+                self._new_stage_bit,
                 ash::vk::DependencyFlags::empty(),
                 &[],
                 &[],
@@ -78,6 +78,7 @@ impl TextureState {
             &TextureState::SHADER_READ => ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             //&TextureState::SHADER_WRITE => ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
             &TextureState::CLEAR => ash::vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
+            &TextureState::COLOR_TARGET => ash::vk::ImageLayout::PRESENT_SRC_KHR,
             _ => todo!(),
         }
     }

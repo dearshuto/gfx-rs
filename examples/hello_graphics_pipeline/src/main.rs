@@ -83,13 +83,13 @@ fn main() {
     let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
 
     let a = vertex_buffer.map_as_slice_mut::<f32>(16);
-    a[0] = 10.0;
-    a[1] = 10.0;
+    a[0] = 0.0;
+    a[1] = 1.0;
+    a[2] = 1.0;
+    a[3] = -1.0;
+    a[4] = -1.0;
+    a[5] = -1.0;
     vertex_buffer.flush_mapped_range(0, 0x40);
-    vertex_buffer.unmap();
-
-    let value = vertex_buffer.map::<f32>();
-    println!("{}", value);
     vertex_buffer.unmap();
 
     let mut dst_buffer = sj::gfx::Buffer::new(
@@ -110,25 +110,25 @@ fn main() {
 
     command_buffer.begin();
     {
-        command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 0.0);
-        // command_buffer.set_render_targets(&[&color_target_view], None);
-        // command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-        // command_buffer.set_pipeline(&pipeline);
-        // command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
+        command_buffer.clear_color(&mut color_target_view, 0.75, 0.25, 0.4, 0.0);
+        command_buffer.set_render_targets(&[&color_target_view], None);
+        command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
+        command_buffer.set_pipeline(&pipeline);
+        command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        // let vertex_count = 3;
-        // let vertex_offset = 0;
-        // command_buffer.draw(
-        //     sj::gfx::PrimitiveTopology::TriangleList,
-        //     vertex_count,
-        //     vertex_offset,
-        // );
+        let vertex_count = 3;
+        let vertex_offset = 0;
+        command_buffer.draw(
+            sj::gfx::PrimitiveTopology::TriangleList,
+            vertex_count,
+            vertex_offset,
+        );
 
         let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
         command_buffer.set_texture_state_transition(
             &texture,
             &texture_subresource_range,
-            sj::gfx::TextureState::SHADER_READ,
+            sj::gfx::TextureState::COLOR_TARGET,
             sj::gfx::PipelineStageBit::RENDER_TARGET,
             sj::gfx::TextureState::COPY_SOURCE,
             sj::gfx::PipelineStageBit::all(),
