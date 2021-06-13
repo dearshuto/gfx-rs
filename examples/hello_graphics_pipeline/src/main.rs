@@ -87,9 +87,9 @@ fn main() {
     let a = vertex_buffer.map_as_slice_mut::<f32>(16);
     a[0] = 0.0;
     a[1] = 1.0;
-    a[2] = 1.0;
+    a[2] = -1.0;
     a[3] = -1.0;
-    a[4] = -1.0;
+    a[4] = 1.0;
     a[5] = -1.0;
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();

@@ -295,7 +295,7 @@ pub struct MipRange {
 impl MipRange {
     pub fn new() -> Self {
         Self {
-            _min_mip_level: 1,
+            _min_mip_level: 0,
             _mip_count: 1,
         }
     }

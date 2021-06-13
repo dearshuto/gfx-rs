@@ -17,7 +17,6 @@ impl<'a> IQueueImpl<'a> for QueueImpl<'a> {
             let queue_family_index = 0;
             let queue_index = 0;
             let queue = device.to_data()._device.get_device_queue(0, 0);
-
             Self {
                 _device: device,
                 _queue: queue,
