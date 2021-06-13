@@ -2,14 +2,14 @@ use ash::version::DeviceV1_0;
 
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
-    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAddress,
-    IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, Shader, ShaderStage, Texture,
-    TextureState, TextureSubresourceRange,
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAccess,
+    GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, Shader, ShaderStage,
+    Texture, TextureState, TextureSubresourceRange,
 };
 
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
-    DrawCommandBuilder, EndRenderPassCommandBuilder, SetPipelineParams,
+    DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
     SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
     SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
     SetViewportScissorStateCommandBuilder,
@@ -396,6 +396,18 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             copy_region,
         );
         let command = Command::CopyImageToBuffer(builder);
+        self._commands.push(command);
+    }
+
+    fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
+
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder =
+            FlushMemoryCommandBuilder::new(self._device, *command_buffer_ash, &gpu_access_flags);
+        let command = Command::FlushMemory(builder);
         self._commands.push(command);
     }
 }

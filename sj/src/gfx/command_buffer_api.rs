@@ -1,6 +1,6 @@
 use super::{
     texture_api::TextureSubresourceRange, Buffer, BufferTextureCopyRegion, ColorTargetView,
-    DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline, PipelineStageBit,
+    DepthStencilView, Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit,
     PrimitiveTopology, ShaderStage, Texture, TextureState, ViewportScissorState,
 };
 use std::marker::PhantomData;
@@ -109,6 +109,8 @@ pub trait ICommandBufferImpl<'a> {
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     );
+
+    fn flush_memory(&mut self, gpu_access_flags: GpuAccess);
 }
 
 pub struct TCommandBufferInterface<'a, T: 'a>
@@ -286,6 +288,10 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
     ) {
         self.command_buffer_impl
             .copy_image_to_buffer(dst_buffer, src_texture, copy_region);
+    }
+
+    pub fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {
+        self.command_buffer_impl.flush_memory(gpu_access_flags);
     }
 
     pub fn to_data(&'a self) -> &'a T {

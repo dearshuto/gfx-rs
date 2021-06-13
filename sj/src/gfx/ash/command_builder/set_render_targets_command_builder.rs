@@ -85,15 +85,14 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
 
     pub fn build(&self) {
         let device_ash = self._device.to_data().get_device();
-        let clear_values = [ash::vk::ClearValue {
-            color: ash::vk::ClearColorValue {
-                float32: [0.2, 0.2, 1.0, 1.0],
-            },
-        }];
         let render_pass_begin_info = ash::vk::RenderPassBeginInfo::builder()
             .render_pass(self._render_pass)
             .framebuffer(self._frame_buffer)
-            .clear_values(&clear_values)
+            .clear_values(&[])
+            .render_area(ash::vk::Rect2D {
+                offset: ash::vk::Offset2D { x: 0, y: 0 },
+                extent: ash::vk::Extent2D::builder().width(640).height(480).build(),
+            })
             .build();
 
         unsafe {
@@ -150,7 +149,7 @@ impl<'a> ColorTargetView<'a> {
         ash::vk::AttachmentDescription::builder()
             .format(format)
             .samples(ash::vk::SampleCountFlags::TYPE_1)
-            .load_op(ash::vk::AttachmentLoadOp::CLEAR) // CLEAR のほうがいいかも
+            .load_op(ash::vk::AttachmentLoadOp::DONT_CARE)
             .store_op(ash::vk::AttachmentStoreOp::STORE)
             .final_layout(ash::vk::ImageLayout::PRESENT_SRC_KHR)
             .build()

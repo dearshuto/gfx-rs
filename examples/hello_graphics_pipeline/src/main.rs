@@ -34,7 +34,9 @@ fn main() {
         .set_format(sj::gfx::AttributeFormat::Float32_32)
         .set_offset(0)
         .set_buffer_index(0)];
-    let vertex_buffer_state_info_array = [sj::gfx::VertexBufferStateInfo::new().set_stride(16)];
+    let vertex_buffer_state_info_array = [
+        sj::gfx::VertexBufferStateInfo::new().set_stride((std::mem::size_of::<f32>() * 2) as i64)
+    ];
     let vertex_state_info = sj::gfx::VertexStateInfo::new()
         .set_attribute_state_info_array(&vertex_attribute_state_info_array)
         .set_buffer_state_info_array(&vertex_buffer_state_info_array);
@@ -61,7 +63,7 @@ fn main() {
 
     let texture_memory_pool_info = sj::gfx::MemoryPoolInfo::new()
         .set_memory_pool_property(
-            sj::gfx::MemoryPoolProperty::CPU_INVISIBLE | sj::gfx::MemoryPoolProperty::GPU_CACHED,
+            sj::gfx::MemoryPoolProperty::CPU_INVISIBLE | sj::gfx::MemoryPoolProperty::GPU_UNCACHED,
         )
         .set_size(1024 * 1024 * 1024);
     let texture_memory_pool = sj::gfx::MemoryPool::new(&device, &texture_memory_pool_info);
@@ -110,19 +112,21 @@ fn main() {
 
     command_buffer.begin();
     {
-        command_buffer.clear_color(&mut color_target_view, 0.75, 0.25, 0.4, 0.0);
+        command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 0.0);
         command_buffer.set_render_targets(&[&color_target_view], None);
         command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
         command_buffer.set_pipeline(&pipeline);
         command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        let vertex_count = 3;
+        let vertex_count = 6;
         let vertex_offset = 0;
         command_buffer.draw(
             sj::gfx::PrimitiveTopology::TriangleList,
             vertex_count,
             vertex_offset,
         );
+
+        command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE);
 
         let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
         command_buffer.set_texture_state_transition(
@@ -133,6 +137,7 @@ fn main() {
             sj::gfx::TextureState::COPY_SOURCE,
             sj::gfx::PipelineStageBit::all(),
         );
+        command_buffer.flush_memory(sj::gfx::GpuAccess::READ);
 
         let region = sj::gfx::BufferTextureCopyRegion::new()
             .set_image_width(640)
@@ -140,6 +145,7 @@ fn main() {
             .edit_texture_copy_region(|region| region.set_width(640).set_height(480));
 
         command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
+        command_buffer.flush_memory(sj::gfx::GpuAccess::WRITE);
     }
     command_buffer.end();
 
@@ -150,7 +156,7 @@ fn main() {
     }
 
     let _data = dst_buffer.map_as_slice::<u8>(4 * 640 * 480);
-    dst_buffer.invalidate_mapped_range(0, 4 * 640 * 480);
+    dst_buffer.invalidate_mapped_range(0, 4 * 640 * 240);
     let mut image = image::DynamicImage::new_rgb8(640, 480);
 
     for x in 0..640 {

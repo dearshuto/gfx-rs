@@ -1,8 +1,9 @@
 use super::{
     ClearColorCommandBuilder, CopyImageToBufferCommandBuilder, DispatchParams, DrawCommandBuilder,
-    EndRenderPassCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
-    SetTextureStateTransitionCommandBuilder, SetUnorderedAccessBufferParams,
-    SetVertexBufferCommandBuilder, SetViewportScissorStateCommandBuilder,
+    EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
+    SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
+    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    SetViewportScissorStateCommandBuilder,
 };
 
 pub enum Command<'a> {
@@ -17,6 +18,7 @@ pub enum Command<'a> {
     Dispatch(DispatchParams<'a>),
     SetTextureStateTransition(SetTextureStateTransitionCommandBuilder<'a>),
     CopyImageToBuffer(CopyImageToBufferCommandBuilder<'a>),
+    FlushMemory(FlushMemoryCommandBuilder<'a>),
 }
 
 impl<'a> Command<'a> {
@@ -33,6 +35,7 @@ impl<'a> Command<'a> {
             Self::Dispatch(ref params) => params.build(),
             Self::CopyImageToBuffer(ref builder) => builder.build(),
             Self::SetTextureStateTransition(ref builder) => builder.build(),
+            Self::FlushMemory(ref builder) => builder.build(),
         }
     }
 }
