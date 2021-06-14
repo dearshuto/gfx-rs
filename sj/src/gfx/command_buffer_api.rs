@@ -1,6 +1,7 @@
 use super::{
-    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, ShaderStage, ViewportScissorState,
+    texture_api::TextureSubresourceRange, Buffer, BufferTextureCopyRegion, ColorTargetView,
+    DepthStencilView, Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit,
+    PrimitiveTopology, ShaderStage, Texture, TextureState, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -91,6 +92,25 @@ pub trait ICommandBufferImpl<'a> {
     fn draw_indirect(&mut self, gpu_address: &GpuAddress);
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32);
+
+    fn set_texture_state_transition(
+        &mut self,
+        texture: &Texture,
+        range: &TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
+    );
+
+    fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    );
+
+    fn flush_memory(&mut self, gpu_access_flags: GpuAccess);
 }
 
 pub struct TCommandBufferInterface<'a, T: 'a>
@@ -239,6 +259,39 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
         self.command_buffer_impl.draw_indirect(gpu_address);
+    }
+
+    pub fn set_texture_state_transition(
+        &mut self,
+        texture: &Texture,
+        range: &TextureSubresourceRange,
+        old_state: TextureState,
+        old_stage_bit: PipelineStageBit,
+        new_state: TextureState,
+        new_stage_bit: PipelineStageBit,
+    ) {
+        self.command_buffer_impl.set_texture_state_transition(
+            texture,
+            range,
+            old_state,
+            old_stage_bit,
+            new_state,
+            new_stage_bit,
+        );
+    }
+
+    pub fn copy_image_to_buffer(
+        &mut self,
+        dst_buffer: &mut Buffer,
+        src_texture: &Texture,
+        copy_region: &BufferTextureCopyRegion,
+    ) {
+        self.command_buffer_impl
+            .copy_image_to_buffer(dst_buffer, src_texture, copy_region);
+    }
+
+    pub fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {
+        self.command_buffer_impl.flush_memory(gpu_access_flags);
     }
 
     pub fn to_data(&'a self) -> &'a T {

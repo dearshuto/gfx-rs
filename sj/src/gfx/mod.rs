@@ -215,7 +215,11 @@ pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
 
 // Texture
+pub use self::texture_api::BufferTextureCopyRegion;
+pub use self::texture_api::TextureCopyRegion;
 pub use self::texture_api::TextureInfo;
+pub use self::texture_api::TextureSubResource;
+pub use self::texture_api::TextureSubresourceRange;
 
 #[cfg(feature = "backend_ash")]
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
@@ -264,8 +268,28 @@ bitflags! {
         const UNORDERED_ACCESS_BUFFER = 0x16;
         const COLOR_BUFFER = 0x32;
         const DEPTH_STENCIL = 0x64;
+        const READ = 0x128;
+        const WRITE = 0x256;
         const INDIRECT_BUFFER = 0x128;
         const IMAGE = 0x4000;
+    }
+}
+
+bitflags! {
+    pub struct TextureState: u32 {
+        const UNDEFINED = 0x01;
+        const DATA_TRANSFER = 0x02;
+        const COPY_SOURCE = 0x04;
+        const COPY_DESTINATION = 0x08;
+        const SHADER_READ = 0x16;
+        const SHADER_WRITE = 0x32;
+        const COLOR_TARGET = 0x64;
+        const DEPTH_READ = 0x128;
+        const DEPTH_WRITE = 0x256;
+        const CLEAR = 0x512;
+        const RESOLVE_SOURCE = 0x1024;
+        const RESOLVE_DESTINATION = 0x2048;
+        const PRESENT = 0x4096;
     }
 }
 
@@ -277,6 +301,19 @@ pub enum ShaderStage {
     Vertex,
     Pixel,
     Compute,
+}
+
+bitflags! {
+    pub struct PipelineStageBit: u32 {
+        const VERTEX_INPUT = 0x01;
+        const VERTEX_SHADER = 0x02;
+        const HULL_SHADER = 0x04;
+        const DOMAIN_SHADER = 0x08;
+        const GEOMETRY_SHADER = 0x16;
+        const PIXEL_SHADER = 0x32;
+        const RENDER_TARGET = 0x64;
+        const COMPUTE_SHDER = 0x128;
+    }
 }
 
 pub enum AttributeFormat {

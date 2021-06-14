@@ -1,9 +1,6 @@
 use ash::version::DeviceV1_0;
 
-use crate::gfx::{
-    BlendStateInfo, BlendTargetStateInfo, DepthStencilStateInfo, RasterizerStateInfo,
-    VertexStateInfo,
-};
+use crate::gfx::{BlendStateInfo, BlendTargetStateInfo, RasterizerStateInfo, VertexStateInfo};
 
 use super::super::pipeline_api::{ComputePipelineInfo, GraphicsPipelineInfo, IPipelineImpl};
 use super::super::{Device, Shader, VertexAttributeStateInfo, VertexBufferStateInfo};
@@ -301,16 +298,6 @@ impl RasterizerStateInfo {
             .polygon_mode(ash::vk::PolygonMode::FILL)
             .front_face(ash::vk::FrontFace::COUNTER_CLOCKWISE)
             .line_width(1.0)
-            .build()
-    }
-}
-
-impl DepthStencilStateInfo {
-    pub fn as_ash(&self) -> ash::vk::PipelineDepthStencilStateCreateInfo {
-        ash::vk::PipelineDepthStencilStateCreateInfo::builder()
-            .depth_test_enable(self.is_depth_test_enabled())
-            .depth_write_enable(self.is_depth_write_enabled())
-            .depth_compare_op(ash::vk::CompareOp::LESS_OR_EQUAL)
             .build()
     }
 }
