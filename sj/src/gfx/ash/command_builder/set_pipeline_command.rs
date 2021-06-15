@@ -40,7 +40,6 @@ impl<'a> SetPipelineParams<'a> {
                 let pipeline = pipeline
                     .to_data()
                     .create_graphics_pipeline(render_pass.unwrap());
-
                 Self {
                     _device: device,
                     _command_buffer: command_buffer,

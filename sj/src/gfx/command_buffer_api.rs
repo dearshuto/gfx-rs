@@ -27,7 +27,13 @@ pub trait ICommandBufferImpl<'a> {
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>);
 
-    fn set_buffer(&mut self, buffer: &'a Buffer<'a>);
+    fn set_constant_buffer(
+        &mut self,
+        slot: i32,
+        stage: ShaderStage,
+        gpu_address: &GpuAddress,
+        size: usize,
+    );
 
     fn set_unordered_access_buffer(
         &mut self,
@@ -158,8 +164,15 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         self.command_buffer_impl.set_pipeline(pipeline);
     }
 
-    pub fn set_buffer(&'a mut self, buffer: &'a Buffer) {
-        self.command_buffer_impl.set_buffer(buffer);
+    pub fn set_constant_buffer(
+        &mut self,
+        slot: i32,
+        stage: ShaderStage,
+        gpu_address: &GpuAddress,
+        size: usize,
+    ) {
+        self.command_buffer_impl
+            .set_constant_buffer(slot, stage, gpu_address, size);
     }
 
     pub fn set_unordered_access_buffer(

@@ -1,15 +1,19 @@
 use ash::version::DeviceV1_0;
-use std::marker::PhantomData;
+use std::ops::Index;
+
+use crate::gfx::ShaderStage;
 
 use super::super::shader_api::{IShaderImpl, ShaderInfo};
-use super::super::Device;
+use super::super::{Device, GpuAccess};
 
 pub struct ShaderImpl<'a> {
     _device: &'a Device,
     _shader: [Option<ash::vk::ShaderModule>; 6],
     _descriptor_set_layout: ash::vk::DescriptorSetLayout,
     _pipeline_layout: ash::vk::PipelineLayout,
-    _marker: PhantomData<&'a u32>,
+    _layout_table_vertex: Option<std::sync::Arc<LayoutTable>>,
+    _layout_table_pixel: Option<std::sync::Arc<LayoutTable>>,
+    _layout_table_compute: Option<std::sync::Arc<LayoutTable>>,
 }
 
 impl<'a> ShaderImpl<'a> {
@@ -33,6 +37,14 @@ impl<'a> ShaderImpl<'a> {
         &self._pipeline_layout
     }
 
+    pub fn get_layout_table(&self, shader_stage: &ShaderStage) -> &LayoutTable {
+        match shader_stage {
+            &ShaderStage::Vertex => self._layout_table_vertex.as_ref().unwrap(),
+            &ShaderStage::Pixel => self._layout_table_pixel.as_ref().unwrap(),
+            &ShaderStage::Compute => self._layout_table_compute.as_ref().unwrap(),
+        }
+    }
+
     fn new_as_compute_shader(device: &'a Device, info: &ShaderInfo) -> Self {
         let shader_modiles = [
             None, // Vertex
@@ -44,13 +56,16 @@ impl<'a> ShaderImpl<'a> {
         ];
 
         let device_impl = device.to_data().get_device();
-        let descriptor_set_layout_bindings =
-            Self::create_descriptor_set_layout_bindings(info.get_shader_binary());
+        let layout_table = Self::create_descriptor_set_layout_bindings(
+            info.get_shader_binary(),
+            ShaderStage::Compute,
+        );
+        let descriptor_set_layout_bindings = layout_table.get_descriptor_set_layout_bindings();
         unsafe {
             let descriptor_set_layout = device_impl
                 .create_descriptor_set_layout(
                     &ash::vk::DescriptorSetLayoutCreateInfo::builder()
-                        .bindings(descriptor_set_layout_bindings.as_slice())
+                        .bindings(descriptor_set_layout_bindings)
                         .build(),
                     None,
                 )
@@ -69,7 +84,9 @@ impl<'a> ShaderImpl<'a> {
                 _shader: shader_modiles,
                 _descriptor_set_layout: descriptor_set_layout,
                 _pipeline_layout: pipeline_layout,
-                _marker: PhantomData,
+                _layout_table_vertex: None,
+                _layout_table_pixel: None,
+                _layout_table_compute: Some(std::sync::Arc::new(layout_table)),
             }
         }
     }
@@ -85,13 +102,17 @@ impl<'a> ShaderImpl<'a> {
         ];
 
         let device_impl = device.to_data().get_device();
+        let layout_table = Self::create_descriptor_set_layout_bindings(
+            info.get_vertex_shader_binary().unwrap(),
+            ShaderStage::Vertex,
+        );
         let vertex_descriptor_set_layout_bindings =
-            Self::create_descriptor_set_layout_bindings(info.get_vertex_shader_binary().unwrap());
+            layout_table.get_descriptor_set_layout_bindings();
         unsafe {
             let descriptor_set_layout = device_impl
                 .create_descriptor_set_layout(
                     &ash::vk::DescriptorSetLayoutCreateInfo::builder()
-                        .bindings(vertex_descriptor_set_layout_bindings.as_slice())
+                        .bindings(vertex_descriptor_set_layout_bindings)
                         .build(),
                     None,
                 )
@@ -110,7 +131,9 @@ impl<'a> ShaderImpl<'a> {
                 _shader: shader_modiles,
                 _descriptor_set_layout: descriptor_set_layout,
                 _pipeline_layout: pipeline_layout,
-                _marker: PhantomData,
+                _layout_table_vertex: Some(std::sync::Arc::new(layout_table)),
+                _layout_table_pixel: None,
+                _layout_table_compute: None,
             }
         }
     }
@@ -144,31 +167,34 @@ impl<'a> ShaderImpl<'a> {
 
     fn create_descriptor_set_layout_bindings(
         shader_binary: &[u8],
-    ) -> Vec<ash::vk::DescriptorSetLayoutBinding> {
+        shader_stage: ShaderStage,
+    ) -> LayoutTable {
         let module = spirv_reflect::ShaderModule::load_u8_data(shader_binary).unwrap();
         let bindings = module.enumerate_descriptor_bindings(None).unwrap();
 
-        let mut result = Vec::new();
-        let mut _uniform_buffer_count = 0;
+        let mut uniform_buffer_count = 0;
         let mut storage_buffer_count = 0;
         for set in bindings {
             match set.descriptor_type {
-                //spirv_reflect::types::ReflectDescriptorType::UniformBuffer => uniform_buffer_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
+                    uniform_buffer_count += 1;
+                }
                 spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
                     storage_buffer_count += 1
                 }
+
                 _ => {}
             };
         }
 
-        result.push(
-            ash::vk::DescriptorSetLayoutBinding::builder()
-                .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
-                .descriptor_count(storage_buffer_count)
-                .stage_flags(ash::vk::ShaderStageFlags::COMPUTE)
-                .build(),
+        let table = LayoutTable::new(
+            shader_stage,
+            uniform_buffer_count,
+            storage_buffer_count,
+            0,
+            0,
         );
-        result
+        table
     }
 }
 
@@ -203,5 +229,91 @@ impl<'a> Drop for ShaderImpl<'a> {
                 }
             }
         }
+    }
+}
+
+impl ShaderStage {
+    pub fn to_ash(&self) -> ash::vk::ShaderStageFlags {
+        match self {
+            &ShaderStage::Vertex => ash::vk::ShaderStageFlags::VERTEX,
+            &ShaderStage::Pixel => ash::vk::ShaderStageFlags::FRAGMENT,
+            &ShaderStage::Compute => ash::vk::ShaderStageFlags::COMPUTE,
+        }
+    }
+}
+
+pub struct LayoutTable {
+    _descriptor_set_layout_bindings: Vec<ash::vk::DescriptorSetLayoutBinding>,
+    _indices: [Vec<u32>; 4],
+}
+
+impl LayoutTable {
+    pub fn new(
+        shader_stage: ShaderStage,
+        uniform_block_count: u32,
+        shader_storage_block_count: u32,
+        _texture_count: u32,
+        _image_count: u32,
+    ) -> Self {
+        let mut descriptor_set_layout_bindings = Vec::new();
+
+        // Uniform Block
+        if uniform_block_count > 0 {
+            descriptor_set_layout_bindings.push(
+                ash::vk::DescriptorSetLayoutBinding::builder()
+                    .descriptor_type(ash::vk::DescriptorType::UNIFORM_BUFFER)
+                    .descriptor_count(uniform_block_count)
+                    .stage_flags(shader_stage.to_ash())
+                    .binding(0)
+                    .build(),
+            );
+        }
+
+        // Shader Storage Block
+        if shader_storage_block_count > 0 {
+            descriptor_set_layout_bindings.push(
+                ash::vk::DescriptorSetLayoutBinding::builder()
+                    .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
+                    .descriptor_count(shader_storage_block_count)
+                    .stage_flags(shader_stage.to_ash())
+                    .build(),
+            );
+        }
+
+        Self {
+            _descriptor_set_layout_bindings: descriptor_set_layout_bindings,
+            _indices: [
+                (0..uniform_block_count).map(|x| x).collect::<Vec<u32>>(),
+                (0..shader_storage_block_count)
+                    .map(|x| uniform_block_count + x)
+                    .collect::<Vec<u32>>(),
+                Vec::new(),
+                Vec::new(),
+            ],
+        }
+    }
+
+    pub fn get_descriptor_set_layout_bindings(&self) -> &[ash::vk::DescriptorSetLayoutBinding] {
+        &self._descriptor_set_layout_bindings
+    }
+
+    fn enum_to_index(gpu_access: &GpuAccess) -> usize {
+        match gpu_access {
+            &GpuAccess::CONSTANT_BUFFER => 0,
+            &GpuAccess::UNORDERED_ACCESS_BUFFER => 1,
+            &GpuAccess::TEXTURE => 2,
+            &GpuAccess::IMAGE => 3,
+            _ => todo!(),
+        }
+    }
+}
+
+impl Index<GpuAccess> for LayoutTable {
+    type Output = [u32];
+
+    fn index(&self, index: GpuAccess) -> &Self::Output {
+        let actual_index = LayoutTable::enum_to_index(&index);
+        let array = &self._indices[actual_index];
+        &array
     }
 }

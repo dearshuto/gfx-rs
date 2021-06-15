@@ -60,7 +60,7 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
             let width = color_target_view_impl.get_width() as u32;
             let height = color_target_view_impl.get_height() as u32;
             let framebuffer_create_info = ash::vk::FramebufferCreateInfo::builder()
-                .render_pass(render_pass)
+                .render_pass(render_pass)                
                 .attachments(&framebuffer_attachments)
                 .width(width)
                 .height(height)
