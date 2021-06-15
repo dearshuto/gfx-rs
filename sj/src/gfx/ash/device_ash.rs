@@ -37,6 +37,11 @@ impl DeviceImpl {
 
 impl TDeviceImpl for DeviceImpl {
     fn new(_info: &DeviceInfo) -> Self {
+        let event_loop = winit::event_loop::EventLoop::new();
+        let window = winit::window::WindowBuilder::new()
+            .build(&event_loop)
+            .unwrap();
+
         unsafe {
             let app_name = std::ffi::CString::new("VulkanTriangle").unwrap();
             let entry = ash::Entry::new().unwrap();
@@ -53,10 +58,6 @@ impl TDeviceImpl for DeviceImpl {
                 .map(|raw_name| raw_name.as_ptr())
                 .collect();
 
-            let event_loop = winit::event_loop::EventLoop::new();
-            let window = winit::window::WindowBuilder::new()
-                .build(&event_loop)
-                .unwrap();
             let surface_extensions = ash_window::enumerate_required_extensions(&window).unwrap();
             let mut extension_names_raw = surface_extensions
                 .iter()
@@ -73,12 +74,13 @@ impl TDeviceImpl for DeviceImpl {
                 .create_instance(&create_info, None)
                 .expect("Instance creation error");
 
+            // 初期化順が大事らしい
+            // SufaceKhr → 物理デバイス → Surface
             let surface = ash_window::create_surface(&entry, &instance, &window, None).unwrap();
-            let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
-
             let physical_devices = instance
                 .enumerate_physical_devices()
                 .expect("Physical device error");
+            let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
 
             let (physical_device, queue_family_index) = physical_devices
                 .iter()
@@ -143,6 +145,9 @@ impl TDeviceImpl for DeviceImpl {
             let debug_utils_messanger = debug_utils
                 .create_debug_utils_messenger(&debug_utils_messanger_create_info, None)
                 .unwrap();
+
+            // 初期化にしか使わないのでここで破棄
+            surface_loader.destroy_surface(surface, None);
 
             Self {
                 _entry: entry,

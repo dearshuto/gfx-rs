@@ -8,11 +8,13 @@ mod depth_stencil_state_api;
 mod depth_stencil_view_api;
 //mod descriptor_pool_api;
 mod device_api;
+mod fence_api;
 mod gpu_address_api;
 mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
 mod rasterizer_state_api;
+mod semaphore_api;
 mod shader_api;
 mod swap_chain_api;
 mod texture_api;
@@ -27,11 +29,13 @@ use self::depth_stencil_state_api::TDepthStencilState;
 use self::depth_stencil_view_api::TDepthStencilView;
 //use self::descriptor_pool_api::TDescriptorInterface;
 use self::device_api::TDeviceInterface;
+use self::fence_api::TFence;
 use self::gpu_address_api::TGpuAddressInterface;
 use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
 use self::queue_api::TQueueInterface;
 use self::rasterizer_state_api::TRasterizerStateInterface;
+use self::semaphore_api::TSemaphore;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
 use self::texture_api::TTexture;
@@ -134,6 +138,15 @@ type DepthStencilViewImpl = self::ash::depth_stencil_view_ash::DepthStencilViewI
 pub type DepthStencilView = TDepthStencilView<DepthStencilViewImpl>;
 //
 
+// Fence
+pub use self::fence_api::FenceInfo;
+
+#[cfg(feature = "backend_ash")]
+type FenceImpl<'a> = self::ash::fence_ash::FenceAsh<'a>;
+
+pub type Fence<'a> = TFence<'a, FenceImpl<'a>>;
+//
+
 //
 #[cfg(feature = "backend_ash")]
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
@@ -187,6 +200,15 @@ type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
 pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
 //
 
+// Semaphore
+pub use self::semaphore_api::SemaphoreInfo;
+
+#[cfg(feature = "backend_ash")]
+type SemaphoreImpl<'a> = self::ash::semaphore_ash::SemaphoreAsh<'a>;
+
+pub type Semaphore<'a> = TSemaphore<'a, SemaphoreImpl<'a>>;
+//
+
 // Shader ------------------------------------------------------------
 pub use self::shader_api::ShaderInfo;
 
@@ -218,7 +240,7 @@ pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 pub use self::texture_api::BufferTextureCopyRegion;
 pub use self::texture_api::TextureCopyRegion;
 pub use self::texture_api::TextureInfo;
-pub use self::texture_api::TextureSubResource;
+pub use self::texture_api::TextureSubresource;
 pub use self::texture_api::TextureSubresourceRange;
 
 #[cfg(feature = "backend_ash")]

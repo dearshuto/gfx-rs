@@ -73,7 +73,7 @@ pub struct TextureCopyRegion {
     _height: i32,
     _depth: i32,
     _array_length: i32,
-    _texture_subresource: TextureSubResource,
+    _texture_subresource: TextureSubresource,
 }
 
 impl TextureCopyRegion {
@@ -86,7 +86,7 @@ impl TextureCopyRegion {
             _height: 1,
             _depth: 1,
             _array_length: 1,
-            _texture_subresource: TextureSubResource::new(),
+            _texture_subresource: TextureSubresource::new(),
         }
     }
 
@@ -153,47 +153,15 @@ impl TextureCopyRegion {
         self
     }
 
-    pub fn get_texture_subresource(&self) -> &TextureSubResource {
+    pub fn get_texture_subresource(&self) -> &TextureSubresource {
         &self._texture_subresource
     }
 
     pub fn edit_texture_subresource(
         mut self,
-        updater: fn(TextureSubResource) -> TextureSubResource,
+        updater: fn(TextureSubresource) -> TextureSubresource,
     ) -> Self {
         self._texture_subresource = updater(self._texture_subresource);
-        self
-    }
-}
-
-pub struct TextureSubResource {
-    _mip_level: i32,
-    _array_index: i32,
-}
-
-impl TextureSubResource {
-    pub fn new() -> Self {
-        Self {
-            _mip_level: 0,
-            _array_index: 0,
-        }
-    }
-
-    pub fn get_mip_level(&self) -> i32 {
-        self._mip_level
-    }
-
-    pub fn set_mip_level(mut self, mip_level: i32) -> Self {
-        self._mip_level = mip_level;
-        self
-    }
-
-    pub fn get_array_index(&self) -> i32 {
-        self._array_index
-    }
-
-    pub fn set_array_index(mut self, array_index: i32) -> Self {
-        self._array_index = array_index;
         self
     }
 }
@@ -354,6 +322,38 @@ impl TextureSubresourceRange {
     }
 }
 
+pub struct TextureSubresource {
+    _mip_level: i32,
+    _array_index: i32,
+}
+
+impl TextureSubresource {
+    pub fn new() -> Self {
+        Self {
+            _mip_level: 0,
+            _array_index: 0,
+        }
+    }
+
+    pub fn get_mip_level(&self) -> i32 {
+        self._mip_level
+    }
+
+    pub fn set_mip_level(mut self, mip_level: i32) -> Self {
+        self._mip_level = mip_level;
+        self
+    }
+
+    pub fn get_array_index(&self) -> i32 {
+        self._array_index
+    }
+
+    pub fn set_array_index(mut self, array_index: i32) -> Self {
+        self._array_index = array_index;
+        self
+    }
+}
+
 pub trait ITexture<'a> {
     fn calculate_required_size(device: &Device, info: &TextureInfo) -> u64;
 
@@ -394,6 +394,13 @@ impl<'a, T: ITexture<'a>> TTexture<'a, T> {
     ) -> Self {
         Self {
             _impl: T::new(device, info, memory_pool, offset, size),
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    pub fn new_internal(impl_instance: T) -> Self {
+        Self {
+            _impl: impl_instance,
             _marker: std::marker::PhantomData,
         }
     }

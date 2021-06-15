@@ -1,14 +1,13 @@
-pub struct Display {
-}
+pub struct Display {}
 
 impl Display {
     pub fn new() -> Self {
-		Self{}
+        Self {}
     }
 }
 
 pub struct Layer {
-	_event_loop: winit::event_loop::EventLoop<()>,
+    _event_loop: winit::event_loop::EventLoop<()>,
     _window: winit::window::Window,
 }
 
@@ -21,9 +20,18 @@ impl Layer {
         &mut self._event_loop
     }
 
-	pub fn get_window(&self) -> &winit::window::Window {
-		&self._window
-	}
+    pub fn get_event_loop_and_window_mut(
+        &mut self,
+    ) -> (
+        &mut winit::event_loop::EventLoop<()>,
+        &mut winit::window::Window,
+    ) {
+        (&mut self._event_loop, &mut self._window)
+    }
+
+    pub fn get_window(&self) -> &winit::window::Window {
+        &self._window
+    }
 }
 
 pub fn create_display() -> Display {
@@ -31,19 +39,15 @@ pub fn create_display() -> Display {
 }
 
 pub fn create_layer(_display: &mut Display) -> Layer {
-	let event_loop = winit::event_loop::EventLoop::new();
-
-	// なぜかダミーをひとつ作っとかないと Device の初期化に失敗する
-	let _event_loop = winit::event_loop::EventLoop::new();
-	
+    let event_loop = winit::event_loop::EventLoop::new();
     let window = winit::window::WindowBuilder::new()
-    // .with_title("Hello Window")
-    // .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))
+        // .with_title("Hello Window")
+        .with_inner_size(winit::dpi::LogicalSize::new(640.0, 480.0))
         .build(&event_loop)
         .unwrap();
-	
-    Layer {		
+
+    Layer {
         _event_loop: event_loop,
-		_window: window,
+        _window: window,
     }
 }

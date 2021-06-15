@@ -47,6 +47,12 @@ impl<'a, T: IColorTargetViewImpl<'a>> TColorTargetView<'a, T> {
         }
     }
 
+    pub fn new_internal(impl_instance: T) -> Self {
+        Self {
+            _impl: impl_instance,
+            _marker: std::marker::PhantomData,
+        }
+    }
     pub fn to_data(&self) -> &T {
         &self._impl
     }
