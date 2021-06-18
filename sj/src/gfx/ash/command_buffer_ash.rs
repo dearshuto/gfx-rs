@@ -1,5 +1,8 @@
 use ash::version::DeviceV1_0;
 
+use crate::gfx::texture_api::TextureSubresource;
+use crate::gfx::TextureCopyRegion;
+
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAccess,
@@ -7,6 +10,7 @@ use super::super::{
     Texture, TextureState, TextureSubresourceRange,
 };
 
+use super::command_builder::CopyImageCommandBuilder;
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
     DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
@@ -112,7 +116,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     fn begin(&mut self) {
         let command_buffer = self._command_buffers.iter().next().unwrap();
         let command_buffer_begin_info = ash::vk::CommandBufferBeginInfo::builder()
-            .flags(ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+            .flags(ash::vk::CommandBufferUsageFlags::RENDER_PASS_CONTINUE)
             .build();
         let device_impl = self._device.to_data().get_device();
 
@@ -219,11 +223,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         let builder = ClearColorCommandBuilder::new(
             self._device,
             *command_buffer_ash,
-            *color_target_view
-                .to_data()
-                .get_texture()
-                .to_data()
-                .get_image(),
+            color_target_view.to_data().get_image(),
             red,
             green,
             blue,
@@ -378,6 +378,32 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             new_stage_bit,
         );
         let command = Command::SetTextureStateTransition(builder);
+        self._commands.push(command);
+    }
+
+    fn copy_image(
+        &mut self,
+        dst_texture: &mut Texture,
+        dst_subresource: &TextureSubresource,
+        dst_offset_u: i32,
+        dst_offset_v: i32,
+        dst_offset_w: i32,
+        src_texture: &Texture,
+        src_copy_range: TextureCopyRegion,
+    ) {
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = CopyImageCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            dst_texture,
+            dst_subresource,
+            dst_offset_u,
+            dst_offset_v,
+            dst_offset_w,
+            src_texture,
+            src_copy_range,
+        );
+        let command = Command::CopyImage(builder);
         self._commands.push(command);
     }
 

@@ -1,9 +1,13 @@
-extern crate image;
-use image::{GenericImage, Pixel};
-
 fn main() {
     let device_info = sj::gfx::DeviceInfo::new();
     let device = sj::gfx::Device::new(&device_info);
+
+    let mut display = sj::vi::create_display();
+    let mut layer = sj::vi::create_layer(&mut display);
+
+    let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
+    let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
+    let (_scan_buffers, scan_buffer_views) = swap_chain.get_scan_buffers_and_views();
 
     let vertex_shader_source =
         include_bytes!("../resources/shaders/hello_graphics_pipeline_vs.spv");
@@ -60,25 +64,6 @@ fn main() {
             sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
         );
     let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
-
-    let texture_memory_pool_info = sj::gfx::MemoryPoolInfo::new()
-        .set_memory_pool_property(
-            sj::gfx::MemoryPoolProperty::CPU_INVISIBLE | sj::gfx::MemoryPoolProperty::GPU_UNCACHED,
-        )
-        .set_size(1024 * 1024 * 1024);
-    let texture_memory_pool = sj::gfx::MemoryPool::new(&device, &texture_memory_pool_info);
-    let texture_info = sj::gfx::TextureInfo::new()
-        .set_width(640)
-        .set_height(480)
-        .set_depth(1)
-        .set_gpu_access_flags(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::READ)
-        .set_image_format(sj::gfx::ImageFormat::R8G8B8A8Unorm);
-    let texture = sj::gfx::Texture::new(&device, &texture_info, &texture_memory_pool, 0, 0);
-
-    let color_target_view_info = sj::gfx::ColorTargetViewInfo::new(&texture)
-        .set_image_format(sj::gfx::ImageFormat::R8G8B8A8Unorm);
-    let mut color_target_view = sj::gfx::ColorTargetView::new(&device, &color_target_view_info);
-
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
@@ -95,84 +80,50 @@ fn main() {
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
-    let mut dst_buffer = sj::gfx::Buffer::new(
-        &device,
-        &sj::gfx::BufferInfo::new()
-            .set_size(4 * 640 * 480)
-            .set_gpu_access_flags(sj::gfx::GpuAccess::WRITE),
-        &memory_pool,
-        0,
-        4 * 640 * 480,
-    );
+    let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
 
     let command_buffer_info = sj::gfx::CommandBufferInfo::new();
-    let mut command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
+    let mut command_buffers = [
+        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
+        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
+    ];
 
     let queue_info = sj::gfx::QueueInfo::new();
     let mut queue = sj::gfx::Queue::new(&device, &queue_info);
 
-    command_buffer.begin();
-    {
-        command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 0.0);
-        command_buffer.set_render_targets(&[&color_target_view], None);
-        command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-        command_buffer.set_pipeline(&pipeline);
-        command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
+    for index in 0..command_buffers.len() {
+        let command_buffer = &mut command_buffers[index];
+        command_buffer.begin();
+        {
+            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0);
+            command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
+            command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
+            command_buffer.set_pipeline(&pipeline);
+            command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        let vertex_count = 6;
-        let vertex_offset = 0;
-        command_buffer.draw(
-            sj::gfx::PrimitiveTopology::TriangleList,
-            vertex_count,
-            vertex_offset,
-        );
+            let vertex_count = 6;
+            let vertex_offset = 0;
+            command_buffer.draw(
+                sj::gfx::PrimitiveTopology::TriangleList,
+                vertex_count,
+                vertex_offset,
+            );
 
-        command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE);
-
-        let texture_subresource_range = sj::gfx::TextureSubresourceRange::new();
-        command_buffer.set_texture_state_transition(
-            &texture,
-            &texture_subresource_range,
-            sj::gfx::TextureState::COLOR_TARGET,
-            sj::gfx::PipelineStageBit::RENDER_TARGET,
-            sj::gfx::TextureState::COPY_SOURCE,
-            sj::gfx::PipelineStageBit::all(),
-        );
-        command_buffer.flush_memory(sj::gfx::GpuAccess::READ);
-
-        let region = sj::gfx::BufferTextureCopyRegion::new()
-            .set_image_width(640)
-            .set_image_height(480)
-            .edit_texture_copy_region(|region| region.set_width(640).set_height(480));
-
-        command_buffer.copy_image_to_buffer(&mut dst_buffer, &texture, &region);
-        command_buffer.flush_memory(sj::gfx::GpuAccess::WRITE);
+            command_buffer
+                .flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE);
+        }
+        command_buffer.end();
     }
-    command_buffer.end();
 
-    for _index in 0..1 {
+    for _i in 0..500 {
+        let index = swap_chain.acquire_next_scan_buffer_index(Some(&mut semaphore), None);
+        queue.sync_semaphore(&mut semaphore);
+
+        let command_buffer = &command_buffers[index as usize];
         queue.execute(&command_buffer);
         queue.flush();
+        queue.present(&mut swap_chain, 1);
         queue.sync();
+        std::thread::sleep(std::time::Duration::from_millis(32));
     }
-
-    let _data = dst_buffer.map_as_slice::<u8>(4 * 640 * 480);
-    dst_buffer.invalidate_mapped_range(0, 4 * 640 * 240);
-    let mut image = image::DynamicImage::new_rgb8(640, 480);
-
-    for x in 0..640 {
-        for y in 0..480 {
-            let index = 4 * (x + y * 640);
-            let red = _data[index + 0];
-            let green = _data[index + 1];
-            let blue = _data[index + 2];
-            image.put_pixel(
-                x as u32,
-                y as u32,
-                image::Rgba::from_channels(red as u8, green as u8, blue, 0),
-            );
-        }
-    }
-
-    image.save("test.png").unwrap();
 }

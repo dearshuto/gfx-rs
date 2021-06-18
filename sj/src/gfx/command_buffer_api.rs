@@ -1,7 +1,8 @@
 use super::{
-    texture_api::TextureSubresourceRange, Buffer, BufferTextureCopyRegion, ColorTargetView,
-    DepthStencilView, Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit,
-    PrimitiveTopology, ShaderStage, Texture, TextureState, ViewportScissorState,
+    texture_api::{TextureSubresource, TextureSubresourceRange},
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAccess,
+    GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, ShaderStage, Texture,
+    TextureCopyRegion, TextureState, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -101,6 +102,17 @@ pub trait ICommandBufferImpl<'a> {
         old_stage_bit: PipelineStageBit,
         new_state: TextureState,
         new_stage_bit: PipelineStageBit,
+    );
+
+    fn copy_image(
+        &mut self,
+        dst_texture: &mut Texture,
+        dst_subresource: &TextureSubresource,
+        dst_offset_u: i32,
+        dst_offset_v: i32,
+        dst_offset_w: i32,
+        src_texture: &Texture,
+        src_copy_range: TextureCopyRegion,
     );
 
     fn copy_image_to_buffer(
@@ -277,6 +289,27 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
             old_stage_bit,
             new_state,
             new_stage_bit,
+        );
+    }
+
+    pub fn copy_image(
+        &mut self,
+        dst_texture: &mut Texture,
+        dst_subresource: &TextureSubresource,
+        dst_offset_u: i32,
+        dst_offset_v: i32,
+        dst_offset_w: i32,
+        src_texture: &Texture,
+        src_copy_range: TextureCopyRegion,
+    ) {
+        self.command_buffer_impl.copy_image(
+            dst_texture,
+            dst_subresource,
+            dst_offset_u,
+            dst_offset_v,
+            dst_offset_w,
+            src_texture,
+            src_copy_range,
         );
     }
 

@@ -5,9 +5,37 @@ use super::super::{Device, Texture};
 
 pub struct ColorTargetViewImpl<'a> {
     _device: &'a Device,
-    _texture: &'a Texture<'a>,
+    _texture: TextureData<'a>,
     _image_view: ash::vk::ImageView,
     _format: ash::vk::Format,
+}
+
+enum TextureData<'a> {
+    Reference(&'a Texture<'a>),
+    SwapChain(ash::vk::Image, i32, i32),
+}
+
+impl<'a> TextureData<'a> {
+    pub fn get_image(&self) -> ash::vk::Image {
+        match *self {
+            Self::Reference(ref data) => *data.to_data().get_image(),
+            Self::SwapChain(ref image, _width, _height) => *image,
+        }
+    }
+
+    pub fn get_width(&self) -> i32 {
+        match *self {
+            Self::Reference(ref data) => data.to_data().get_width(),
+            Self::SwapChain(ref _image, width, _height) => width,
+        }
+    }
+
+    pub fn get_height(&self) -> i32 {
+        match *self {
+            Self::Reference(ref data) => data.to_data().get_height(),
+            Self::SwapChain(ref _image, _width, height) => height,
+        }
+    }
 }
 
 impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewImpl<'a> {
@@ -44,7 +72,7 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewImpl<'a> {
 
             Self {
                 _device: device,
-                _texture: texture,
+                _texture: TextureData::Reference(texture),
                 _image_view: image_view,
                 _format: info.get_image_format_as_ash(),
             }
@@ -53,6 +81,22 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewImpl<'a> {
 }
 
 impl<'a> ColorTargetViewImpl<'a> {
+    pub fn new(
+        device: &'a Device,
+        texture: ash::vk::Image,
+        width: i32,
+        height: i32,
+        image_view: ash::vk::ImageView,
+        format: ash::vk::Format,
+    ) -> Self {
+        Self {
+            _device: device,
+            _texture: TextureData::SwapChain(texture, width, height),
+            _image_view: image_view,
+            _format: format,
+        }
+    }
+
     pub fn get_format(&self) -> ash::vk::Format {
         self._format
     }
@@ -61,8 +105,16 @@ impl<'a> ColorTargetViewImpl<'a> {
         &self._image_view
     }
 
-    pub fn get_texture(&self) -> &'a Texture {
-        self._texture
+    pub fn get_image(&self) -> ash::vk::Image {
+        self._texture.get_image()
+    }
+
+    pub fn get_width(&self) -> i32 {
+        self._texture.get_width()
+    }
+
+    pub fn get_height(&self) -> i32 {
+        self._texture.get_height()
     }
 }
 

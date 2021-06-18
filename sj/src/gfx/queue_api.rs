@@ -16,11 +16,13 @@ pub trait IQueueImpl<'a> {
 
     fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>);
 
-    fn present(&self, _swap_chain: &mut SwapChain, _present_interval: i32);
+    fn present(&mut self, _swap_chain: &mut SwapChain, _present_interval: i32);
 
     fn flush(&mut self);
 
     fn sync(&self);
+
+    fn sync_semaphore(&mut self, semaphore: &mut crate::gfx::Semaphore);
 }
 
 pub struct TQueueInterface<'a, T: 'a>
@@ -51,8 +53,12 @@ impl<'a, T: IQueueImpl<'a>> TQueueInterface<'a, T> {
         self.queue_impl.sync();
     }
 
-    pub fn present(&mut self, swap_chain: &mut SwapChain, _present_interval: i32) {
-        swap_chain.update();
+    pub fn sync_semaphore(&mut self, semaphore: &mut crate::gfx::Semaphore) {
+        self.queue_impl.sync_semaphore(semaphore);
+    }
+
+    pub fn present(&mut self, swap_chain: &mut SwapChain, present_interval: i32) {
+        self.queue_impl.present(swap_chain, present_interval);
     }
 
     pub fn to_data(&self) -> &T {

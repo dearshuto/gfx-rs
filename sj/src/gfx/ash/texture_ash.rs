@@ -8,9 +8,20 @@ pub struct TextureImpl<'a> {
     _image: ash::vk::Image,
     _width: i32,
     _height: i32,
+    _should_explicit_drop: bool,
 }
 
 impl<'a> TextureImpl<'a> {
+    pub fn new(device: &'a Device, image: ash::vk::Image, width: i32, height: i32) -> Self {
+        Self {
+            _device: device,
+            _image: image,
+            _width: width,
+            _height: height,
+            _should_explicit_drop: false,
+        }
+    }
+
     pub fn create_image(device: &Device, info: &TextureInfo) -> ash::vk::Image {
         let device_ash = device.to_data().get_device();
 
@@ -94,6 +105,7 @@ impl<'a> ITexture<'a> for TextureImpl<'a> {
                 _image: image,
                 _width: info.get_width(),
                 _height: info.get_height(),
+                _should_explicit_drop: true,
             }
         }
     }
@@ -102,8 +114,10 @@ impl<'a> ITexture<'a> for TextureImpl<'a> {
 impl<'a> Drop for TextureImpl<'a> {
     fn drop(&mut self) {
         let device_ash = self._device.to_data().get_device();
-        unsafe {
-            device_ash.destroy_image(self._image, None);
+        if self._should_explicit_drop {
+            unsafe {
+                device_ash.destroy_image(self._image, None);
+            }
         }
     }
 }

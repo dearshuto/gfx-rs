@@ -56,18 +56,14 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
                 .create_render_pass(&render_pass_create_info, None)
                 .unwrap();
 
-            let first_texture = color_target_views
-                .iter()
-                .next()
-                .unwrap()
-                .to_data()
-                .get_texture()
-                .to_data();
+            let color_target_view_impl = color_target_views.iter().next().unwrap().to_data();
+            let width = color_target_view_impl.get_width() as u32;
+            let height = color_target_view_impl.get_height() as u32;
             let framebuffer_create_info = ash::vk::FramebufferCreateInfo::builder()
                 .render_pass(render_pass)
                 .attachments(&framebuffer_attachments)
-                .width(first_texture.get_width() as u32)
-                .height(first_texture.get_height() as u32)
+                .width(width)
+                .height(height)
                 .layers(1)
                 .build();
             let framebuffer = device_ash

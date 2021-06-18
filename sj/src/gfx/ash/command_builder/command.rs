@@ -1,7 +1,7 @@
 use super::{
-    ClearColorCommandBuilder, CopyImageToBufferCommandBuilder, DispatchParams, DrawCommandBuilder,
-    EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
-    SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
+    ClearColorCommandBuilder, CopyImageCommandBuilder, CopyImageToBufferCommandBuilder,
+    DispatchParams, DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder,
+    SetPipelineParams, SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
     SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
     SetViewportScissorStateCommandBuilder,
 };
@@ -17,6 +17,7 @@ pub enum Command<'a> {
     Draw(DrawCommandBuilder<'a>),
     Dispatch(DispatchParams<'a>),
     SetTextureStateTransition(SetTextureStateTransitionCommandBuilder<'a>),
+    CopyImage(CopyImageCommandBuilder<'a>),
     CopyImageToBuffer(CopyImageToBufferCommandBuilder<'a>),
     FlushMemory(FlushMemoryCommandBuilder<'a>),
 }
@@ -33,6 +34,7 @@ impl<'a> Command<'a> {
             Self::SetVertexBuffer(ref builder) => builder.build(),
             Self::Draw(ref builder) => builder.build(),
             Self::Dispatch(ref params) => params.build(),
+            Self::CopyImage(ref builder) => builder.build(),
             Self::CopyImageToBuffer(ref builder) => builder.build(),
             Self::SetTextureStateTransition(ref builder) => builder.build(),
             Self::FlushMemory(ref builder) => builder.build(),
