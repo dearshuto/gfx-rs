@@ -1,5 +1,7 @@
 use ash::version::DeviceV1_0;
 
+use std::ops::Index;
+
 use crate::gfx::texture_api::TextureSubresource;
 use crate::gfx::TextureCopyRegion;
 
@@ -11,6 +13,7 @@ use super::super::{
 };
 
 use super::command_builder::CopyImageCommandBuilder;
+use super::command_builder::SetConstantBufferCommandBuilder;
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
     DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetPipelineParams,
@@ -187,8 +190,30 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         self._commands.push(command);
     }
 
-    // 使ってないコード
-    fn set_buffer(&mut self, _buffer: &'a Buffer<'a>) {}
+    fn set_constant_buffer(
+        &mut self,
+        slot: i32,
+        stage: ShaderStage,
+        gpu_address: &GpuAddress,
+        size: usize,
+    ) {
+        let layout_table = self
+            ._current_shader
+            .as_ref()
+            .unwrap()
+            .to_data()
+            .get_layout_table(&stage);
+        let _layout_index = layout_table.index(GpuAccess::CONSTANT_BUFFER)[slot as usize];
+
+        let builder = SetConstantBufferCommandBuilder::new(
+            self._device,
+            self._current_descriptor_set.unwrap(),
+            gpu_address,
+            size,
+        );
+        let command = Command::SetConstantBuffer(builder);
+        self._commands.push(command);
+    }
 
     fn set_unordered_access_buffer(
         &mut self,
@@ -290,9 +315,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         base_instance: i32,
     ) {
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let descriptor_set = self._current_descriptor_set.unwrap();
+        let pipeline_layout = self
+            ._current_shader
+            .unwrap()
+            .to_data()
+            .get_pipeline_layout();
         let params = DrawCommandBuilder::new(
             self._device,
             *command_buffer_ash,
+            *pipeline_layout,
+            descriptor_set,
             vertex_count as u32,
             instance_count as u32,
             vertex_offset as u32,

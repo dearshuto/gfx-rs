@@ -5,6 +5,7 @@ mod copy_image_to_buffer_command_builder;
 mod dispatch_command;
 mod draw_command_builder;
 mod flush_memory_command_builder;
+mod set_constant_buffer_command_builder;
 mod set_pipeline_command;
 mod set_render_targets_command_builder;
 mod set_texture_state_transition_command_builder;
@@ -19,6 +20,7 @@ pub use self::copy_image_to_buffer_command_builder::CopyImageToBufferCommandBuil
 pub use self::dispatch_command::DispatchParams;
 pub use self::draw_command_builder::DrawCommandBuilder;
 pub use self::flush_memory_command_builder::FlushMemoryCommandBuilder;
+pub use self::set_constant_buffer_command_builder::SetConstantBufferCommandBuilder;
 pub use self::set_pipeline_command::SetPipelineParams;
 pub use self::set_render_targets_command_builder::EndRenderPassCommandBuilder;
 pub use self::set_render_targets_command_builder::SetRenderTargetsCommandBuilder;

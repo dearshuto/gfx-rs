@@ -132,7 +132,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn flush_mapped_range(&self, offset: i64, size: u64) {
         let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
             .memory(self._memory_pool.to_data().get_memory_pool())
-            .offset(offset as u64)
+            .offset((self._offset + offset) as u64)
             .size(size)
             .build();
         unsafe {
@@ -148,7 +148,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         unsafe {
             let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
                 .memory(self._memory_pool.to_data().get_memory_pool())
-                .offset(offset as u64)
+                .offset((self._offset + offset) as u64)
                 .size(size)
                 .build();
             self._device
