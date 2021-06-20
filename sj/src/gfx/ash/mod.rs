@@ -16,5 +16,6 @@ pub mod semaphore_ash;
 pub mod shader_ash;
 pub mod swap_chain_ash;
 pub mod texture_ash;
+pub mod utils;
 pub mod vertex_state_ash;
 pub mod viewport_scissor_state_ash;

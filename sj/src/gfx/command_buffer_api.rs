@@ -1,8 +1,9 @@
 use super::{
-    texture_api::{TextureSubresource, TextureSubresourceRange},
-    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilView, Device, GpuAccess,
-    GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology, ShaderStage, Texture,
-    TextureCopyRegion, TextureState, ViewportScissorState,
+    common::ClearColorValue,
+    texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
+    Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
+    Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,
+    ShaderStage, Texture, TextureCopyRegion, TextureState, ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -50,6 +51,18 @@ pub trait ICommandBufferImpl<'a> {
         green: f32,
         blue: f32,
         alpha: f32,
+        texture_array_range: Option<&TextureArrayRange>,
+    );
+
+    //fn clear_color_target(&mut self, clear_color: &ClearColorValue);
+
+    fn clear_depth_stencil(
+        &mut self,
+        depth_stencil: &mut DepthStencilView,
+        depth: f32,
+        stencil: i32,
+        clear_mode: &DepthStencilClearMode,
+        texture_array_range: Option<&TextureArrayRange>,
     );
 
     fn set_render_targets(
@@ -193,14 +206,35 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         green: f32,
         blue: f32,
         alpha: f32,
+        texture_array_range: Option<&TextureArrayRange>,
     ) {
-        self.command_buffer_impl
-            .clear_color(color_target_view, red, green, blue, alpha);
+        self.command_buffer_impl.clear_color(
+            color_target_view,
+            red,
+            green,
+            blue,
+            alpha,
+            texture_array_range,
+        );
     }
 
-    pub fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
-        self.command_buffer_impl
-            .dispatch(group_count_x, group_count_y, group_count_z);
+    pub fn clear_color_target(&mut self, _clear_color: &ClearColorValue) {}
+
+    pub fn clear_depth_stencil(
+        &mut self,
+        depth_stencil: &mut DepthStencilView,
+        depth: f32,
+        stencil: i32,
+        clear_mode: &DepthStencilClearMode,
+        texture_array_range: Option<&TextureArrayRange>,
+    ) {
+        self.command_buffer_impl.clear_depth_stencil(
+            depth_stencil,
+            depth,
+            stencil,
+            clear_mode,
+            texture_array_range,
+        );
     }
 
     pub fn set_render_targets(
@@ -284,6 +318,11 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
         self.command_buffer_impl.draw_indirect(gpu_address);
+    }
+
+    pub fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
+        self.command_buffer_impl
+            .dispatch(group_count_x, group_count_y, group_count_z);
     }
 
     pub fn set_texture_state_transition(

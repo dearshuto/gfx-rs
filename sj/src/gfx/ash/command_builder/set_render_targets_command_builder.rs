@@ -13,18 +13,34 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
         device: &'a Device,
         command_buffer: ash::vk::CommandBuffer,
         color_target_views: &[&ColorTargetView],
-        _depth_stencil_state_view: Option<&DepthStencilView>,
+        depth_stencil_state_view: Option<&DepthStencilView>,
     ) -> Self {
         let device_ash = device.to_data().get_device();
-        let render_pass_attatchments: Vec<ash::vk::AttachmentDescription> = color_target_views
+        let mut render_pass_attatchments: Vec<ash::vk::AttachmentDescription> = color_target_views
             .iter()
             .map(|info| info.to_attachment_description())
             .collect();
+        if let Some(_value) = depth_stencil_state_view {
+            render_pass_attatchments.push(
+                ash::vk::AttachmentDescription::builder()
+                    .format(ash::vk::Format::D32_SFLOAT)
+                    .samples(ash::vk::SampleCountFlags::TYPE_1)
+                    .load_op(ash::vk::AttachmentLoadOp::DONT_CARE)
+                    .store_op(ash::vk::AttachmentStoreOp::STORE)
+                    .initial_layout(ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+                    .final_layout(ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+                    .build(),
+            );
+        }
 
         let color_attachment_references = [ash::vk::AttachmentReference::builder()
             .attachment(0)
             .layout(ash::vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL)
             .build()];
+        let depth_attachment_reference = ash::vk::AttachmentReference::builder()
+            .attachment(1) // TODO: Multiple Render Target
+            .layout(ash::vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+            .build();
 
         let dependencies = [ash::vk::SubpassDependency {
             src_subpass: ash::vk::SUBPASS_EXTERNAL,
@@ -35,10 +51,14 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
             ..Default::default()
         }];
 
-        let subpasses = [ash::vk::SubpassDescription::builder()
+        let mut subpass_description_builder = ash::vk::SubpassDescription::builder()
             .color_attachments(&color_attachment_references)
-            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS)
-            .build()];
+            .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS);
+        if depth_stencil_state_view.is_some() {
+            subpass_description_builder =
+                subpass_description_builder.depth_stencil_attachment(&depth_attachment_reference);
+        }
+        let subpasses = [subpass_description_builder.build()];
 
         let render_pass_create_info = ash::vk::RenderPassCreateInfo::builder()
             .attachments(&render_pass_attatchments)
@@ -46,10 +66,14 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
             .dependencies(&dependencies)
             .build();
 
-        let framebuffer_attachments: Vec<ash::vk::ImageView> = color_target_views
+        let mut framebuffer_attachments: Vec<ash::vk::ImageView> = color_target_views
             .iter()
             .map(|x| *x.to_data().get_image_view())
             .collect();
+        if let Some(depth_stencil_view_ref) = depth_stencil_state_view {
+            let depth_image_view = depth_stencil_view_ref.to_data().get_image_view();
+            framebuffer_attachments.push(depth_image_view);
+        }
 
         unsafe {
             let render_pass = device_ash
@@ -60,7 +84,7 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
             let width = color_target_view_impl.get_width() as u32;
             let height = color_target_view_impl.get_height() as u32;
             let framebuffer_create_info = ash::vk::FramebufferCreateInfo::builder()
-                .render_pass(render_pass)                
+                .render_pass(render_pass)
                 .attachments(&framebuffer_attachments)
                 .width(width)
                 .height(height)

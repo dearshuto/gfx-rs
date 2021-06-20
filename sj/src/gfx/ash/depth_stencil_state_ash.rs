@@ -15,10 +15,20 @@ impl IDepthStencilStateImpl for DepthStencilStateImpl {
 
 impl DepthStencilStateInfo {
     pub fn as_ash(&self) -> ash::vk::PipelineDepthStencilStateCreateInfo {
+        let noop_stencil_state = ash::vk::StencilOpState {
+            fail_op: ash::vk::StencilOp::KEEP,
+            pass_op: ash::vk::StencilOp::KEEP,
+            depth_fail_op: ash::vk::StencilOp::KEEP,
+            compare_op: ash::vk::CompareOp::ALWAYS,
+            ..Default::default()
+        };
         ash::vk::PipelineDepthStencilStateCreateInfo::builder()
             .depth_test_enable(self.is_depth_test_enabled())
             .depth_write_enable(self.is_depth_write_enabled())
-            .depth_compare_op(ash::vk::CompareOp::LESS_OR_EQUAL)
+            .depth_compare_op(ash::vk::CompareOp::LESS)
+            .front(noop_stencil_state)
+            .back(noop_stencil_state)
+            .max_depth_bounds(1.0)
             .build()
     }
 }

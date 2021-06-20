@@ -1,4 +1,5 @@
 mod clear_color_command_builder;
+mod clear_depth_stencil_command_builder;
 mod command;
 mod copy_image_command_builder;
 mod copy_image_to_buffer_command_builder;
@@ -14,6 +15,7 @@ mod set_vertex_buffer_command_builder;
 mod set_viewport_scissor_state_command_builder;
 
 pub use self::clear_color_command_builder::ClearColorCommandBuilder;
+pub use self::clear_depth_stencil_command_builder::ClearDepthStencilCommandBuilder;
 pub use self::command::Command;
 pub use self::copy_image_command_builder::CopyImageCommandBuilder;
 pub use self::copy_image_to_buffer_command_builder::CopyImageToBufferCommandBuilder;

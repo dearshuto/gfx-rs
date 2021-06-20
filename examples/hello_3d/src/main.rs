@@ -6,7 +6,7 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    let position = glm::vec3(0.1, 1.0, 3.0);
+    let position = glm::vec3(1.5, 1.0, 3.0);
     let at = glm::vec3(0.0, 0.0, 0.0);
     let up = glm::vec3(0.0, 1.0, 0.0);
     let view_matrix: glm::Mat4x4 = glm::look_at(&position, &at, &up);
@@ -67,7 +67,9 @@ fn main() {
         .set_attribute_state_info_array(&vertex_attribute_state_info_array)
         .set_buffer_state_info_array(&vertex_buffer_state_info_array);
     let rasterizer_state_info = sj::gfx::RasterizerStateInfo::new();
-    let depth_stencil_state_info = sj::gfx::DepthStencilStateInfo::new();
+    let depth_stencil_state_info = sj::gfx::DepthStencilStateInfo::new()
+        .set_depth_test_enabled(true)
+        .set_depth_write_enabled(true);
     let blend_target_state_info_array = [sj::gfx::BlendTargetStateInfo::new()];
     let blend_state_info =
         sj::gfx::BlendStateInfo::new().set_target_state_info(&blend_target_state_info_array);
@@ -136,12 +138,38 @@ fn main() {
         vertex_data[13] = 0.0;
         vertex_data[14] = 0.0;
 
-        vertex_data[15] = 1.0;
+        vertex_data[15] = 0.0;
         vertex_data[16] = 0.0;
-        vertex_data[17] = 0.0;
+        vertex_data[17] = 1.0;
     }
     vertex_buffer.flush_mapped_range(0, 0x40 /*(std::mem::size_of::<f32>() * 9) as u64*/);
     vertex_buffer.unmap();
+
+    // 震度ステンシルビュー
+    let depth_texture_memory_pool = sj::gfx::MemoryPool::new(
+        &device,
+        &sj::gfx::MemoryPoolInfo::new()
+            .set_size(32 * 640 * 480)
+            .set_memory_pool_property(
+                sj::gfx::MemoryPoolProperty::CPU_INVISIBLE
+                    | sj::gfx::MemoryPoolProperty::GPU_CACHED,
+            ),
+    );
+    let depth_texture = sj::gfx::Texture::new(
+        &device,
+        &sj::gfx::TextureInfo::new()
+            .set_width(640)
+            .set_height(480)
+            .set_image_format(sj::gfx::ImageFormat::D32)
+            .set_gpu_access_flags(sj::gfx::GpuAccess::DEPTH_STENCIL | sj::gfx::GpuAccess::TEXTURE),
+        &depth_texture_memory_pool,
+        0,
+        1024,
+    );
+    let mut depth_stencil_view = sj::gfx::DepthStencilView::new(
+        &device,
+        &sj::gfx::DepthStencilViewInfo::new(&depth_texture),
+    );
 
     let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
 
@@ -158,8 +186,18 @@ fn main() {
         let command_buffer = &mut command_buffers[index];
 
         command_buffer.begin();
-        command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0);
-        command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
+        command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
+        command_buffer.clear_depth_stencil(
+            &mut depth_stencil_view,
+            1.0,
+            0,
+            &sj::gfx::DepthStencilClearMode::Depth,
+            None,
+        );
+        command_buffer
+            .flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::DEPTH_STENCIL);
+
+        command_buffer.set_render_targets(&[&scan_buffer_views[index]], Some(&depth_stencil_view));
         command_buffer.set_viewport_scissor_state(&&viewport_scissor_state);
         command_buffer.set_pipeline(&pipeline);
         command_buffer.set_constant_buffer(

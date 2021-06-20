@@ -1,7 +1,7 @@
 use ash::version::DeviceV1_0;
 
 use super::super::texture_api::{ITexture, TextureInfo};
-use super::super::{Device, GpuAccess, ImageFormat, MemoryPool};
+use super::super::{Device, GpuAccess, MemoryPool};
 
 pub struct TextureImpl<'a> {
     _device: &'a Device,
@@ -27,7 +27,7 @@ impl<'a> TextureImpl<'a> {
 
         let image_create_info = ash::vk::ImageCreateInfo::builder()
             .image_type(ash::vk::ImageType::TYPE_2D)
-            .format(info.get_image_format_as_ash())
+            .format(info.get_image_format().to_ash())
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE)
             .extent(ash::vk::Extent3D {
                 width: info.get_width() as u32,
@@ -158,11 +158,5 @@ impl TextureInfo {
         }
 
         result
-    }
-
-    pub fn get_image_format_as_ash(&self) -> ash::vk::Format {
-        match self.get_image_format() {
-            ImageFormat::R8G8B8A8Unorm => ash::vk::Format::R8G8B8A8_UNORM,
-        }
     }
 }
