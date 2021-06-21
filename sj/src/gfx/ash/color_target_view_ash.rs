@@ -47,7 +47,7 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewImpl<'a> {
             let image_view_create_info = ash::vk::ImageViewCreateInfo::builder()
                 .image(*texture.to_data().get_image())
                 .view_type(info.get_image_view_type_as_ash())
-                .format(info.get_image_format_as_ash())
+                .format(info.get_image_format().to_ash())
                 .components(
                     ash::vk::ComponentMapping::builder()
                         .r(ash::vk::ComponentSwizzle::R)
@@ -74,7 +74,7 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewImpl<'a> {
                 _device: device,
                 _texture: TextureData::Reference(texture),
                 _image_view: image_view,
-                _format: info.get_image_format_as_ash(),
+                _format: info.get_image_format().to_ash(),
             }
         }
     }
@@ -121,12 +121,6 @@ impl<'a> ColorTargetViewImpl<'a> {
 impl<'a> ColorTargetViewInfo<'a> {
     pub fn get_image_view_type_as_ash(&self) -> ash::vk::ImageViewType {
         ash::vk::ImageViewType::TYPE_2D
-    }
-
-    pub fn get_image_format_as_ash(&self) -> ash::vk::Format {
-        match self.get_image_format() {
-            &crate::gfx::ImageFormat::R8G8B8A8Unorm => ash::vk::Format::R8G8B8A8_UNORM,
-        }
     }
 }
 

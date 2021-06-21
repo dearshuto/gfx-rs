@@ -4,6 +4,7 @@ mod blend_state_api;
 mod buffer_api;
 mod color_target_view_api;
 mod command_buffer_api;
+mod common;
 mod depth_stencil_state_api;
 mod depth_stencil_view_api;
 //mod descriptor_pool_api;
@@ -133,9 +134,9 @@ pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
 pub use self::depth_stencil_view_api::DepthStencilViewInfo;
 
 #[cfg(feature = "backend_ash")]
-type DepthStencilViewImpl = self::ash::depth_stencil_view_ash::DepthStencilViewImpl;
+type DepthStencilViewImpl<'a> = self::ash::depth_stencil_view_ash::DepthStencilViewImpl<'a>;
 
-pub type DepthStencilView = TDepthStencilView<DepthStencilViewImpl>;
+pub type DepthStencilView<'a> = TDepthStencilView<'a, DepthStencilViewImpl<'a>>;
 //
 
 // Fence
@@ -317,6 +318,7 @@ bitflags! {
 
 pub enum ImageFormat {
     R8G8B8A8Unorm,
+    D32,
 }
 
 pub enum ShaderStage {
@@ -336,6 +338,12 @@ bitflags! {
         const RENDER_TARGET = 0x64;
         const COMPUTE_SHDER = 0x128;
     }
+}
+
+pub enum DepthStencilClearMode {
+    Depth,
+    Stencil,
+    DepthStencil,
 }
 
 pub enum AttributeFormat {

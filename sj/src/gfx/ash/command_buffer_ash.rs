@@ -2,7 +2,9 @@ use ash::version::DeviceV1_0;
 
 use std::ops::Index;
 
+use crate::gfx::texture_api::TextureArrayRange;
 use crate::gfx::texture_api::TextureSubresource;
+use crate::gfx::DepthStencilClearMode;
 use crate::gfx::TextureCopyRegion;
 
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
@@ -12,6 +14,7 @@ use super::super::{
     Texture, TextureState, TextureSubresourceRange,
 };
 
+use super::command_builder::ClearDepthStencilCommandBuilder;
 use super::command_builder::CopyImageCommandBuilder;
 use super::command_builder::SetConstantBufferCommandBuilder;
 use super::command_builder::{
@@ -243,6 +246,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         green: f32,
         blue: f32,
         alpha: f32,
+        _texture_array_range: Option<&TextureArrayRange>,
     ) {
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
         let builder = ClearColorCommandBuilder::new(
@@ -255,6 +259,28 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
             alpha,
         );
         let command = Command::ClearColorCommand(builder);
+        self._commands.push(command);
+    }
+
+    fn clear_depth_stencil(
+        &mut self,
+        depth_stencil: &mut DepthStencilView,
+        depth: f32,
+        stencil: i32,
+        clear_mode: &DepthStencilClearMode,
+        texture_array_range: Option<&TextureArrayRange>,
+    ) {
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let builder = ClearDepthStencilCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            depth_stencil,
+            depth,
+            stencil,
+            clear_mode,
+            texture_array_range,
+        );
+        let command = Command::ClearDepthStencil(builder);
         self._commands.push(command);
     }
 

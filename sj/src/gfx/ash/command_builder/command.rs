@@ -1,13 +1,15 @@
 use super::{
-    ClearColorCommandBuilder, CopyImageCommandBuilder, CopyImageToBufferCommandBuilder,
-    DispatchParams, DrawCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder,
-    SetConstantBufferCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
-    SetTextureStateTransitionCommandBuilder, SetUnorderedAccessBufferParams,
-    SetVertexBufferCommandBuilder, SetViewportScissorStateCommandBuilder,
+    ClearColorCommandBuilder, ClearDepthStencilCommandBuilder, CopyImageCommandBuilder,
+    CopyImageToBufferCommandBuilder, DispatchParams, DrawCommandBuilder,
+    EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetConstantBufferCommandBuilder,
+    SetPipelineParams, SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
+    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
+    SetViewportScissorStateCommandBuilder,
 };
 
 pub enum Command<'a> {
     ClearColorCommand(ClearColorCommandBuilder<'a>),
+    ClearDepthStencil(ClearDepthStencilCommandBuilder<'a>),
     SetRenderTargets(SetRenderTargetsCommandBuilder<'a>),
     EndRenderTargets(EndRenderPassCommandBuilder<'a>),
     SetViewportScissorState(SetViewportScissorStateCommandBuilder<'a>),
@@ -27,6 +29,7 @@ impl<'a> Command<'a> {
     pub fn build(&self) {
         match *self {
             Self::ClearColorCommand(ref builder) => builder.build(),
+            Self::ClearDepthStencil(ref builder) => builder.build(),
             Self::SetRenderTargets(ref builder) => builder.build(),
             Self::EndRenderTargets(ref builder) => builder.buld(),
             Self::SetViewportScissorState(ref builder) => builder.build(),
