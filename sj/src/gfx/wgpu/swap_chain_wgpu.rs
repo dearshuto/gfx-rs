@@ -8,8 +8,26 @@ impl<'a> ISwapChainImpl<'a> for SwapChainWgpu {
         todo!();
     }
 
-    fn get_scan_buffer_views_mut(&mut self) -> &mut [ColorTargetView] {
-        todo!();
+    fn get_scan_buffer_views_mut(&mut self) -> &mut [ColorTargetView<'a>] {
+        todo!()
+    }
+
+    fn get_scan_buffers_mut(&mut self) -> &mut [crate::gfx::Texture<'a>] {
+        todo!()
+    }
+
+    fn get_scan_buffers_and_views(
+        &mut self,
+    ) -> (&mut [crate::gfx::Texture<'a>], &mut [ColorTargetView<'a>]) {
+        todo!()
+    }
+
+    fn acquire_next_scan_buffer_index(
+        &mut self,
+        semaphore: Option<&mut crate::gfx::Semaphore>,
+        fence: Option<&mut crate::gfx::Fence>,
+    ) -> i32 {
+        todo!()
     }
 
     fn update(&mut self) {

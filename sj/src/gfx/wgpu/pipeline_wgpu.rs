@@ -36,7 +36,6 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
                     label: None,
                     layout: &bind_group_layout,
                     entries: &[],
-                    bindings: (),
                 });
         let a: wgpu::BindGroup;
 

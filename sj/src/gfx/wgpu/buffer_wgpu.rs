@@ -27,8 +27,10 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
             .to_data()
             .get_device()
             .create_buffer(&wgpu::BufferDescriptor {
+                label: None,
                 size,
                 usage: wgpu::BufferUsage::MAP_READ | wgpu::BufferUsage::COPY_DST,
+                mapped_at_creation: false,
             });
 
         BufferImpl {
@@ -49,7 +51,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         todo!()
     }
 
-    fn map_as_slice_mut<U>(&self, count: usize) -> &mut [U] {
+    fn map_as_slice_mut<U>(&self, count: usize) -> crate::gfx::buffer_api::MappedData<U> {
         todo!()
     }
 

@@ -1,4 +1,4 @@
-﻿use super::super::shader_api::IShaderImpl;
+use super::super::shader_api::IShaderImpl;
 use super::super::shader_api::ShaderInfo;
 use super::super::Device;
 use std::marker::PhantomData;
@@ -16,11 +16,12 @@ impl<'a> ShaderImpl<'a> {
 
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self {
-        let shader_source = std::borrow::Cow::Borrowed(info.get_shader_binary());
+        let array = vec![0 as u32];
+        let shader_source = std::borrow::Cow::Borrowed(array.as_slice());
         let shader_module = device
             .to_data()
             .get_device()
-            .create_shader_module(&wgpu::ShaderModuleSource::Sprv(shader_source));
+            .create_shader_module(wgpu::ShaderModuleSource::SpirV(shader_source));
 
         Self {
             shader_impl: shader_module,

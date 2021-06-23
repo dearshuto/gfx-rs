@@ -15,9 +15,9 @@ impl super::super::device_api::TDeviceImpl for DeviceImpl {
 
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                label: None,
-                features: wgpu::Features::empty(),
                 limits: wgpu::Limits::default(),
+                features: wgpu::Features::default(),
+                shader_validation: false,
             },
             None,
         ))
