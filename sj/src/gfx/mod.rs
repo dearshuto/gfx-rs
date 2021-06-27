@@ -278,7 +278,7 @@ pub use self::texture_api::TextureSubresourceRange;
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type TextureImpl<'a> = self::wgpu::texture_wgpu::TextureWgpu;
+type TextureImpl<'a> = self::wgpu::texture_wgpu::TextureWgpu<'a>;
 
 pub type Texture<'a> = TTexture<'a, TextureImpl<'a>>;
 //
