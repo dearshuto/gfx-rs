@@ -3,28 +3,31 @@ use super::super::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
+use super::command_builder::set_constant_buffer_command::SetConstantBufferCommand;
+
+pub trait ICommand {
+    fn build(&self, command_encoder: &mut wgpu::CommandEncoder);
+}
 
 pub struct CommandBuffer<'a> {
-    device: &'a wgpu::Device,
+    _device: &'a Device,
+    _commands: Vec<Box<dyn ICommand>>,
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
     fn new(device: &'a Device, _info: &CommandBufferInfo) -> Self {
         CommandBuffer {
-            device: device.to_data().get_device(),
+            _device: device,
+            _commands: Vec::new(),
         }
     }
 
-    fn begin(&mut self) {
-        todo!();
-    }
+    fn begin(&mut self) {}
 
-    fn end(&mut self) {
-        todo!();
-    }
+    fn end(&mut self) {}
 
     fn reset(&mut self) {
-        todo!();
+        self._commands.clear();
     }
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
@@ -42,7 +45,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         gpu_address: &GpuAddress,
         size: usize,
     ) {
-        todo!()
+        let command = SetConstantBufferCommand {};
     }
 
     fn set_unordered_access_buffer(
@@ -182,44 +185,13 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 }
 
 impl<'a> CommandBuffer<'a> {
-    pub fn begin(&mut self) {}
+    pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
+        let mut command_encoder = self
+            ._device
+            .to_data()
+            .get_device()
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-    pub fn end(&mut self) {}
-
-    pub fn set_pipeline(&self, pipeline: &'a Pipeline) {
-        let a: &super::pipeline_wgpu::Pipeline = pipeline.to_data();
-    }
-
-    // pub fn get_command_buffer(&self) -> wgpu::CommandBuffer {
-    //     let mut command_encoder = self
-    //         .device
-    //         .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-    //     {
-    //         let mut compute_pass =
-    //             command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
-    //         // for item in &self.commands {
-    //         // 	item.push(&mut command_encoder);
-    //         // }
-    //     }
-
-    //     command_encoder.finish()
-    // }
-}
-
-trait ICommand {
-    fn push(&self, command_encoder: &mut wgpu::CommandEncoder);
-}
-
-struct SetPipelineCommand<'a> {
-    compute_pipeline: &'a wgpu::ComputePipeline,
-}
-
-impl<'a> SetPipelineCommand<'a> {
-    fn push(
-        &self,
-        command_encoder: &mut wgpu::RenderPipeline,
-        compute_pass: &'a mut wgpu::ComputePass<'a>,
-    ) {
-        compute_pass.set_pipeline(self.compute_pipeline);
+        command_encoder
     }
 }

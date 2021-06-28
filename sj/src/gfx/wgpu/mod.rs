@@ -2,6 +2,7 @@
 pub mod buffer_wgpu;
 pub mod color_target_view_wgpu;
 pub mod command_buffer_wgpu;
+mod command_builder;
 pub mod depth_stencil_state_wgpu;
 pub mod depth_stencil_view_wgpu;
 pub mod descriptor_pool_wgpu;

@@ -44,13 +44,13 @@ fn main() {
         texture_required_size,
     );
 
-    let mut a = buffer.map::<Data>();
-    a.value = 10;
-    buffer.unmap();
+    // let mut a = buffer.map::<Data>();
+    // a.value = 10;
+    // buffer.unmap();
 
-    let d = buffer.map::<Data>();
-    println!("{}", d.value);
-    buffer.unmap();
+    // let d = buffer.map::<Data>();
+    // println!("{}", d.value);
+    // buffer.unmap();
 
     let command_buffer_info = sj::gfx::CommandBufferInfo::new();
     let command_buffer = sj::gfx::CommandBuffer::new(&device, &command_buffer_info);
