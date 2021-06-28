@@ -1,5 +1,5 @@
 use crate::gfx::{
-    ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
+    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
 
@@ -10,6 +10,7 @@ pub struct ComputePassCommandBuilder<'a> {
     _compute_pipeline: Option<&'a wgpu::ComputePipeline>,
     _bind_grpup: Option<wgpu::BindGroup>,
     _bind_grpup_layout: Option<wgpu::BindGroupLayout>,
+    _buffers: Vec<&'a Buffer<'a>>,
     _dispatch_count_x: u32,
     _dispatch_count_y: u32,
     _dispatch_count_z: u32,
@@ -23,6 +24,7 @@ impl<'a> ComputePassCommandBuilder<'a> {
             _compute_pipeline: None,
             _bind_grpup: None,
             _bind_grpup_layout: None,
+            _buffers: Vec::new(),
             _dispatch_count_x: 0,
             _dispatch_count_y: 0,
             _dispatch_count_z: 0,
@@ -152,12 +154,12 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
         let bind_group = device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &bind_group_layout,
-            entries: &[
-				// wgpu::BindGroupEntry {
-                // binding: 0,
-                // resource:
-				// }
-			],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(
+                    self._buffers[0].to_data().get_buffer().slice(..),
+                ),
+            }],
         });
         self._bind_grpup = Some(bind_group);
         self._bind_grpup_layout = Some(bind_group_layout);

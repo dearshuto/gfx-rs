@@ -379,11 +379,11 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         self.command_buffer_impl.flush_memory(gpu_access_flags);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.command_buffer_impl
     }
 
-    pub fn to_data_mut(&'a mut self) -> &'a mut T {
+    pub fn to_data_mut(&mut self) -> &mut T {
         &mut self.command_buffer_impl
     }
 }

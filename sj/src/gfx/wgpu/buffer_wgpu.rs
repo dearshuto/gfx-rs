@@ -70,6 +70,16 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
 }
 
+impl<'a> BufferImpl<'a> {
+    pub fn get_buffer(&self) -> &wgpu::Buffer {
+        &self._buffer_impl
+    }
+
+    pub fn get_buffer_mut(&mut self) -> &mut wgpu::Buffer {
+        &mut self._buffer_impl
+    }
+}
+
 impl BufferInfo {
     pub fn get_as_usage(&self) -> wgpu::BufferUsage {
         let gpu_access = self.get_gpu_access_flags();
