@@ -10,7 +10,7 @@ pub struct ComputePassCommandBuilder<'a> {
     _compute_pipeline: Option<&'a wgpu::ComputePipeline>,
     _bind_grpup: Option<wgpu::BindGroup>,
     _bind_grpup_layout: Option<wgpu::BindGroupLayout>,
-    _buffers: Vec<&'a Buffer<'a>>,
+    _buffers: Vec<Option<wgpu::BindingResource<'a>>>,
     _dispatch_count_x: u32,
     _dispatch_count_y: u32,
     _dispatch_count_z: u32,
@@ -60,20 +60,44 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
     fn set_constant_buffer(
         &mut self,
         slot: i32,
-        stage: ShaderStage,
+        _stage: ShaderStage,
         gpu_address: &GpuAddress,
-        size: usize,
+        _size: usize,
     ) {
+        if (slot as usize) < self._buffers.len() {
+            self._buffers.resize(slot as usize, None);
+        }
+
+        let a = gpu_address.to_data();
+        let slice = a.get_buffer().to_data().get_buffer().slice(..);
+        self._buffers[0] = Some(wgpu::BindingResource::Buffer(slice));
+
+        // let slice = gpu_address
+        //     .to_data()
+        //     .get_buffer()
+        //     .to_data()
+        //     .get_buffer()
+        //     .slice(..);
+
+        // self._buffers[slot as usize] = Some(wgpu::BindingResource::Buffer(slice));
     }
 
     fn set_unordered_access_buffer(
         &mut self,
         slot: i32,
-        stage: ShaderStage,
+        _stage: ShaderStage,
         gpu_address: &GpuAddress,
-        size: u64,
+        _size: u64,
     ) {
-        todo!()
+        // self._buffers.resize(slot);
+        // self._buffers[slot] = wgpu::BindingResource::Buffer(
+        //     gpu_address
+        //         .to_data()
+        //         .get_buffer()
+        //         .to_data()
+        //         .get_buffer()
+        //         .slice(..),
+        // );
     }
 
     fn set_render_targets(

@@ -4,13 +4,13 @@ use std::marker::PhantomData;
 
 pub struct Pipeline<'a> {
     render_pipeline_impl: Option<wgpu::RenderPipeline>,
-    compute_pipeline_impl: wgpu::ComputePipeline,
+    compute_pipeline_impl: Option<wgpu::ComputePipeline>,
     bind_group: wgpu::BindGroup,
     _marker: PhantomData<&'a i32>,
 }
 
 impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
-    fn new_as_graphics(device: &'a Device, info: &'a GraphicsPipelineInfo) -> Self {
+    fn new_as_graphics(_device: &'a Device, _info: &'a GraphicsPipelineInfo) -> Self {
         todo!()
     }
 
@@ -37,11 +37,10 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
                     layout: &bind_group_layout,
                     entries: &[],
                 });
-        let a: wgpu::BindGroup;
 
         Self {
             render_pipeline_impl: None,
-            compute_pipeline_impl: compute_pipeline,
+            compute_pipeline_impl: Some(compute_pipeline),
             bind_group,
             _marker: PhantomData,
         }
@@ -49,12 +48,16 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
 }
 
 impl<'a> Pipeline<'a> {
+    pub fn is_compute(&self) -> bool {
+        self.compute_pipeline_impl.is_some()
+    }
+
     pub fn get_render_pipeline(&self) -> Option<&wgpu::RenderPipeline> {
         self.render_pipeline_impl.as_ref()
     }
 
     pub fn get_compute_pipeline(&'a self) -> Option<&wgpu::ComputePipeline> {
-        Some(&self.compute_pipeline_impl)
+        self.compute_pipeline_impl.as_ref()
     }
 
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {

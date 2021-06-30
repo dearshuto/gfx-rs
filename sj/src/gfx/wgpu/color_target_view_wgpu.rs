@@ -6,7 +6,7 @@ pub struct ColorTargetViewWgpu<'a> {
 }
 
 impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewWgpu<'a> {
-    fn new(device: &'a Device, info: &'a crate::gfx::ColorTargetViewInfo) -> Self {
+    fn new(_device: &'a Device, _info: &'a crate::gfx::ColorTargetViewInfo) -> Self {
         todo!()
     }
 }

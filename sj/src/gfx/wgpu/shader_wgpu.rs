@@ -15,7 +15,7 @@ impl<'a> ShaderImpl<'a> {
 }
 
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
-    fn new(device: &'a Device, info: &ShaderInfo) -> Self {
+    fn new(device: &'a Device, _info: &ShaderInfo) -> Self {
         let array = vec![0 as u32];
         let shader_source = std::borrow::Cow::Borrowed(array.as_slice());
         let shader_module = device

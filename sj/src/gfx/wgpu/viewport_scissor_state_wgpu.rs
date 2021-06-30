@@ -7,7 +7,7 @@ pub struct ViewportScissorStateWgpu<'a> {
 }
 
 impl<'a> IViewportScissorState<'a> for ViewportScissorStateWgpu<'a> {
-    fn new(device: &'a crate::gfx::Device, info: &crate::gfx::ViewportScissorStateInfo) -> Self {
+    fn new(_device: &'a crate::gfx::Device, _info: &crate::gfx::ViewportScissorStateInfo) -> Self {
         todo!()
     }
 }

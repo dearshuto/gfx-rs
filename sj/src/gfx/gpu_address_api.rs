@@ -26,11 +26,11 @@ impl<'a, T: IGpuAddressImpl<'a>> TGpuAddressInterface<'a, T> {
         self._impl.offset(offset);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self._impl
     }
 
-    pub fn to_data_mut(&'a mut self) -> &'a mut T {
+    pub fn to_data_mut(&mut self) -> &mut T {
         &mut self._impl
     }
 }

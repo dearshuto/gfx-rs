@@ -27,13 +27,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         self._commands.clear();
     }
 
-    fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
+    fn set_viewport_scissor_state(&mut self, _viewport_scissor_state: &'a ViewportScissorState) {
         todo!();
     }
 
-    fn set_pipeline(&mut self, _pipeline: &Pipeline<'a>) {
-        //        let compute_command_builder = ComputePassCommandBuilder::new(self._device);
-        //        self._commands.push(Box::new(compute_command_builder));
+    fn set_pipeline(&mut self, pipeline: &Pipeline<'a>) {
+        if pipeline.to_data().is_compute() {
+            // let compute_command_builder = ComputePassCommandBuilder::new(self._device);
+            // self._commands.push(Box::new(compute_command_builder));
+        }
     }
 
     fn set_constant_buffer(
@@ -222,7 +224,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
 impl<'a> CommandBuffer<'a> {
     pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
-        let mut command_encoder = self
+        let command_encoder = self
             ._device
             .to_data()
             .get_device()
