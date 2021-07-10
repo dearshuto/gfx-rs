@@ -1,14 +1,20 @@
-use super::super::device_info::DeviceInfo;
+use super::super::device_api::{DeviceInfo, TDeviceImpl};
 
-pub struct Device {
+pub struct DeviceVk {
     device_impl: std::sync::Arc<vulkano::device::Device>,
     queue_impl: std::sync::Arc<vulkano::device::Queue>,
 }
 
-impl Device {
-    pub fn new(_info: &DeviceInfo) -> Device {
+impl TDeviceImpl for DeviceVk {
+    fn new(_info: &DeviceInfo) -> Self {
         let required_extensions = vulkano_win::required_extensions();
-        let instance = vulkano::instance::Instance::new(None, &required_extensions, None).unwrap();
+        let instance = vulkano::instance::Instance::new(
+            None,
+            vulkano::Version::V1_1,
+            &required_extensions,
+            None,
+        )
+        .unwrap();
         let physical_device = vulkano::instance::PhysicalDevice::enumerate(&instance)
             .next()
             .unwrap();
@@ -33,12 +39,14 @@ impl Device {
         )
         .unwrap();
 
-        Device {
-            device_impl: device.clone(),
+        Self {
+            device_impl: device,
             queue_impl: queues.next().unwrap(),
         }
     }
+}
 
+impl DeviceVk {
     pub fn get_device_impl(&self) -> std::sync::Arc<vulkano::device::Device> {
         self.device_impl.clone()
     }
@@ -46,8 +54,8 @@ impl Device {
     pub fn get_queue(&self) -> std::sync::Arc<vulkano::device::Queue> {
         self.queue_impl.clone()
     }
-}
 
-impl Drop for Device {
-    fn drop(&mut self) {}
+    pub fn clone_queue(&self) -> std::sync::Arc<vulkano::device::Queue> {
+        self.queue_impl.clone()
+    }
 }
