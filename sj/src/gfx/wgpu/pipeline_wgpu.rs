@@ -1,12 +1,12 @@
+use crate::gfx::Shader;
+
 use super::super::pipeline_api::{ComputePipelineInfo, GraphicsPipelineInfo, IPipelineImpl};
 use super::super::Device;
-use std::marker::PhantomData;
 
 pub struct Pipeline<'a> {
     render_pipeline_impl: Option<wgpu::RenderPipeline>,
     compute_pipeline_impl: Option<wgpu::ComputePipeline>,
-    bind_group: wgpu::BindGroup,
-    _marker: PhantomData<&'a i32>,
+    _shader: &'a Shader<'a>,
 }
 
 impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
@@ -27,22 +27,10 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
             },
         );
 
-        let bind_group_layout = compute_pipeline.get_bind_group_layout(0);
-        let bind_group =
-            device
-                .to_data()
-                .get_device()
-                .create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: None,
-                    layout: &bind_group_layout,
-                    entries: &[],
-                });
-
         Self {
             render_pipeline_impl: None,
             compute_pipeline_impl: Some(compute_pipeline),
-            bind_group,
-            _marker: PhantomData,
+            _shader: info.get_shader(),
         }
     }
 }
@@ -60,7 +48,7 @@ impl<'a> Pipeline<'a> {
         self.compute_pipeline_impl.as_ref()
     }
 
-    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
-        &self.bind_group
+    pub fn get_shader(&self) -> &Shader {
+        self._shader
     }
 }

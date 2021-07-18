@@ -92,6 +92,7 @@ impl ViewportStateInfo {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct ScissorStateInfo {
     _origin_x: i32,
     _origin_y: i32,

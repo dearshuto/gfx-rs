@@ -146,7 +146,7 @@ pub use self::depth_stencil_view_api::DepthStencilViewInfo;
 type DepthStencilViewImpl<'a> = self::ash::depth_stencil_view_ash::DepthStencilViewImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type DepthStencilViewImpl<'a> = self::wgpu::depth_stencil_view_wgpu::DepthStencilViewWgpu<'a>;
+type DepthStencilViewImpl<'a> = self::wgpu::depth_stencil_view_wgpu::DepthStencilViewWgpu;
 
 pub type DepthStencilView<'a> = TDepthStencilView<'a, DepthStencilViewImpl<'a>>;
 //
@@ -168,7 +168,7 @@ pub type Fence<'a> = TFence<'a, FenceImpl<'a>>;
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type GpuAddressImpl<'a> = self::wgpu::gpu_address_wgpu::GpuAddressWgpu;
+type GpuAddressImpl<'a> = self::wgpu::gpu_address_wgpu::GpuAddressWgpu<'a>;
 
 pub type GpuAddress<'a> = TGpuAddressInterface<'a, GpuAddressImpl<'a>>;
 //
@@ -307,7 +307,7 @@ type ViewportScissorStateImpl = self::ash::viewport_scissor_state_ash::ViewportS
 
 #[cfg(feature = "backend_wgpu")]
 type ViewportScissorStateImpl<'a> =
-    self::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu<'a>;
+    self::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu;
 
 pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl<'a>>;
 //

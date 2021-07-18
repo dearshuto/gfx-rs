@@ -32,7 +32,7 @@ pub trait ICommandBufferImpl<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     );
 
@@ -181,7 +181,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     ) {
         self.command_buffer_impl

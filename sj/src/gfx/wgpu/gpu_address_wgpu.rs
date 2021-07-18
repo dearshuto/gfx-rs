@@ -1,11 +1,13 @@
 use super::super::gpu_address_api::IGpuAddressImpl;
 use super::super::Buffer;
 
-pub struct GpuAddressWgpu {}
+pub struct GpuAddressWgpu<'a> {
+    _buffer: &'a Buffer<'a>,
+}
 
-impl<'a> IGpuAddressImpl<'a> for GpuAddressWgpu {
-    fn new<'buffer: 'a>(_buffer: &'buffer Buffer<'buffer>) -> Self {
-        todo!();
+impl<'a> IGpuAddressImpl<'a> for GpuAddressWgpu<'a> {
+    fn new(buffer: &'a Buffer) -> Self {
+        Self { _buffer: buffer }
     }
 
     fn offset(&mut self, _offset: i64) {
@@ -13,8 +15,8 @@ impl<'a> IGpuAddressImpl<'a> for GpuAddressWgpu {
     }
 }
 
-impl GpuAddressWgpu {
+impl<'a> GpuAddressWgpu<'a> {
     pub fn get_buffer(&self) -> &Buffer {
-        todo!();
+        self._buffer
     }
 }

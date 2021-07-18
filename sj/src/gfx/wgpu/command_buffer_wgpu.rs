@@ -3,12 +3,13 @@ use super::super::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
-use super::command_builder::command_builder::ICommandBuilder;
 use super::command_builder::compute_pass_command_builder::ComputePassCommandBuilder;
+use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
+use super::command_builder::CommandBuilder;
 
 pub struct CommandBuffer<'a> {
     _device: &'a Device,
-    _commands: Vec<Box<dyn ICommandBuilder<'a>>>,
+    _commands: Vec<CommandBuilder<'a>>,
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
@@ -27,14 +28,22 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         self._commands.clear();
     }
 
-    fn set_viewport_scissor_state(&mut self, _viewport_scissor_state: &'a ViewportScissorState) {
-        todo!();
+    fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_viewport_scissor_state(viewport_scissor_state);
     }
 
-    fn set_pipeline(&mut self, pipeline: &Pipeline<'a>) {
+    fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         if pipeline.to_data().is_compute() {
-            // let compute_command_builder = ComputePassCommandBuilder::new(self._device);
-            // self._commands.push(Box::new(compute_command_builder));
+            let builder = ComputePassCommandBuilder::new(self._device);
+            let command = CommandBuilder::Compute(builder);
+            self._commands.push(command);
+        } else {
+            let builder = GraphicsPassCommandBuilder::new(self._device, pipeline);
+            let command = CommandBuilder::Graphics(builder);
+            self._commands.push(command);
         }
     }
 
@@ -42,7 +51,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     ) {
         self._commands
@@ -89,10 +98,13 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn set_render_targets(
         &mut self,
-        _color_target_views: &[&ColorTargetView],
-        _depth_stencil_state_view: Option<&DepthStencilView>,
+        color_target_views: &[&ColorTargetView],
+        depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-        todo!();
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
     fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {

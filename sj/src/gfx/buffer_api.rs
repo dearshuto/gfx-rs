@@ -110,7 +110,7 @@ where
         self.buffer_impl.invalidate_mapped_range(offset, size);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.buffer_impl
     }
 }

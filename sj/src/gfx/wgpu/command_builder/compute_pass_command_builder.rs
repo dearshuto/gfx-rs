@@ -1,16 +1,11 @@
-use crate::gfx::{
-    Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, ShaderStage, ViewportScissorState,
-};
-
-use super::command_builder::ICommandBuilder;
+use crate::gfx::{Device, GpuAddress, Pipeline, ShaderStage};
 
 pub struct ComputePassCommandBuilder<'a> {
     _device: &'a Device,
     _compute_pipeline: Option<&'a wgpu::ComputePipeline>,
     _bind_grpup: Option<wgpu::BindGroup>,
     _bind_grpup_layout: Option<wgpu::BindGroupLayout>,
-    _buffers: Vec<Option<wgpu::BindingResource<'a>>>,
+    _buffers: [Option<GpuAddress<'a>>; 32],
     _dispatch_count_x: u32,
     _dispatch_count_y: u32,
     _dispatch_count_z: u32,
@@ -24,17 +19,15 @@ impl<'a> ComputePassCommandBuilder<'a> {
             _compute_pipeline: None,
             _bind_grpup: None,
             _bind_grpup_layout: None,
-            _buffers: Vec::new(),
+            _buffers: std::default::Default::default(),
             _dispatch_count_x: 0,
             _dispatch_count_y: 0,
             _dispatch_count_z: 0,
             _is_end: false,
         }
     }
-}
 
-impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
-    fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
+    pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
         let mut compute_pass = command_encoder.begin_compute_pass();
         compute_pass.set_pipeline(self._compute_pipeline.unwrap());
         compute_pass.set_bind_group(0, self._bind_grpup.as_ref().unwrap(), &[]);
@@ -45,32 +38,18 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
         );
     }
 
-    fn is_end(&self) -> bool {
-        self._is_end
-    }
-
-    fn set_viewport_scissor_state(&mut self, _viewport_scissor_state: &'a ViewportScissorState) {
-        assert!(false);
-    }
-
-    fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
+    pub fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         self._compute_pipeline = pipeline.to_data().get_compute_pipeline();
     }
 
-    fn set_constant_buffer(
+    pub fn set_constant_buffer(
         &mut self,
         slot: i32,
         _stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         _size: usize,
     ) {
-        if (slot as usize) < self._buffers.len() {
-            self._buffers.resize(slot as usize, None);
-        }
-
-        let a = gpu_address.to_data();
-        let slice = a.get_buffer().to_data().get_buffer().slice(..);
-        self._buffers[0] = Some(wgpu::BindingResource::Buffer(slice));
+        self._buffers[slot as usize] = Some(gpu_address);
 
         // let slice = gpu_address
         //     .to_data()
@@ -82,7 +61,7 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
         // self._buffers[slot as usize] = Some(wgpu::BindingResource::Buffer(slice));
     }
 
-    fn set_unordered_access_buffer(
+    pub fn set_unordered_access_buffer(
         &mut self,
         slot: i32,
         _stage: ShaderStage,
@@ -100,67 +79,11 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
         // );
     }
 
-    fn set_render_targets(
-        &mut self,
-        color_target_views: &[&ColorTargetView],
-        depth_stencil_state_view: Option<&DepthStencilView>,
-    ) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
         assert!(false);
     }
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
-        assert!(false);
-    }
-
-    fn draw(
-        &mut self,
-        primitive_topology: PrimitiveTopology,
-        vertex_count: i32,
-        vertex_offset: i32,
-    ) {
-        assert!(false);
-    }
-
-    fn draw_instanced(
-        &mut self,
-        primitive_topology: PrimitiveTopology,
-        vertex_count: i32,
-        vertex_offset: i32,
-        instance_count: i32,
-        base_instance: i32,
-    ) {
-        assert!(false);
-    }
-
-    fn draw_indexed(
-        &mut self,
-        primitive_topology: PrimitiveTopology,
-        index_format: IndexFormat,
-        gpu_address: &GpuAddress,
-        index_count: i32,
-        base_vertex: i32,
-    ) {
-        assert!(false);
-    }
-
-    fn draw_indexed_instanced(
-        &mut self,
-        primitive_topology: PrimitiveTopology,
-        index_format: IndexFormat,
-        gpu_address: &GpuAddress,
-        index_count: i32,
-        base_vertex: i32,
-        instance_count: i32,
-        base_instance: i32,
-    ) {
-        assert!(false);
-    }
-
-    fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
-        assert!(false);
-    }
-
-    fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
+    pub fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
         let device_wgpu = self._device.to_data().get_device();
         let bind_group_layout =
             device_wgpu.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -175,14 +98,20 @@ impl<'a> ICommandBuilder<'a> for ComputePassCommandBuilder<'a> {
                     count: None,
                 }],
             });
+        let slice = self._buffers[0]
+            .as_ref()
+            .unwrap()
+            .to_data()
+            .get_buffer()
+            .to_data()
+            .get_buffer()
+            .slice(..);
         let bind_group = device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(
-                    self._buffers[0].to_data().get_buffer().slice(..),
-                ),
+                resource: wgpu::BindingResource::Buffer(slice),
             }],
         });
         self._bind_grpup = Some(bind_group);

@@ -16,7 +16,7 @@ pub trait ICommandBuilder<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     );
 
