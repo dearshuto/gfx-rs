@@ -3,17 +3,12 @@ use crate::gfx::Device;
 use vulkano::pipeline::shader::SpecializationConstants;
 use vulkano::pipeline::vertex::SingleBufferDefinition;
 
-#[derive(Default, Copy, Clone)]
-pub struct Vertex {
-    pub position: [f32; 2],
-    pub color: [f32; 3],
-}
-
-vulkano::impl_vertex!(Vertex, position, color);
+type VkGraphicsPipeline<T> = vulkano::pipeline::GraphicsPipeline<T>;
+use super::common::Float3232;
 
 pub struct PipelineVk {
     _graphics_pipeline:
-        Option<std::sync::Arc<vulkano::pipeline::GraphicsPipeline<SingleBufferDefinition<Vertex>>>>,
+        Option<std::sync::Arc<VkGraphicsPipeline<SingleBufferDefinition<Float3232>>>>,
     _compute_pipeline: Option<std::sync::Arc<vulkano::pipeline::ComputePipeline>>,
 }
 
@@ -125,7 +120,7 @@ impl<'a> IPipelineImpl<'a> for PipelineVk {
         );
         let graphics_pipeline = std::sync::Arc::new(
             vulkano::pipeline::GraphicsPipeline::start()
-                .vertex_input(SingleBufferDefinition::<Vertex>::new())
+                //.vertex_input(SingleBufferDefinition::<Vertex>::new())
                 .vertex_shader(vert_main, ())
                 .triangle_list()
                 .viewports_dynamic_scissors_irrelevant(1)
@@ -139,7 +134,7 @@ impl<'a> IPipelineImpl<'a> for PipelineVk {
         );
 
         Self {
-            _graphics_pipeline: Some(graphics_pipeline),
+            _graphics_pipeline: None, //Some(graphics_pipeline),
             _compute_pipeline: None,
         }
     }

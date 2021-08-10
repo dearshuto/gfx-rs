@@ -9,7 +9,6 @@ pub struct ShaderVk {
 impl<'a> IShaderImpl<'a> for ShaderVk {
     fn new(device: &'a crate::gfx::Device, info: &crate::gfx::ShaderInfo) -> Self {
         let vertex_shader_source = info.get_vertex_shader_binary().unwrap();
-
         let device_vk = device.to_data().get_device_impl();
 
         unsafe {

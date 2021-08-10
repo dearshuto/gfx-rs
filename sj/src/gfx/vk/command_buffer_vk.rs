@@ -1,13 +1,26 @@
+use super::command_builders::{
+    ClearColorCommandBuilder, ClearDepthStencilCommandBuilder, Command, CopyImageCommandBuilder,
+    CopyImageToBufferCommandBuilder, DispatchCommandBuilder, DrawIndexedInstancedCommandBuilder,
+    DrawInstancedCommandBuilder, SetConstnatBufferCommandBuilder, SetPipelineCommandBuilder,
+    SetRenderTargetsCommandBuilder, SetUnorderedAccessBufferCommandBuilder,
+    SetVertexBufferCommandBuilder, SetViewportScissorStateBuilder,
+};
 use crate::gfx::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
-use crate::gfx::{Device, Pipeline, ViewportScissorState};
+use crate::gfx::{Device, GpuAccess, Pipeline, ViewportScissorState};
 
 pub struct CommandBufferVk<'a> {
     _device: &'a Device,
+    _commands: Vec<Command>,
+    _command_buffer: Option<vulkano::command_buffer::PrimaryAutoCommandBuffer>,
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
-    fn new(device: &'a crate::gfx::Device, info: &CommandBufferInfo) -> Self {
-        todo!()
+    fn new(device: &'a crate::gfx::Device, _info: &CommandBufferInfo) -> Self {
+        Self {
+            _device: device,
+            _commands: Vec::new(),
+            _command_buffer: None,
+        }
     }
 
     fn begin(&mut self) {
@@ -15,19 +28,37 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
     }
 
     fn end(&mut self) {
-        todo!()
+        let device_vk = self._device.to_data().get_device_impl();
+        let queue_vk = self._device.to_data().get_queue();
+
+        let mut command_builder = vulkano::command_buffer::AutoCommandBufferBuilder::primary(
+            device_vk.clone(),
+            queue_vk.family(),
+            vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
+        )
+        .unwrap();
+
+        for command in &self._commands {
+            command_builder = command.build(command_builder);
+        }
+
+        self._command_buffer = Some(command_builder.build().unwrap());
     }
 
     fn reset(&mut self) {
-        todo!()
+        self._commands.clear();
     }
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
-        todo!()
+        let builder = SetViewportScissorStateBuilder::new(viewport_scissor_state);
+        let command = Command::SetViewportScissorState(builder);
+        self._commands.push(command);
     }
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-        todo!()
+        let builder = SetPipelineCommandBuilder::new(pipeline);
+        let command = Command::SetPipeline(builder);
+        self._commands.push(command);
     }
 
     fn set_constant_buffer(
@@ -37,7 +68,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         gpu_address: &crate::gfx::GpuAddress,
         size: usize,
     ) {
-        todo!()
+        let builder = SetConstnatBufferCommandBuilder::new(slot, stage, gpu_address, size);
+        let command = Command::SetConstantBuffer(builder);
+        self._commands.push(command);
     }
 
     fn set_unordered_access_buffer(
@@ -47,7 +80,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         gpu_address: &crate::gfx::GpuAddress,
         size: u64,
     ) {
-        todo!()
+        let builder = SetUnorderedAccessBufferCommandBuilder::new(slot, stage, gpu_address, size);
+        let command = Command::SetUnorderedAccessBuffer(builder);
+        self._commands.push(command);
     }
 
     fn clear_color(
@@ -59,7 +94,16 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         alpha: f32,
         texture_array_range: Option<&crate::gfx::texture_api::TextureArrayRange>,
     ) {
-        todo!()
+        let builder = ClearColorCommandBuilder::new(
+            color_target_view,
+            red,
+            green,
+            blue,
+            alpha,
+            texture_array_range,
+        );
+        let command = Command::ClearColor(builder);
+        self._commands.push(command);
     }
 
     fn clear_depth_stencil(
@@ -70,7 +114,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         clear_mode: &crate::gfx::DepthStencilClearMode,
         texture_array_range: Option<&crate::gfx::texture_api::TextureArrayRange>,
     ) {
-        todo!()
+        let builder = ClearDepthStencilCommandBuilder::new(
+            depth_stencil,
+            depth,
+            stencil,
+            clear_mode,
+            texture_array_range,
+        );
+        let command = Command::ClearDepthStencil(builder);
+        self._commands.push(command);
     }
 
     fn set_render_targets(
@@ -78,11 +130,16 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         color_target_views: &[&crate::gfx::ColorTargetView],
         depth_stencil_state_view: Option<&crate::gfx::DepthStencilView>,
     ) {
-        todo!()
+        let builder =
+            SetRenderTargetsCommandBuilder::new(color_target_views, depth_stencil_state_view);
+        let command = Command::SetRenderTargets(builder);
+        self._commands.push(command);
     }
 
     fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &crate::gfx::GpuAddress) {
-        todo!()
+        let builder = SetVertexBufferCommandBuilder::new(buffer_index, gpu_address);
+        let command = Command::SetVertexBuffer(builder);
+        self._commands.push(command);
     }
 
     fn draw(
@@ -91,7 +148,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         vertex_count: i32,
         vertex_offset: i32,
     ) {
-        todo!()
+        self.draw_instanced(primitive_topology, vertex_count, vertex_offset, 1, 0);
     }
 
     fn draw_instanced(
@@ -102,7 +159,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-        todo!()
+        // let builder = DrawInstancedCommandBuilder::new(
+        //     primitive_topology,
+        //     vertex_count,
+        //     vertex_offset,
+        //     instance_count,
+        //     base_instance,
+        // );
+        // let command = Command::DrawInstanced(builder);
+        // self._commands.push(command);
     }
 
     fn draw_indexed(
@@ -113,7 +178,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         index_count: i32,
         base_vertex: i32,
     ) {
-        todo!()
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            1,
+            0,
+        );
     }
 
     fn draw_indexed_instanced(
@@ -126,25 +199,37 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-        todo!()
+        let builder = DrawIndexedInstancedCommandBuilder::new(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            instance_count,
+            base_instance,
+        );
+        let command = Command::DrawIndexedInstanced(builder);
+        self._commands.push(command);
     }
 
-    fn draw_indirect(&mut self, gpu_address: &crate::gfx::GpuAddress) {
+    fn draw_indirect(&mut self, _gpu_address: &crate::gfx::GpuAddress) {
         todo!()
     }
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
-        todo!()
+        let builder = DispatchCommandBuilder::new(group_count_x, group_count_y, group_count_z);
+        let command = Command::Dispatch(builder);
+        self._commands.push(command);
     }
 
     fn set_texture_state_transition(
         &mut self,
-        texture: &crate::gfx::Texture,
-        range: &crate::gfx::TextureSubresourceRange,
-        old_state: crate::gfx::TextureState,
-        old_stage_bit: crate::gfx::PipelineStageBit,
-        new_state: crate::gfx::TextureState,
-        new_stage_bit: crate::gfx::PipelineStageBit,
+        _texture: &crate::gfx::Texture,
+        _range: &crate::gfx::TextureSubresourceRange,
+        _old_state: crate::gfx::TextureState,
+        _old_stage_bit: crate::gfx::PipelineStageBit,
+        _new_state: crate::gfx::TextureState,
+        _new_stage_bit: crate::gfx::PipelineStageBit,
     ) {
         todo!()
     }
@@ -159,7 +244,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         src_texture: &crate::gfx::Texture,
         src_copy_range: crate::gfx::TextureCopyRegion,
     ) {
-        todo!()
+        let builder = CopyImageCommandBuilder::new(
+            dst_texture,
+            dst_subresource,
+            dst_offset_u,
+            dst_offset_v,
+            dst_offset_w,
+            src_texture,
+            src_copy_range,
+        );
+        let command = Command::CopyImage(builder);
+        self._commands.push(command);
     }
 
     fn copy_image_to_buffer(
@@ -168,10 +263,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         src_texture: &crate::gfx::Texture,
         copy_region: &crate::gfx::BufferTextureCopyRegion,
     ) {
-        todo!()
+        let builder = CopyImageToBufferCommandBuilder::new(dst_buffer, src_texture, copy_region);
+        let command = Command::CopyImageToBuffer(builder);
+        self._commands.push(command);
     }
 
-    fn flush_memory(&mut self, gpu_access_flags: crate::gfx::GpuAccess) {
-        todo!()
-    }
+    fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {}
 }
