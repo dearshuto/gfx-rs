@@ -66,7 +66,7 @@ impl<'a> CommandBuilder<'a> {
 
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         match self {
@@ -77,10 +77,10 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
         match self {
-            Self::Graphics(ref mut builder) => {} // builder.set_vertex_buffer(buffer_index, gpu_address),
-            Self::Compute(ref mut builder) => builder.set_vertex_buffer(buffer_index, gpu_address),
+            Self::Graphics(ref mut builder) => builder.set_vertex_buffer(buffer_index, gpu_address),
+            Self::Compute(ref mut builder) => builder.set_vertex_buffer(buffer_index, &gpu_address),
         }
     }
 

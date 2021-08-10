@@ -1,4 +1,4 @@
-use super::{Device, GpuAccess, MemoryPool};
+use super::{Device, GpuAccess, GpuAddress, MemoryPool};
 use std::marker::PhantomData;
 
 pub struct BufferInfo {
@@ -55,6 +55,8 @@ pub trait IBufferImpl<'a> {
     fn flush_mapped_range(&self, offset: i64, size: u64);
 
     fn invalidate_mapped_range(&self, offset: i64, size: u64);
+
+    fn get_gpu_address(&self) -> GpuAddress;
 }
 
 pub struct TBufferInterface<'a, T: 'a>
@@ -108,6 +110,10 @@ where
 
     pub fn invalidate_mapped_range(&self, offset: i64, size: u64) {
         self.buffer_impl.invalidate_mapped_range(offset, size);
+    }
+
+    pub fn get_gpu_address(&self) -> GpuAddress {
+        self.buffer_impl.get_gpu_address()
     }
 
     pub fn to_data(&self) -> &T {

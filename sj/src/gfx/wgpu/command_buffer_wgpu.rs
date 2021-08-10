@@ -22,7 +22,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {}
+    fn end(&mut self) {
+        let mut val = 0;
+        val += 9;
+    }
 
     fn reset(&mut self) {
         self._commands.clear();
@@ -98,7 +101,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         self._commands
@@ -107,7 +110,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
         self._commands
             .last_mut()
             .unwrap()

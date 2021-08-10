@@ -1,7 +1,9 @@
 use crate::gfx::buffer_api::MappedData;
+use crate::gfx::GpuAddress;
 
 use super::super::buffer_api::{BufferInfo, IBufferImpl};
 use super::super::{Device, GpuAccess, MemoryPool};
+use super::gpu_address_wgpu::GpuAddressWgpu;
 use std::marker::PhantomData;
 
 pub struct BufferImpl<'a> {
@@ -68,6 +70,11 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
 
     fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
+
+    fn get_gpu_address(&self) -> GpuAddress {
+        let instance = GpuAddressWgpu::new(self);
+        GpuAddress::new(instance)
+    }
 }
 
 impl<'a> BufferImpl<'a> {

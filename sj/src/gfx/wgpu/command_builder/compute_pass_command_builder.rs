@@ -103,7 +103,6 @@ impl<'a> ComputePassCommandBuilder<'a> {
             .unwrap()
             .to_data()
             .get_buffer()
-            .to_data()
             .get_buffer()
             .slice(..);
         let bind_group = device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {

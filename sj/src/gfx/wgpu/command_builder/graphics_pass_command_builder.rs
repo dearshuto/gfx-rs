@@ -7,8 +7,11 @@ use crate::gfx::{
 pub struct GraphicsPassCommandBuilder<'a> {
     _device: &'a Device,
     _pipeline: &'a Pipeline<'a>,
+    _color_attachment_descriptors: Vec<wgpu::RenderPassColorAttachmentDescriptor<'a>>,
     _viewport_scissor_state: Option<ViewportScissorStateWgpu>,
-    _vertex_buffers: [Option<wgpu::BufferSlice<'a>>; 8],
+    _vertex_buffers: [Option<GpuAddress<'a>>; 8],
+    _constant_buffers: [Option<GpuAddress<'a>>; 32],
+    _bind_group: Option<wgpu::BindGroup>,
     _vertex_offset: u32,
     _vertrex_count: u32,
 }
@@ -18,16 +21,23 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         Self {
             _device: device,
             _pipeline: pipeline,
+            _color_attachment_descriptors: Vec::new(),
             _viewport_scissor_state: None,
             _vertex_buffers: std::default::Default::default(),
+            _constant_buffers: std::default::Default::default(),
+            _bind_group: None,
             _vertex_offset: 0,
             _vertrex_count: 0,
         }
     }
 
+    pub fn update_descriptors(&mut self) {
+        self._bind_group = Some(self.create_bind_group());
+    }
+
     pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
         let render_pass_descriptor = wgpu::RenderPassDescriptor {
-            color_attachments: &[],
+            color_attachments: &self._color_attachment_descriptors,
             depth_stencil_attachment: None,
         };
         let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
@@ -38,6 +48,13 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             .unwrap()
             .push(&mut render_pass);
 
+        // デスクリプタたちをセット
+        render_pass.set_bind_group(0, self._bind_group.as_ref().unwrap(), &[]);
+
+        // 頂点バッファ
+        //GraphicsPassCommandBuilder::push_vertex_buffers(&mut render_pass, &self._vertex_buffers);
+
+        // 描画コマンド
         render_pass.draw(
             std::ops::Range {
                 start: self._vertex_offset,
@@ -71,29 +88,39 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
 
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
-        depth_stencil_state_view: Option<&DepthStencilView>,
+        color_target_views: &[&'a ColorTargetView<'a>],
+        _depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
+        let view = color_target_views[0].to_data().get_texture_view();
+        let color_attachment_descriptor = wgpu::RenderPassColorAttachmentDescriptor {
+            attachment: view,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color {
+                    r: 0.1,
+                    g: 0.2,
+                    b: 0.3,
+                    a: 1.0,
+                }),
+                store: true,
+            },
+        };
+        self._color_attachment_descriptors.clear();
+        self._color_attachment_descriptors
+            .push(color_attachment_descriptor);
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress<'a>) {
-        // let slice = gpu_address
-        //     .to_data()
-        //     .get_buffer()
-        //     .to_data()
-        //     .get_buffer()
-        //     .slice(..);
-        // self._vertex_buffers[buffer_index as usize] = Some(slice);
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
+        self._vertex_buffers[buffer_index as usize] = Some(gpu_address);
     }
 
     pub fn draw(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
+        primitive_topology: PrimitiveTopology,
         vertex_count: i32,
         vertex_offset: i32,
     ) {
-        self._vertrex_count = vertex_count as u32;
-        self._vertex_offset = vertex_offset as u32;
+        self.draw_instanced(primitive_topology, vertex_count, vertex_offset, 1, 0);
     }
 
     pub fn draw_instanced(
@@ -104,31 +131,44 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
+        self._vertrex_count = vertex_count as u32;
+        self._vertex_offset = vertex_offset as u32;
     }
 
     pub fn draw_indexed(
         &mut self,
-        primitive_topology: PrimitiveTopology,
-        index_format: IndexFormat,
-        gpu_address: &GpuAddress,
-        index_count: i32,
-        base_vertex: i32,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: IndexFormat,
+        _gpu_address: &GpuAddress,
+        _index_count: i32,
+        _base_vertex: i32,
     ) {
+        todo!()
     }
 
     pub fn draw_indexed_instanced(
         &mut self,
-        primitive_topology: PrimitiveTopology,
-        index_format: IndexFormat,
-        gpu_address: &GpuAddress,
-        index_count: i32,
-        base_vertex: i32,
-        instance_count: i32,
-        base_instance: i32,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: IndexFormat,
+        _gpu_address: &GpuAddress,
+        _index_count: i32,
+        _base_vertex: i32,
+        _instance_count: i32,
+        _base_instance: i32,
     ) {
+        todo!()
     }
 
-    pub fn draw_indirect(&mut self, gpu_address: &GpuAddress) {}
+    pub fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
+        todo!()
+    }
+
+    fn create_render_pass_descriptor(&self) -> wgpu::RenderPassDescriptor {
+        wgpu::RenderPassDescriptor {
+            color_attachments: &[],
+            depth_stencil_attachment: None,
+        }
+    }
 
     fn create_bind_group(&self) -> wgpu::BindGroup {
         let device_wgpu = self._device.to_data().get_device();
@@ -139,10 +179,41 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             .to_data()
             .get_bind_group_layout();
 
+        let slice = self._constant_buffers[0]
+            .as_ref()
+            .unwrap()
+            .to_data()
+            .get_buffer()
+            .get_buffer()
+            .slice(..);
+
+        let entrices = [
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(slice),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Buffer(slice),
+            },
+        ];
+
         device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: bind_group_layout,
-            entries: &[],
+            entries: &entrices,
         })
     }
+
+    // fn push_vertex_buffers(
+    //     render_pass: &mut wgpu::RenderPass<'a>,
+    //     vertex_buffer_gpu_addresses: &'a [GpuAddress<'a>],
+    // ) {
+    //     let slice = vertex_buffer_gpu_addresses[0]
+    //         .to_data()
+    //         .get_buffer()
+    //         .get_buffer()
+    //         .slice(..);
+    //     render_pass.set_vertex_buffer(0, slice);
+    // }
 }

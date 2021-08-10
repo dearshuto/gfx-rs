@@ -67,11 +67,11 @@ pub trait ICommandBufferImpl<'a> {
 
     fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     );
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress);
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>);
 
     fn draw(
         &mut self,
@@ -239,14 +239,14 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         self.command_buffer_impl
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
         self.command_buffer_impl
             .set_vertex_buffer(buffer_index, gpu_address);
     }

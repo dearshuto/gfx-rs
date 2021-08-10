@@ -1,4 +1,4 @@
-﻿pub mod blend_state_wgpu;
+pub mod blend_state_wgpu;
 pub mod buffer_wgpu;
 pub mod color_target_view_wgpu;
 pub mod command_buffer_wgpu;
@@ -16,6 +16,7 @@ pub mod rasterizer_state_wgpu;
 pub mod semaphore_wgpu;
 pub mod shader_wgpu;
 pub mod swap_chain_wgpu;
+pub mod texture_view_wgpu;
 pub mod texture_wgpu;
 pub mod vertex_state_wgpu;
 pub mod viewport_scissor_state_wgpu;
