@@ -1,8 +1,21 @@
-pub struct DeviceInfo {}
+use crate::vi::Layer;
 
-impl DeviceInfo {
-    pub fn new() -> DeviceInfo {
-        DeviceInfo {}
+pub struct DeviceInfo<'a> {
+    _layer: Option<&'a Layer>,
+}
+
+impl<'a> DeviceInfo<'a> {
+    pub fn new() -> DeviceInfo<'a> {
+        DeviceInfo { _layer: None }
+    }
+
+    pub fn get_layer(&self) -> Option<&'a Layer> {
+        self._layer
+    }
+
+    pub fn set_layer(mut self, layer: Option<&'a Layer>) -> DeviceInfo<'a> {
+        self._layer = layer;
+        self
     }
 }
 

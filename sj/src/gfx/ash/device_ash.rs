@@ -11,6 +11,8 @@ pub struct DeviceImpl {
     _queue: ash::vk::Queue,
     _queue_family_index: u32,
     _queue_family_properties: Vec<ash::vk::QueueFamilyProperties>,
+    _surface_loader: ash::extensions::khr::Surface,
+    _surface: Option<ash::vk::SurfaceKHR>,
 }
 
 impl DeviceImpl {
@@ -36,12 +38,7 @@ impl DeviceImpl {
 }
 
 impl TDeviceImpl for DeviceImpl {
-    fn new(_info: &DeviceInfo) -> Self {
-        let event_loop = winit::event_loop::EventLoop::new();
-        let window = winit::window::WindowBuilder::new()
-            .build(&event_loop)
-            .unwrap();
-
+    fn new(info: &DeviceInfo) -> Self {
         unsafe {
             let app_name = std::ffi::CString::new("VulkanTriangle").unwrap();
             let entry = ash::Entry::new().unwrap();
@@ -58,12 +55,17 @@ impl TDeviceImpl for DeviceImpl {
                 .map(|raw_name| raw_name.as_ptr())
                 .collect();
 
-            let surface_extensions = ash_window::enumerate_required_extensions(&window).unwrap();
-            let mut extension_names_raw = surface_extensions
-                .iter()
-                .map(|ext| ext.as_ptr())
-                .collect::<Vec<_>>();
-            extension_names_raw.push(ash::extensions::ext::DebugUtils::name().as_ptr());
+            let window = info.get_layer();
+            let mut extension_names_raw = vec![ash::extensions::ext::DebugUtils::name().as_ptr()];
+            if window.is_some() {
+                let surface_extensions = ash_window::enumerate_required_extensions(
+                    window.as_ref().unwrap().get_window(),
+                )
+                .unwrap();
+                for item in surface_extensions {
+                    extension_names_raw.push(item.as_ptr());
+                }
+            }
 
             let create_info = ash::vk::InstanceCreateInfo::builder()
                 .application_info(&appinfo)
@@ -76,7 +78,20 @@ impl TDeviceImpl for DeviceImpl {
 
             // 初期化順が大事らしい
             // SufaceKhr → 物理デバイス → Surface
-            let surface = ash_window::create_surface(&entry, &instance, &window, None).unwrap();
+            let surface = if window.is_some() {
+                Some(
+                    ash_window::create_surface(
+                        &entry,
+                        &instance,
+                        window.as_ref().unwrap().get_window(),
+                        None,
+                    )
+                    .unwrap(),
+                )
+            } else {
+                None
+            };
+
             let physical_devices = instance
                 .enumerate_physical_devices()
                 .expect("Physical device error");
@@ -91,15 +106,20 @@ impl TDeviceImpl for DeviceImpl {
                         .enumerate()
                         .find_map(|(index, ref info)| {
                             let supports_graphic_and_surface =
-                                info.queue_flags.contains(ash::vk::QueueFlags::GRAPHICS)
-                                    && surface_loader
-                                        .get_physical_device_surface_support(
-                                            *physical_device,
-                                            index as u32,
-                                            surface,
-                                        )
-                                        .unwrap();
-                            if supports_graphic_and_surface {
+                                info.queue_flags.contains(ash::vk::QueueFlags::GRAPHICS);
+                            let is_surface_supported = if surface.is_some() {
+                                surface_loader
+                                    .get_physical_device_surface_support(
+                                        *physical_device,
+                                        index as u32,
+                                        *surface.as_ref().unwrap(),
+                                    )
+                                    .unwrap()
+                            } else {
+                                true
+                            };
+
+                            if supports_graphic_and_surface && is_surface_supported {
                                 Some((*physical_device, index))
                             } else {
                                 None
@@ -111,7 +131,11 @@ impl TDeviceImpl for DeviceImpl {
             let queue_family_properties =
                 instance.get_physical_device_queue_family_properties(physical_device);
             let queue_family_index = queue_family_index as u32;
-            let device_extension_names_raw = [ash::extensions::khr::Swapchain::name().as_ptr()];
+            let device_extension_names_raw = if window.is_some() {
+                vec![ash::extensions::khr::Swapchain::name().as_ptr()]
+            } else {
+                vec![]
+            };
             let features = ash::vk::PhysicalDeviceFeatures {
                 shader_clip_distance: 1,
                 ..Default::default()
@@ -147,7 +171,6 @@ impl TDeviceImpl for DeviceImpl {
                 .unwrap();
 
             // 初期化にしか使わないのでここで破棄
-            surface_loader.destroy_surface(surface, None);
 
             Self {
                 _entry: entry,
@@ -159,6 +182,8 @@ impl TDeviceImpl for DeviceImpl {
                 _physical_device: physical_device,
                 _queue_family_index: queue_family_index,
                 _queue_family_properties: queue_family_properties,
+                _surface_loader: surface_loader,
+                _surface: surface,
             }
         }
     }
@@ -200,6 +225,10 @@ impl Drop for DeviceImpl {
     fn drop(&mut self) {
         unsafe {
             self._device.device_wait_idle().unwrap();
+            if self._surface.is_some() {
+                self._surface_loader
+                    .destroy_surface(self._surface.unwrap(), None);
+            }
             self._device.destroy_device(None);
             self._debug_utils
                 .destroy_debug_utils_messenger(self._debug_utils_messanger, None);
