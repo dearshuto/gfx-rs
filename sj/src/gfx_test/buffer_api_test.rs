@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::super::super::gfx::{
-        Buffer, BufferInfo, BufferUsage, Device, DeviceInfo, MemoryPool, MemoryPoolInfo,
+        Buffer, BufferInfo, Device, DeviceInfo, GpuAccess, MemoryPool, MemoryPoolInfo,
         MemoryPoolProperty,
     };
 
@@ -20,7 +20,7 @@ mod tests {
             &device,
             &BufferInfo::new()
                 .set_size(512)
-                .set_buffer_usage(BufferUsage::CONSTANT_BUFFER),
+                .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER),
             &memory_pool,
             0,
             512,
@@ -41,10 +41,10 @@ mod tests {
             &device,
             &BufferInfo::new()
                 .set_size(512)
-                .set_buffer_usage(BufferUsage::CONSTANT_BUFFER),
+                .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER),
             &memory_pool,
             0,
-            512,
+            16,
         );
     }
 }

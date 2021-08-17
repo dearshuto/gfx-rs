@@ -1,9 +1,9 @@
 ﻿fn main() {
-    let device_info = sj::gfx::DeviceInfo::new();
-    let device = sj::gfx::Device::new(&device_info);
-
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
+
+    let device_info = sj::gfx::DeviceInfo::new().set_layer(Some(&layer));
+    let device = sj::gfx::Device::new(&device_info);
 
     let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
     let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);

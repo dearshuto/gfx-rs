@@ -33,6 +33,8 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         offset: i64,
         size: u64,
     ) -> Self {
+        assert!(info.get_size() <= size);
+
         let device_impl = device.to_data().get_device();
         let memory_pool_impl = memory_pool.to_data().get_memory_pool();
         let buffer_create_info = ash::vk::BufferCreateInfo::builder()
@@ -184,6 +186,12 @@ impl BufferInfo {
             .contains(GpuAccess::VERTEX_BUFFER)
         {
             result |= ash::vk::BufferUsageFlags::VERTEX_BUFFER;
+        }
+        if self
+            .get_gpu_access_flags()
+            .contains(GpuAccess::INDEX_BUFFER)
+        {
+            result |= ash::vk::BufferUsageFlags::INDEX_BUFFER;
         }
         if self
             .get_gpu_access_flags()
