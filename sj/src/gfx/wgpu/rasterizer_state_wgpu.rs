@@ -4,7 +4,7 @@ use super::super::Device;
 pub struct RasterizerStateWgpu {}
 
 impl IRasterizerStateImpl for RasterizerStateWgpu {
-    fn new(device: &Device, info: RasterizerStateInfo) -> Self {
-        todo!();
+    fn new(_device: &Device, _info: RasterizerStateInfo) -> Self {
+        Self {}
     }
 }

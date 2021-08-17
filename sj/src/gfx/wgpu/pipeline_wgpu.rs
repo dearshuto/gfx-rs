@@ -20,10 +20,8 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
             &wgpu::ComputePipelineDescriptor {
                 layout: None,
                 label: None,
-                compute_stage: wgpu::ProgrammableStageDescriptor {
-                    module: shader,
-                    entry_point: "main",
-                },
+                module: shader,
+                entry_point: &"main".to_string(),
             },
         );
 

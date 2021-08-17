@@ -18,10 +18,15 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self {
         let array = vec![0 as u32];
         let shader_source = std::borrow::Cow::Borrowed(array.as_slice());
-        let shader_module = device
-            .to_data()
-            .get_device()
-            .create_shader_module(wgpu::ShaderModuleSource::SpirV(shader_source));
+        let shader_module =
+            device
+                .to_data()
+                .get_device()
+                .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                    label: None,
+                    source: wgpu::ShaderSource::SpirV(shader_source),
+                    flags: wgpu::ShaderFlags::all(),
+                });
 
         Self {
             shader_impl: shader_module,
