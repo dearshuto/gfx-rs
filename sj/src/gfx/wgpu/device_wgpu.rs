@@ -17,7 +17,7 @@ impl super::super::device_api::TDeviceImpl for DeviceImpl {
             &wgpu::DeviceDescriptor {
                 limits: wgpu::Limits::default(),
                 features: wgpu::Features::default(),
-                shader_validation: false,
+                label: None,
             },
             None,
         ))

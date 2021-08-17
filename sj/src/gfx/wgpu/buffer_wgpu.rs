@@ -21,6 +21,8 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         offset: i64,
         size: u64,
     ) -> Self {
+        assert!(info.get_size() <= size);
+
         let slice_size = 1024 * std::mem::size_of::<u32>();
         let size = slice_size as wgpu::BufferAddress;
         let buffer = device

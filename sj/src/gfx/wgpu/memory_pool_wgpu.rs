@@ -4,7 +4,7 @@ use super::super::Device;
 pub struct MemoryPoolWgpu {}
 
 impl<'a> IMemoryPoolImpl<'a> for MemoryPoolWgpu {
-    fn new(device: &'a Device, info: &MemoryPoolInfo) -> Self {
-        todo!();
+    fn new(_device: &'a Device, _info: &MemoryPoolInfo) -> Self {
+        Self {}
     }
 }
