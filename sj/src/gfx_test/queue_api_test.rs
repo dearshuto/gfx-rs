@@ -1,12 +1,7 @@
-#[cfg(test)]
-mod tests {
-    use super::super::super::gfx::{CommandBuffer, CommandBufferInfo, Device, DeviceInfo};
+﻿use crate::gfx::{Device, DeviceInfo, Queue, QueueInfo};
 
-    #[test]
-    fn initialize() {
-        let device = Device::new(&DeviceInfo::new());
-        let mut command_buffer = CommandBuffer::new(&device, &CommandBufferInfo::new());
-        command_buffer.begin();
-        command_buffer.end();
-    }
+#[test]
+fn initialize() {
+    let device = Device::new(&DeviceInfo::new());
+    let _queue = Queue::new(&device, &QueueInfo::new());
 }
