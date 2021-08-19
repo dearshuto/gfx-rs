@@ -4,8 +4,8 @@ use super::super::vertex_state_api::{IVertexState, VertexStateInfo};
 use super::super::Device;
 
 pub struct VertexStateWgpu {
-    _vertex_attribute_state_info: Vec<VertexAttributeStateInfo>,
-    _vertex_buffer_state_info: Vec<VertexBufferStateInfo>,
+    _vertex_attribute_state_info_array: Vec<VertexAttributeStateInfo>,
+    _vertex_buffer_state_info_array: Vec<VertexBufferStateInfo>,
 }
 
 impl IVertexState for VertexStateWgpu {
@@ -14,8 +14,18 @@ impl IVertexState for VertexStateWgpu {
         let vertex_buffer_state_info_array = info.get_buffer_state_info_array().to_vec();
 
         Self {
-            _vertex_attribute_state_info: vertex_attribute_state_info_arra,
-            _vertex_buffer_state_info: vertex_buffer_state_info_array,
+            _vertex_attribute_state_info_array: vertex_attribute_state_info_arra,
+            _vertex_buffer_state_info_array: vertex_buffer_state_info_array,
         }
+    }
+}
+
+impl VertexStateWgpu {
+    pub fn get_vertex_attribute_state_info_array(&self) -> &[VertexAttributeStateInfo] {
+        &self._vertex_attribute_state_info_array
+    }
+
+    pub fn get_vertex_buffer_state_info_array(&self) -> &[VertexBufferStateInfo] {
+        &self._vertex_buffer_state_info_array
     }
 }
