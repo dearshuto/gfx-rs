@@ -4,7 +4,7 @@ use super::super::Device;
 pub struct VertexStateWgpu {}
 
 impl IVertexState for VertexStateWgpu {
-    fn new(device: &Device, info: &VertexStateInfo) -> Self {
+    fn new(_device: &Device, _info: &VertexStateInfo) -> Self {
         todo!();
     }
 }

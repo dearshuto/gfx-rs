@@ -32,7 +32,7 @@ pub trait ICommandBufferImpl<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     );
 
@@ -67,11 +67,11 @@ pub trait ICommandBufferImpl<'a> {
 
     fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     );
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress);
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>);
 
     fn draw(
         &mut self,
@@ -181,7 +181,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     ) {
         self.command_buffer_impl
@@ -239,14 +239,14 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
 
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &'a [&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         self.command_buffer_impl
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
         self.command_buffer_impl
             .set_vertex_buffer(buffer_index, gpu_address);
     }
@@ -379,11 +379,11 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         self.command_buffer_impl.flush_memory(gpu_access_flags);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.command_buffer_impl
     }
 
-    pub fn to_data_mut(&'a mut self) -> &'a mut T {
+    pub fn to_data_mut(&mut self) -> &mut T {
         &mut self.command_buffer_impl
     }
 }

@@ -1,10 +1,10 @@
 use super::super::pipeline_api::{ComputePipelineInfo, GraphicsPipelineInfo, IPipelineImpl};
-use super::super::Device;
+use super::super::{Device, Shader};
 use std::marker::PhantomData;
 
 pub struct Pipeline<'a> {
     render_pipeline_impl: Option<wgpu::RenderPipeline>,
-    compute_pipeline_impl: wgpu::ComputePipeline,
+    compute_pipeline_impl: Option<wgpu::ComputePipeline>,
     bind_group: wgpu::BindGroup,
     _marker: PhantomData<&'a i32>,
 }
@@ -39,7 +39,7 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
 
         Self {
             render_pipeline_impl: None,
-            compute_pipeline_impl: compute_pipeline,
+            compute_pipeline_impl: Some(compute_pipeline),
             bind_group,
             _marker: PhantomData,
         }
@@ -47,15 +47,23 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
 }
 
 impl<'a> Pipeline<'a> {
+    pub fn is_compute(&self) -> bool {
+        self.compute_pipeline_impl.is_some()
+    }
+
     pub fn get_render_pipeline(&self) -> Option<&wgpu::RenderPipeline> {
         self.render_pipeline_impl.as_ref()
     }
 
     pub fn get_compute_pipeline(&'a self) -> Option<&wgpu::ComputePipeline> {
-        Some(&self.compute_pipeline_impl)
+        Some(self.compute_pipeline_impl.as_ref().unwrap())
     }
 
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
+    }
+
+    pub fn get_shader(&self) -> &Shader {
+		todo!()
     }
 }
