@@ -22,10 +22,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {
-        let mut val = 0;
-        val += 9;
-    }
+    fn end(&mut self) {}
 
     fn reset(&mut self) {
         self._commands.clear();
