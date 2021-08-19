@@ -7,3 +7,4 @@ pub mod fence_api_test;
 pub mod memory_pool_api_test;
 pub mod queue_api_test;
 pub mod rasterizer_state_api_test;
+pub mod vertex_state_api_test;
