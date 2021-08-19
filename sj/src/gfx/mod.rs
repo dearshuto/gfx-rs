@@ -316,11 +316,13 @@ bitflags! {
     }
 }
 
+#[derive(Clone)]
 pub enum ImageFormat {
     R8G8B8A8Unorm,
     D32,
 }
 
+#[derive(Clone)]
 pub enum ShaderStage {
     Vertex,
     Pixel,
@@ -346,16 +348,19 @@ pub enum DepthStencilClearMode {
     DepthStencil,
 }
 
+#[derive(Clone)]
 pub enum AttributeFormat {
     Float32_32,
     Float32_32_32,
 }
 
+#[derive(Clone)]
 pub enum PrimitiveTopology {
     PointList,
     TriangleList,
 }
 
+#[derive(Clone)]
 pub enum IndexFormat {
     Uint32,
 }
