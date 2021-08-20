@@ -45,3 +45,9 @@ impl<'a> ITexture<'a> for TextureWgpu<'a> {
         }
     }
 }
+
+impl<'a> TextureWgpu<'a> {
+    pub fn get_texture(&self) -> &wgpu::Texture {
+        &self._texture
+    }
+}
