@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::gfx::{Device, DeviceInfo, Fence, FenceInfo};
 
 #[test]

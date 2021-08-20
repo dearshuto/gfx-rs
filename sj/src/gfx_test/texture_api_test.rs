@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::gfx::{
     Device, DeviceInfo, GpuAccess, ImageFormat, MemoryPool, MemoryPoolInfo, MemoryPoolProperty,
     Texture, TextureInfo,

@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::gfx::{
     AttributeFormat, Device, DeviceInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
     VertexState, VertexStateInfo,
