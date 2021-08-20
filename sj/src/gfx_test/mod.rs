@@ -1,5 +1,6 @@
 ﻿pub mod blend_state_api_test;
 pub mod buffer_api_test;
+pub mod color_target_view_api_test;
 pub mod command_buffer_api_test;
 pub mod depth_stencil_state_api_test;
 pub mod device_api_test;
