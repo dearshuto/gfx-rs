@@ -472,6 +472,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     ) {
+		if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
         let builder = CopyImageToBufferCommandBuilder::new(
             self._device,

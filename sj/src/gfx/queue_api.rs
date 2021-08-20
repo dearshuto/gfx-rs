@@ -93,7 +93,6 @@ mod tests {
         let device = Device::new(&DeviceInfo::new());
         let command_buffer = CommandBuffer::new(&device, &CommandBufferInfo::new());
         let mut queue = Queue::new(&device, &QueueInfo::new());
-
         queue.execute(&command_buffer);
         queue.sync();
     }
