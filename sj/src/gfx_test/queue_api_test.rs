@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::gfx::{CommandBuffer, CommandBufferInfo, Device, DeviceInfo, Queue, QueueInfo};
 
 #[test]
