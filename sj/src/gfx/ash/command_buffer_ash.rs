@@ -122,7 +122,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     fn begin(&mut self) {
         let command_buffer = self._command_buffers.iter().next().unwrap();
         let command_buffer_begin_info = ash::vk::CommandBufferBeginInfo::builder()
-            .flags(ash::vk::CommandBufferUsageFlags::RENDER_PASS_CONTINUE)
+            .flags(ash::vk::CommandBufferUsageFlags::empty())
             .build();
         let device_impl = self._device.to_data().get_device();
 
