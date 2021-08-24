@@ -1,9 +1,9 @@
 fn main() {
-    let device_info = sj::gfx::DeviceInfo::new();
-    let device = sj::gfx::Device::new(&device_info);
-
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
+
+    let device_info = sj::gfx::DeviceInfo::new().set_layer(Some(&layer));
+    let device = sj::gfx::Device::new(&device_info);
 
     let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
     let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
@@ -95,7 +95,7 @@ fn main() {
         let command_buffer = &mut command_buffers[index];
         command_buffer.begin();
         {
-            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0);
+            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
             command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
             command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
             command_buffer.set_pipeline(&pipeline);

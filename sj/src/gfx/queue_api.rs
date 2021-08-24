@@ -69,3 +69,31 @@ impl<'a, T: IQueueImpl<'a>> TQueueInterface<'a, T> {
         &mut self.queue_impl
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[cfg(test)]
+    use crate::gfx::{CommandBuffer, CommandBufferInfo, Device, DeviceInfo, Queue, QueueInfo};
+
+    #[test]
+    fn new() {
+        let device = Device::new(&DeviceInfo::new());
+        let _queue = Queue::new(&device, &QueueInfo::new());
+    }
+
+    #[test]
+    fn sync_test() {
+        let device = Device::new(&DeviceInfo::new());
+        let mut queue = Queue::new(&device, &QueueInfo::new());
+        queue.sync();
+    }
+
+    #[test]
+    fn execure_test() {
+        let device = Device::new(&DeviceInfo::new());
+        let command_buffer = CommandBuffer::new(&device, &CommandBufferInfo::new());
+        let mut queue = Queue::new(&device, &QueueInfo::new());
+        queue.execute(&command_buffer);
+        queue.sync();
+    }
+}
