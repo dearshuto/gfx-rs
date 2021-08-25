@@ -37,7 +37,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         if pipeline.to_data().is_compute() {
-            let builder = ComputePassCommandBuilder::new(self._device);
+            let builder = ComputePassCommandBuilder::new(self._device, pipeline);
             let command = CommandBuilder::Compute(builder);
             self._commands.push(command);
         } else {
@@ -64,7 +64,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: &'a GpuAddress,
         size: u64,
     ) {
         self._commands
@@ -107,7 +107,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &'a GpuAddress<'a>) {
         self._commands
             .last_mut()
             .unwrap()

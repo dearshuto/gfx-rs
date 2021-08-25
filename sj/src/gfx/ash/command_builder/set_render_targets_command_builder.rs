@@ -27,7 +27,7 @@ impl<'a> SetRenderTargetsCommandBuilder<'a> {
                     .samples(ash::vk::SampleCountFlags::TYPE_1)
                     .load_op(ash::vk::AttachmentLoadOp::DONT_CARE)
                     .store_op(ash::vk::AttachmentStoreOp::STORE)
-                    .initial_layout(ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+                    .initial_layout(ash::vk::ImageLayout::UNDEFINED)
                     .final_layout(ash::vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
                     .build(),
             );

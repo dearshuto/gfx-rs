@@ -1,5 +1,5 @@
+use crate::gfx::ClearColorValue;
 use super::{
-    common::ClearColorValue,
     texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
     Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,
@@ -40,7 +40,7 @@ pub trait ICommandBufferImpl<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: &'a GpuAddress,
         size: u64,
     );
 
@@ -71,7 +71,7 @@ pub trait ICommandBufferImpl<'a> {
         depth_stencil_state_view: Option<&DepthStencilView>,
     );
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>);
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &'a GpuAddress<'a>);
 
     fn draw(
         &mut self,
@@ -192,7 +192,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: &'a GpuAddress,
         size: u64,
     ) {
         self.command_buffer_impl
@@ -246,7 +246,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &'a GpuAddress<'a>) {
         self.command_buffer_impl
             .set_vertex_buffer(buffer_index, gpu_address);
     }

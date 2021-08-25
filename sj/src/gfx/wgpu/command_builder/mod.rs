@@ -51,7 +51,7 @@ impl<'a> CommandBuilder<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: &'a GpuAddress,
         size: u64,
     ) {
         match self {
@@ -77,7 +77,7 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &'a GpuAddress<'a>) {
         match self {
             Self::Graphics(ref mut builder) => builder.set_vertex_buffer(buffer_index, gpu_address),
             Self::Compute(ref mut builder) => builder.set_vertex_buffer(buffer_index, &gpu_address),

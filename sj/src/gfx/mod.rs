@@ -2,9 +2,9 @@ use bitflags;
 
 mod blend_state_api;
 mod buffer_api;
+mod clear_color_value;
 mod color_target_view_api;
 mod command_buffer_api;
-mod common;
 mod depth_stencil_state_api;
 mod depth_stencil_view_api;
 //mod descriptor_pool_api;
@@ -21,6 +21,8 @@ mod swap_chain_api;
 mod texture_api;
 mod vertex_state_api;
 mod viewport_scissor_state_api;
+
+use self::clear_color_value::ClearColorValue;
 
 use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
@@ -168,7 +170,7 @@ pub type Fence<'a> = TFence<'a, FenceImpl<'a>>;
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type GpuAddressImpl<'a> = self::wgpu::gpu_address_wgpu::GpuAddressWgpu<'a>;
+type GpuAddressImpl<'a> = self::wgpu::gpu_address_wgpu::GpuAddressWgpu;
 
 pub type GpuAddress<'a> = TGpuAddressInterface<'a, GpuAddressImpl<'a>>;
 //
@@ -190,7 +192,7 @@ pub use self::pipeline_api::ComputePipelineInfo;
 pub use self::pipeline_api::GraphicsPipelineInfo;
 
 #[cfg(feature = "backend_wgpu")]
-type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline<'a>;
+type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline;
 
 #[cfg(feature = "backend_ash")]
 type PipelineImpl<'a> = self::ash::pipeline_ash::PipelineImpl<'a>;

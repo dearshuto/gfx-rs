@@ -1,11 +1,14 @@
 use crate::gfx::{Device, GpuAddress, Pipeline, ShaderStage};
+use std::sync::Arc;
 
 pub struct ComputePassCommandBuilder<'a> {
     _device: &'a Device,
+    _pipeline: &'a Pipeline<'a>,
     _compute_pipeline: Option<&'a wgpu::ComputePipeline>,
     _bind_grpup: Option<wgpu::BindGroup>,
     _bind_grpup_layout: Option<wgpu::BindGroupLayout>,
-    _buffers: [Option<GpuAddress<'a>>; 32],
+    _buffer_binding: [Option<Arc<wgpu::Buffer>>; 8],
+    _buffers: [Option<Arc<wgpu::Buffer>>; 32],
     _dispatch_count_x: u32,
     _dispatch_count_y: u32,
     _dispatch_count_z: u32,
@@ -13,12 +16,14 @@ pub struct ComputePassCommandBuilder<'a> {
 }
 
 impl<'a> ComputePassCommandBuilder<'a> {
-    pub fn new(device: &'a Device) -> Self {
+    pub fn new(device: &'a Device, pipeline: &'a Pipeline<'a>) -> Self {
         Self {
             _device: device,
+            _pipeline: pipeline,
             _compute_pipeline: None,
             _bind_grpup: None,
             _bind_grpup_layout: None,
+            _buffer_binding: std::default::Default::default(),
             _buffers: std::default::Default::default(),
             _dispatch_count_x: 0,
             _dispatch_count_y: 0,
@@ -27,19 +32,19 @@ impl<'a> ComputePassCommandBuilder<'a> {
         }
     }
 
-    pub fn build(&self, _command_encoder: &mut wgpu::CommandEncoder) {
-        // let mut compute_pass = command_encoder.begin_compute_pass();
-        // compute_pass.set_pipeline(self._compute_pipeline.unwrap());
-        // compute_pass.set_bind_group(0, self._bind_grpup.as_ref().unwrap(), &[]);
-        // compute_pass.dispatch(
-        //     self._dispatch_count_x,
-        //     self._dispatch_count_y,
-        //     self._dispatch_count_z,
-        // );
-    }
-
-    pub fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-        self._compute_pipeline = pipeline.to_data().get_compute_pipeline();
+    pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
+		let compute_pipeline = self._pipeline.to_data().get_compute_pipeline();
+		let bind_group = self._pipeline.to_data().get_compute_bind_group();
+        let mut compute_pass =
+            command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
+		
+        compute_pass.set_pipeline(&compute_pipeline);
+        compute_pass.set_bind_group(0, &bind_group, &[]);
+        compute_pass.dispatch(
+            self._dispatch_count_x,
+            self._dispatch_count_y,
+            self._dispatch_count_z,
+        );
     }
 
     pub fn set_constant_buffer(
@@ -49,41 +54,25 @@ impl<'a> ComputePassCommandBuilder<'a> {
         gpu_address: GpuAddress<'a>,
         _size: usize,
     ) {
-        self._buffers[slot as usize] = Some(gpu_address);
-
-        // let slice = gpu_address
-        //     .to_data()
-        //     .get_buffer()
-        //     .to_data()
-        //     .get_buffer()
-        //     .slice(..);
-
-        // self._buffers[slot as usize] = Some(wgpu::BindingResource::Buffer(slice));
+        self._buffers[slot as usize] = Some(gpu_address.to_data().clone_buffer());
     }
 
     pub fn set_unordered_access_buffer(
         &mut self,
         slot: i32,
         _stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: &'a GpuAddress,
         _size: u64,
     ) {
-        // self._buffers.resize(slot);
-        // self._buffers[slot] = wgpu::BindingResource::Buffer(
-        //     gpu_address
-        //         .to_data()
-        //         .get_buffer()
-        //         .to_data()
-        //         .get_buffer()
-        //         .slice(..),
-        // );
+		assert!(0 <= slot);
+		self._buffer_binding[slot as usize] = Some(gpu_address.to_data().clone_buffer());
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    pub fn set_vertex_buffer(&mut self, _buffer_index: i32, _gpu_address: &GpuAddress) {
         assert!(false);
     }
-		
-	pub fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
+
+    pub fn dispatch(&mut self, _group_count_x: u32, _group_count_y: u32, _group_count_z: u32) {
         // let device_wgpu = self._device.to_data().get_device();
         // let bind_group_layout =
         //     device_wgpu.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

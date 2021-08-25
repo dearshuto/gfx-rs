@@ -1,31 +1,28 @@
 use super::super::shader_api::IShaderImpl;
 use super::super::shader_api::ShaderInfo;
 use super::super::Device;
+use std::sync::Arc;
 use std::marker::PhantomData;
 
 pub struct ShaderImpl<'a> {
-    _vertex_shader_module: Option<wgpu::ShaderModule>,
-    _pixel_shader_module: Option<wgpu::ShaderModule>,
-    _compute_shader_module: Option<wgpu::ShaderModule>,
+    _vertex_shader_module: Option<Arc<wgpu::ShaderModule>>,
+    _pixel_shader_module: Option<Arc<wgpu::ShaderModule>>,
+    _compute_shader_module: Option<Arc<wgpu::ShaderModule>>,
     _marker: PhantomData<&'a i32>,
 }
 
 impl<'a> ShaderImpl<'a> {
-    pub fn get_impl(&'a self) -> &'a wgpu::ShaderModule {
-        self._vertex_shader_module.as_ref().unwrap()
-    }
+	pub fn clone_vertex_shader_module(&self) -> Arc<wgpu::ShaderModule> {
+		self._vertex_shader_module.as_ref().unwrap().clone()
+	}
 
-    pub fn get_vertex_shader_module(&self) -> &wgpu::ShaderModule {
-        self._vertex_shader_module.as_ref().unwrap()
-    }
+	pub fn clone_pixel_shader_module(&self) -> Arc<wgpu::ShaderModule> {
+		self._pixel_shader_module.as_ref().unwrap().clone()
+	}
 
-    pub fn get_pixel_shader_module(&self) -> &wgpu::ShaderModule {
-        self._pixel_shader_module.as_ref().unwrap()
-    }
-
-    pub fn get_compute_shader_module(&self) -> &wgpu::ShaderModule {
-        self._compute_shader_module.as_ref().unwrap()
-    }
+	pub fn clone_compute_shader_module(&self) -> Arc<wgpu::ShaderModule> {
+		self._compute_shader_module.as_ref().unwrap().clone()
+	}
 
     fn create_shader_module(device: &wgpu::Device, sprv_binary: &[u8]) -> wgpu::ShaderModule {
         let options = naga::front::spv::Options {
@@ -56,24 +53,24 @@ impl<'a> ShaderImpl<'a> {
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self {
         let vertex_shader_module = match info.get_vertex_shader_binary() {
-            Some(vertex_shader_binary) => Some(ShaderImpl::create_shader_module(
+            Some(vertex_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &vertex_shader_binary,
-            )),
+            ))),
             None => None,
         };
         let pixel_shader_module = match info.get_pixel_shader_binary() {
-            Some(pixel_shader_binary) => Some(ShaderImpl::create_shader_module(
+            Some(pixel_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &pixel_shader_binary,
-            )),
+            ))),
             None => None,
         };
         let compute_shader_module = match info.get_compute_shader_binary() {
-            Some(compute_shader_binary) => Some(ShaderImpl::create_shader_module(
+            Some(compute_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &compute_shader_binary,
-            )),
+            ))),
             None => None,
         };
 
