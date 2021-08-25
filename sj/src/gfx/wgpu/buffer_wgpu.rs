@@ -21,6 +21,8 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         _offset: i64,
         _size: u64,
     ) -> Self {
+        assert!(info.get_size() <= _size);
+
         let slice_size = info.get_size();
         let size = slice_size as wgpu::BufferAddress;
         let buffer = device
