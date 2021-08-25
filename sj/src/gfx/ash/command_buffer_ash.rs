@@ -33,6 +33,7 @@ pub struct CommandBufferImpl<'a> {
     _commands: Vec<Command<'a>>,
     _current_shader: Option<&'a Shader<'a>>,
     _current_descriptor_set: Option<ash::vk::DescriptorSet>,
+    _current_pipeline: Option<&'a Pipeline<'a>>,
     _current_render_pass: Option<ash::vk::RenderPass>,
 }
 
@@ -114,6 +115,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
                 _commands: Vec::<Command>::new(),
                 _current_shader: None,
                 _current_descriptor_set: None,
+                _current_pipeline: None,
                 _current_render_pass: None,
             }
         }
@@ -170,27 +172,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     }
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
-        let render_pass = if pipeline.to_data().is_graphics_pipeline() {
-            Some(*self._current_render_pass.as_ref().unwrap())
-        } else {
-            None
-        };
-
-        if pipeline.to_data().is_graphics_pipeline() {}
-        let set_pipelie_params = SetPipelineParams::new(
-            self._device,
-            pipeline,
-            *command_buffer_ash,
-            self._descriptor_pool,
-            render_pass,
-        );
-
-        self._current_shader = Some(pipeline.to_data().get_shader());
-        self._current_descriptor_set = Some(*set_pipelie_params.get_descriptor_set());
-
-        let command = Command::SetPipeline(set_pipelie_params);
-        self._commands.push(command);
+        self._current_pipeline = Some(pipeline);
     }
 
     fn set_constant_buffer(
@@ -294,18 +276,36 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         }
 
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
-        let builder = SetRenderTargetsCommandBuilder::new(
+        let set_render_target_command_builder = SetRenderTargetsCommandBuilder::new(
             self._device,
             *command_buffer_ash,
             color_target_views,
             depth_stencil_state_view,
         );
 
-        // いったん RenderPass は取っておく
-        self._current_render_pass = Some(*builder.get_render_pass());
+        let render_pass = *set_render_target_command_builder.get_render_pass();
 
-        let command = Command::SetRenderTargets(builder);
-        self._commands.push(command);
+        let set_render_target_command =
+            Command::SetRenderTargets(set_render_target_command_builder);
+
+        let pipeline = self._current_pipeline.unwrap();
+        let set_pipelie_params = SetPipelineParams::new(
+            self._device,
+            pipeline,
+            *command_buffer_ash,
+            self._descriptor_pool,
+            Some(render_pass),
+        );
+
+        self._current_shader = Some(pipeline.to_data().get_shader());
+        self._current_descriptor_set = Some(*set_pipelie_params.get_descriptor_set());
+
+        let set_pipeline_command = Command::SetPipeline(set_pipelie_params);
+        self._commands.push(set_pipeline_command);
+        self._commands.push(set_render_target_command);
+
+        // RenderPass が開始したことを知りたいので、いったん RenderPass は取っておく
+        self._current_render_pass = Some(render_pass);
     }
 
     fn set_vertex_buffer(&mut self, _buffer_index: i32, gpu_address: &GpuAddress) {
@@ -472,7 +472,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     ) {
-		if self.is_render_pass_begining() {
+        if self.is_render_pass_begining() {
             self.push_end_render_pass_command();
         }
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();

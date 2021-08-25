@@ -155,9 +155,9 @@ fn ash() {
 
     command_buffer.begin();
     command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 1.0, None);
+	command_buffer.set_pipeline(&pipeline);
     command_buffer.set_render_targets(&[&color_target_view], None);
     command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-    command_buffer.set_pipeline(&pipeline);
     command_buffer.set_vertex_buffer(0, &GpuAddress::new(&vertex_buffer));
     command_buffer.draw(sj::gfx::PrimitiveTopology::PointList, 6, 0);
     command_buffer.flush_memory(GpuAccess::COLOR_BUFFER | GpuAccess::TEXTURE);
