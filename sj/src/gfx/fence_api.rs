@@ -23,3 +23,14 @@ impl<'a, T: IFence<'a>> TFence<'a, T> {
         &self._impl
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gfx::{Device, DeviceInfo, Fence, FenceInfo};
+
+    #[test]
+    fn initialize() {
+        let device = Device::new(&DeviceInfo::new());
+        let _fence = Fence::new(&device, &FenceInfo {});
+    }
+}
