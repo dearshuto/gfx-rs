@@ -33,3 +33,14 @@ impl<'a, T: ISemaphore<'a>> TSemaphore<'a, T> {
         &mut self._impl
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gfx::{Device, DeviceInfo, Semaphore, SemaphoreInfo};
+
+    #[test]
+    fn initialize() {
+        let device = Device::new(&DeviceInfo::new());
+        let _semahore = Semaphore::new(&device, &SemaphoreInfo::new());
+    }
+}
