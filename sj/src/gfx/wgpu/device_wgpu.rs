@@ -8,7 +8,7 @@ pub struct DeviceImpl {
 
 impl super::super::device_api::TDeviceImpl for DeviceImpl {
     fn new(_info: &DeviceInfo) -> DeviceImpl {
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
         let adapter =
             executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))
                 .unwrap();

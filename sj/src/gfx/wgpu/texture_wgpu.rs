@@ -36,7 +36,7 @@ impl<'a> ITexture<'a> for TextureWgpu<'a> {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_SRC,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_SRC,
         });
 
         Self {
