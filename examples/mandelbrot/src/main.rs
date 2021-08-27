@@ -1,4 +1,4 @@
-﻿fn main() {
+fn main() {
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
 
@@ -103,9 +103,9 @@
         let command_buffer = &mut command_buffers[index];
         command_buffer.begin();
         {
+            command_buffer.set_pipeline(&pipeline);
             command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
             command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-            command_buffer.set_pipeline(&pipeline);
             command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
             let vertex_count = 6;
