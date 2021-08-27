@@ -6,7 +6,7 @@ version = "0.21.0"
 [features]
 default = ["backend_wgpu"]
 backend_vulkano = ["vulkano", "vulkano-win"]
-backend_wgpu = ["wgpu"]
+backend_wgpu = ["wgpu", "naga"]
 backend_ash = ["ash", "ash-window", "raw-window-handle", "spirv-reflect"]
 
 [dependencies]
@@ -15,7 +15,8 @@ winit = "0.24.0"
 libloading = "0.7"
 vulkano =  {version = "0.24.0", optional = true}
 vulkano-win = {version = "0.24.0", optional = true}
-wgpu = {version = "0.9.0", optional = true}
+wgpu = {version = "0.10.0", optional = true}
+naga = {version = "0.6.1", features = ["spv-in", "wgsl-out"], optional = true}
 ash = {version = "0.32.1", optional = true}
 raw-window-handle = { version = "0.3", optional = true}
 ash-window = {version = "0.6.0", optional = true}	

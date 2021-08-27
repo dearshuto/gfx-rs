@@ -90,31 +90,31 @@ impl<'a> BufferImpl<'a> {
 }
 
 impl BufferInfo {
-    pub fn get_as_usage(&self) -> wgpu::BufferUsage {
+    pub fn get_as_usage(&self) -> wgpu::BufferUsages {
         let gpu_access = self.get_gpu_access_flags();
 
-        let mut result = wgpu::BufferUsage::empty();
+        let mut result = wgpu::BufferUsages::empty();
         if gpu_access.contains(GpuAccess::VERTEX_BUFFER) {
-            result |= wgpu::BufferUsage::VERTEX;
+            result |= wgpu::BufferUsages::VERTEX;
         }
         if gpu_access.contains(GpuAccess::INDEX_BUFFER) {
-            result |= wgpu::BufferUsage::INDEX;
+            result |= wgpu::BufferUsages::INDEX;
         }
         if gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER) {
-            result |= wgpu::BufferUsage::STORAGE;
+            result |= wgpu::BufferUsages::STORAGE;
         }
         if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
-            result |= wgpu::BufferUsage::UNIFORM;
+            result |= wgpu::BufferUsages::UNIFORM;
         }
         if gpu_access.contains(GpuAccess::READ) {
-            result |= wgpu::BufferUsage::MAP_READ;
+            result |= wgpu::BufferUsages::MAP_READ;
         }
         if gpu_access.contains(GpuAccess::WRITE) {
-            result |= wgpu::BufferUsage::MAP_WRITE;
+            result |= wgpu::BufferUsages::MAP_WRITE;
         }
 
-        result |= wgpu::BufferUsage::COPY_SRC;
-        result |= wgpu::BufferUsage::COPY_DST;
+        result |= wgpu::BufferUsages::COPY_SRC;
+        result |= wgpu::BufferUsages::COPY_DST;
 
         result
     }
