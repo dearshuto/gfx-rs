@@ -12,8 +12,14 @@ pub struct ViewportScissorStateWgpu {
 }
 
 impl<'a> IViewportScissorState<'a> for ViewportScissorStateWgpu {
-    fn new(_device: &'a crate::gfx::Device, _info: &crate::gfx::ViewportScissorStateInfo) -> Self {
-        todo!()
+    fn new(_device: &'a crate::gfx::Device, info: &crate::gfx::ViewportScissorStateInfo) -> Self {
+        Self {
+            _origin_x: info.get_viewport_state_info_array()[0].get_origin_x(),
+            _origin_y: info.get_viewport_state_info_array()[0].get_origin_y(),
+            _width: info.get_viewport_state_info_array()[0].get_width(),
+            _height: info.get_viewport_state_info_array()[0].get_height(),
+            _scissor_state_info: info.get_scissor_state_info_array()[0],
+        }
     }
 }
 
@@ -45,4 +51,3 @@ impl ViewportScissorStateWgpu {
         );
     }
 }
-
