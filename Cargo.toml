@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "sj",
-	"examples/hello_gfx",
 	"examples/hello_graphics_pipeline",
 	"examples/hello_3d",
 	"examples/hello_compute",
