@@ -1,0 +1,13 @@
+[package]
+name = "hello_texture"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+sj = { path = "../../sj" }
+image = "*"
+
+[build-dependencies]
+shaderc = "0.7"
+image = "0.23.14"
