@@ -4,6 +4,7 @@ members = [
 	"examples/hello_graphics_pipeline",
 	"examples/hello_3d",
 	"examples/hello_compute",
+	"examples/hello_draw_indexed",
 	"examples/mandelbrot",
 	"examples/shader_setup",
 	"examples/simple_window",

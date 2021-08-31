@@ -1,10 +1,10 @@
 use super::{
     ClearColorCommandBuilder, ClearDepthStencilCommandBuilder, CopyImageCommandBuilder,
     CopyImageToBufferCommandBuilder, DispatchParams, DrawCommandBuilder,
-    EndRenderPassCommandBuilder, FlushMemoryCommandBuilder, SetConstantBufferCommandBuilder,
-    SetPipelineParams, SetRenderTargetsCommandBuilder, SetTextureStateTransitionCommandBuilder,
-    SetUnorderedAccessBufferParams, SetVertexBufferCommandBuilder,
-    SetViewportScissorStateCommandBuilder,
+    DrawIndexedInstancedCommandBuilder, EndRenderPassCommandBuilder, FlushMemoryCommandBuilder,
+    SetConstantBufferCommandBuilder, SetPipelineParams, SetRenderTargetsCommandBuilder,
+    SetTextureStateTransitionCommandBuilder, SetUnorderedAccessBufferParams,
+    SetVertexBufferCommandBuilder, SetViewportScissorStateCommandBuilder,
 };
 
 pub enum Command<'a> {
@@ -18,6 +18,7 @@ pub enum Command<'a> {
     SetUnorderedAccessBuffer(SetUnorderedAccessBufferParams<'a>),
     SetVertexBuffer(SetVertexBufferCommandBuilder<'a>),
     Draw(DrawCommandBuilder<'a>),
+    DrawIndexedInstanced(DrawIndexedInstancedCommandBuilder<'a>),
     Dispatch(DispatchParams<'a>),
     SetTextureStateTransition(SetTextureStateTransitionCommandBuilder<'a>),
     CopyImage(CopyImageCommandBuilder<'a>),
@@ -37,6 +38,7 @@ impl<'a> Command<'a> {
             Self::SetConstantBuffer(ref builder) => builder.build(),
             Self::SetUnorderedAccessBuffer(ref params) => params.build(),
             Self::SetVertexBuffer(ref builder) => builder.build(),
+            Self::DrawIndexedInstanced(ref builder) => builder.build(),
             Self::Draw(ref builder) => builder.build(),
             Self::Dispatch(ref params) => params.build(),
             Self::CopyImage(ref builder) => builder.build(),
