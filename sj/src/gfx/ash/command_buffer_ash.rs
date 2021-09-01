@@ -16,6 +16,7 @@ use super::super::{
 
 use super::command_builder::ClearDepthStencilCommandBuilder;
 use super::command_builder::CopyImageCommandBuilder;
+use super::command_builder::DrawIndexedInstancedCommandBuilder;
 use super::command_builder::SetConstantBufferCommandBuilder;
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
@@ -363,26 +364,55 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn draw_indexed(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: &GpuAddress,
+        index_count: i32,
+        base_vertex: i32,
     ) {
-        std::unimplemented!();
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            1,
+            0,
+        );
     }
 
     fn draw_indexed_instanced(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: &GpuAddress,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        std::unimplemented!();
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let descriptor_set = self._current_descriptor_set.unwrap();
+        let pipeline_layout = self
+            ._current_shader
+            .unwrap()
+            .to_data()
+            .get_pipeline_layout();
+        let builder = DrawIndexedInstancedCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            *pipeline_layout,
+            descriptor_set,
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            instance_count,
+            base_instance,
+        );
+        let command = Command::DrawIndexedInstanced(builder);
+        self._commands.push(command);
     }
 
     fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
