@@ -1,4 +1,4 @@
-use super::Device;
+use super::{Device, ShaderInterfaceSlotType};
 use std::marker::PhantomData;
 
 pub struct ShaderInfo<'a> {
@@ -55,6 +55,8 @@ impl<'a> ShaderInfo<'a> {
 
 pub trait IShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self;
+
+    fn get_interface_slot(&self, interface_slot_type: ShaderInterfaceSlotType, name: &str) -> i32;
 }
 
 pub struct TShaderInterface<'a, T: 'a>
@@ -71,6 +73,15 @@ impl<'a, T: IShaderImpl<'a>> TShaderInterface<'a, T> {
             shader_impl: T::new(device, info),
             _marker: PhantomData,
         }
+    }
+
+    pub fn get_interface_slot(
+        &self,
+        interface_slot_type: ShaderInterfaceSlotType,
+        name: &str,
+    ) -> i32 {
+        self.shader_impl
+            .get_interface_slot(interface_slot_type, name)
     }
 
     pub fn to_data(&'a self) -> &'a T {

@@ -329,6 +329,12 @@ pub enum ShaderStage {
     Compute,
 }
 
+#[derive(Clone, Debug)]
+pub enum ShaderInterfaceSlotType {
+    ConstantBuffer,
+    Sampler,
+}
+
 bitflags! {
     pub struct PipelineStageBit: u32 {
         const VERTEX_INPUT = 0x01;

@@ -1,7 +1,7 @@
 use ash::version::DeviceV1_0;
 use std::ops::Index;
 
-use crate::gfx::ShaderStage;
+use crate::gfx::{ShaderInterfaceSlotType, ShaderStage};
 
 use super::super::shader_api::{IShaderImpl, ShaderInfo};
 use super::super::{Device, GpuAccess};
@@ -14,6 +14,7 @@ pub struct ShaderImpl<'a> {
     _layout_table_vertex: Option<std::sync::Arc<LayoutTable>>,
     _layout_table_pixel: Option<std::sync::Arc<LayoutTable>>,
     _layout_table_compute: Option<std::sync::Arc<LayoutTable>>,
+    _interface_slot_table: [std::collections::HashMap<String, i32>; 2],
 }
 
 impl<'a> ShaderImpl<'a> {
@@ -87,6 +88,10 @@ impl<'a> ShaderImpl<'a> {
                 _layout_table_vertex: None,
                 _layout_table_pixel: None,
                 _layout_table_compute: Some(std::sync::Arc::new(layout_table)),
+                _interface_slot_table: [
+                    std::collections::HashMap::<String, i32>::new(),
+                    std::collections::HashMap::<String, i32>::new(),
+                ],
             }
         }
     }
@@ -134,6 +139,10 @@ impl<'a> ShaderImpl<'a> {
                 _layout_table_vertex: Some(std::sync::Arc::new(layout_table)),
                 _layout_table_pixel: None,
                 _layout_table_compute: None,
+                _interface_slot_table: [
+                    std::collections::HashMap::<String, i32>::new(),
+                    std::collections::HashMap::<String, i32>::new(),
+                ],
             }
         }
     }
@@ -205,6 +214,10 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
         } else {
             Self::new_as_graphics_shader(device, info)
         }
+    }
+
+    fn get_interface_slot(&self, interface_slot_type: ShaderInterfaceSlotType, name: &str) -> i32 {
+        -1
     }
 }
 
