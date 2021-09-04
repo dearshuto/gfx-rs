@@ -85,16 +85,17 @@ impl<'a> ISwapChainImpl<'a> for SwapChainImpl<'a> {
                 .find(|&mode| mode == ash::vk::PresentModeKHR::MAILBOX)
                 .unwrap_or(ash::vk::PresentModeKHR::FIFO);
 
+            let desired_image_count = surface_capabilities.min_image_count + 1;
+
             let swap_chain_create_info = ash::vk::SwapchainCreateInfoKHR::builder()
                 .surface(surface)
-                .min_image_count(2)
+                .min_image_count(desired_image_count)
                 .image_color_space(surface_format.color_space)
                 .image_format(surface_format.format)
                 .image_extent(surface_resolution)
                 .image_usage(
                     ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
-                        | ash::vk::ImageUsageFlags::INPUT_ATTACHMENT
-                        | ash::vk::ImageUsageFlags::TRANSFER_SRC
+                        | ash::vk::ImageUsageFlags::SAMPLED
                         | ash::vk::ImageUsageFlags::TRANSFER_DST,
                 )
                 .image_sharing_mode(ash::vk::SharingMode::EXCLUSIVE)
@@ -156,7 +157,7 @@ impl<'a> ISwapChainImpl<'a> for SwapChainImpl<'a> {
                     640,
                     480,
                     present_image_views[i],
-                    ash::vk::Format::B8G8R8A8_UNORM,
+                    surface_format.format,
                 );
                 let color_target_view = ColorTargetView::new_internal(color_target_view_impl);
                 color_target_views.push(color_target_view);

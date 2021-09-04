@@ -16,6 +16,7 @@ use super::super::{
 
 use super::command_builder::ClearDepthStencilCommandBuilder;
 use super::command_builder::CopyImageCommandBuilder;
+use super::command_builder::DrawIndexedInstancedCommandBuilder;
 use super::command_builder::SetConstantBufferCommandBuilder;
 use super::command_builder::{
     ClearColorCommandBuilder, Command, CopyImageToBufferCommandBuilder, DispatchParams,
@@ -33,6 +34,7 @@ pub struct CommandBufferImpl<'a> {
     _commands: Vec<Command<'a>>,
     _current_shader: Option<&'a Shader<'a>>,
     _current_descriptor_set: Option<ash::vk::DescriptorSet>,
+    _current_pipeline: Option<&'a Pipeline<'a>>,
     _current_render_pass: Option<ash::vk::RenderPass>,
 }
 
@@ -114,6 +116,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
                 _commands: Vec::<Command>::new(),
                 _current_shader: None,
                 _current_descriptor_set: None,
+                _current_pipeline: None,
                 _current_render_pass: None,
             }
         }
@@ -122,7 +125,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     fn begin(&mut self) {
         let command_buffer = self._command_buffers.iter().next().unwrap();
         let command_buffer_begin_info = ash::vk::CommandBufferBeginInfo::builder()
-            .flags(ash::vk::CommandBufferUsageFlags::RENDER_PASS_CONTINUE)
+            .flags(ash::vk::CommandBufferUsageFlags::empty())
             .build();
         let device_impl = self._device.to_data().get_device();
 
@@ -170,27 +173,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
     }
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
-        let render_pass = if pipeline.to_data().is_graphics_pipeline() {
-            Some(*self._current_render_pass.as_ref().unwrap())
-        } else {
-            None
-        };
-
-        if pipeline.to_data().is_graphics_pipeline() {}
-        let set_pipelie_params = SetPipelineParams::new(
-            self._device,
-            pipeline,
-            *command_buffer_ash,
-            self._descriptor_pool,
-            render_pass,
-        );
-
-        self._current_shader = Some(pipeline.to_data().get_shader());
-        self._current_descriptor_set = Some(*set_pipelie_params.get_descriptor_set());
-
-        let command = Command::SetPipeline(set_pipelie_params);
-        self._commands.push(command);
+        self._current_pipeline = Some(pipeline);
     }
 
     fn set_constant_buffer(
@@ -294,18 +277,36 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         }
 
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
-        let builder = SetRenderTargetsCommandBuilder::new(
+        let set_render_target_command_builder = SetRenderTargetsCommandBuilder::new(
             self._device,
             *command_buffer_ash,
             color_target_views,
             depth_stencil_state_view,
         );
 
-        // いったん RenderPass は取っておく
-        self._current_render_pass = Some(*builder.get_render_pass());
+        let render_pass = *set_render_target_command_builder.get_render_pass();
 
-        let command = Command::SetRenderTargets(builder);
-        self._commands.push(command);
+        let set_render_target_command =
+            Command::SetRenderTargets(set_render_target_command_builder);
+
+        let pipeline = self._current_pipeline.unwrap();
+        let set_pipelie_params = SetPipelineParams::new(
+            self._device,
+            pipeline,
+            *command_buffer_ash,
+            self._descriptor_pool,
+            Some(render_pass),
+        );
+
+        self._current_shader = Some(pipeline.to_data().get_shader());
+        self._current_descriptor_set = Some(*set_pipelie_params.get_descriptor_set());
+
+        let set_pipeline_command = Command::SetPipeline(set_pipelie_params);
+        self._commands.push(set_pipeline_command);
+        self._commands.push(set_render_target_command);
+
+        // RenderPass が開始したことを知りたいので、いったん RenderPass は取っておく
+        self._current_render_pass = Some(render_pass);
     }
 
     fn set_vertex_buffer(&mut self, _buffer_index: i32, gpu_address: &GpuAddress) {
@@ -363,26 +364,55 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
 
     fn draw_indexed(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: &GpuAddress,
+        index_count: i32,
+        base_vertex: i32,
     ) {
-        std::unimplemented!();
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            1,
+            0,
+        );
     }
 
     fn draw_indexed_instanced(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: &GpuAddress,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        std::unimplemented!();
+        let command_buffer_ash = self._command_buffers.iter().next().unwrap();
+        let descriptor_set = self._current_descriptor_set.unwrap();
+        let pipeline_layout = self
+            ._current_shader
+            .unwrap()
+            .to_data()
+            .get_pipeline_layout();
+        let builder = DrawIndexedInstancedCommandBuilder::new(
+            self._device,
+            *command_buffer_ash,
+            *pipeline_layout,
+            descriptor_set,
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            instance_count,
+            base_instance,
+        );
+        let command = Command::DrawIndexedInstanced(builder);
+        self._commands.push(command);
     }
 
     fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
@@ -472,6 +502,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferImpl<'a> {
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     ) {
+        if self.is_render_pass_begining() {
+            self.push_end_render_pass_command();
+        }
         let command_buffer_ash = self._command_buffers.iter().next().unwrap();
         let builder = CopyImageToBufferCommandBuilder::new(
             self._device,

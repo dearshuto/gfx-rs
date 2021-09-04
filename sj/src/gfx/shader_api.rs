@@ -77,3 +77,69 @@ impl<'a, T: IShaderImpl<'a>> TShaderInterface<'a, T> {
         &self.shader_impl
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gfx::{Device, DeviceInfo, Shader};
+
+    use super::ShaderInfo;
+
+    #[test]
+    fn initialize_graphics_shader() {
+        let vertex_shader_source = &include_str!("test.vs");
+        let pixel_shader_source = &include_str!("test.fs");
+        let mut compiler = shaderc::Compiler::new().unwrap();
+        let options = shaderc::CompileOptions::new().unwrap();
+
+        let vertex_shader_binary = compiler
+            .compile_into_spirv(
+                vertex_shader_source,
+                shaderc::ShaderKind::Vertex,
+                "shader.glsl",
+                "main",
+                Some(&options),
+            )
+            .unwrap();
+
+        let pixel_shader_binary = compiler
+            .compile_into_spirv(
+                pixel_shader_source,
+                shaderc::ShaderKind::Fragment,
+                "shader.glsl",
+                "main",
+                Some(&options),
+            )
+            .unwrap();
+
+        let device = Device::new(&DeviceInfo::new());
+        let _shader = Shader::new(
+            &device,
+            &ShaderInfo::new()
+                .set_vertex_shader_binary(vertex_shader_binary.as_binary_u8())
+                .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
+        );
+    }
+
+    #[test]
+    fn initialize_compute_shader() {
+        let compute_shader_source = &include_str!("test.glsl");
+        let mut compiler = shaderc::Compiler::new().unwrap();
+        let options = shaderc::CompileOptions::new().unwrap();
+
+        let compute_shader_binary = compiler
+            .compile_into_spirv(
+                compute_shader_source,
+                shaderc::ShaderKind::Compute,
+                "shader.glsl",
+                "main",
+                Some(&options),
+            )
+            .unwrap();
+
+        let device = Device::new(&DeviceInfo::new());
+        let _shader = Shader::new(
+            &device,
+            &ShaderInfo::new().set_compute_shader_binary(compute_shader_binary.as_binary_u8()),
+        );
+    }
+}

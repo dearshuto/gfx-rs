@@ -167,3 +167,32 @@ impl<'a, T: IViewportScissorState<'a>> TViewportScissorState<'a, T> {
         &self._impl
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gfx::{
+        Device, DeviceInfo, ScissorStateInfo, ViewportScissorState, ViewportScissorStateInfo,
+        ViewportStateInfo,
+    };
+
+    #[test]
+    fn initialize() {
+        let device = Device::new(&DeviceInfo::new());
+        let viewport_state_info = ViewportStateInfo::new()
+            .set_origin_x(0.0)
+            .set_origin_y(0.0)
+            .set_width(640.0)
+            .set_height(480.0);
+        let scissor_state_info = ScissorStateInfo::new()
+            .set_origin_x(0)
+            .set_origin_y(0)
+            .set_width(640)
+            .set_height(480);
+        let _viewport_scissor_state = ViewportScissorState::new(
+            &device,
+            &ViewportScissorStateInfo::new()
+                .set_viewport_state_info_array(&[viewport_state_info])
+                .set_scissor_state_info_array(&[scissor_state_info]),
+        );
+    }
+}

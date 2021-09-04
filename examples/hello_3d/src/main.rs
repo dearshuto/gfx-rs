@@ -13,11 +13,11 @@ fn main() {
     let fov = std::f32::consts::PI / 4.0;
     let projection_matrix: glm::Mat4x4 = glm::perspective_fov(fov, 640.0, 480.0, 0.1, 100.0);
 
-    let device_info = sj::gfx::DeviceInfo::new();
-    let device = sj::gfx::Device::new(&device_info);
-
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
+
+    let device_info = sj::gfx::DeviceInfo::new().set_layer(Some(&layer));
+    let device = sj::gfx::Device::new(&device_info);
 
     let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
     let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
@@ -197,9 +197,9 @@ fn main() {
         command_buffer
             .flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::DEPTH_STENCIL);
 
+        command_buffer.set_pipeline(&pipeline);
         command_buffer.set_render_targets(&[&scan_buffer_views[index]], Some(&depth_stencil_view));
         command_buffer.set_viewport_scissor_state(&&viewport_scissor_state);
-        command_buffer.set_pipeline(&pipeline);
         command_buffer.set_constant_buffer(
             0,
             sj::gfx::ShaderStage::Vertex,
