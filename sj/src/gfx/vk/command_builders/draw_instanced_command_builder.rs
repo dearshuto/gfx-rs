@@ -8,7 +8,7 @@ use vulkano::command_buffer::{
     AutoCommandBufferBuilder, CommandBufferUsage, DynamicState, SubpassContents,
 };
 use vulkano::pipeline::vertex::BufferlessDefinition;
-use vulkano::pipeline::vertex::SingleBufferDefinition;
+//use vulkano::pipeline::vertex::SingleBufferDefinition;
 use vulkano::pipeline::GraphicsPipeline;
 
 use super::VkAutoCommandBufferBuilder;

@@ -15,7 +15,7 @@ impl TDeviceImpl for DeviceVk {
             None,
         )
         .unwrap();
-        let physical_device = vulkano::instance::PhysicalDevice::enumerate(&instance)
+        let physical_device = vulkano::device::physical::PhysicalDevice::enumerate(&instance)
             .next()
             .unwrap();
 
@@ -33,8 +33,8 @@ impl TDeviceImpl for DeviceVk {
         };
         let (device, mut queues) = vulkano::device::Device::new(
             physical_device,
-            physical_device.supported_features(),
-            &device_ext,
+            &vulkano::device::Features::none(),
+            &physical_device.required_extensions().union(&device_ext),
             [(queue_family, 0.5)].iter().cloned(),
         )
         .unwrap();
