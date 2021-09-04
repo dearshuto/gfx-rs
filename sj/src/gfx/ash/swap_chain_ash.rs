@@ -85,8 +85,8 @@ impl<'a> ISwapChainImpl<'a> for SwapChainImpl<'a> {
                 .find(|&mode| mode == ash::vk::PresentModeKHR::MAILBOX)
                 .unwrap_or(ash::vk::PresentModeKHR::FIFO);
 
-            let desired_image_count = surface_capabilities.min_image_count + 1;
-
+            let desired_image_count = surface_capabilities.min_image_count;
+			
             let swap_chain_create_info = ash::vk::SwapchainCreateInfoKHR::builder()
                 .surface(surface)
                 .min_image_count(desired_image_count)
