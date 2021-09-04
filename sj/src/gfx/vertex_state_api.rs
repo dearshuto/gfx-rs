@@ -1,5 +1,6 @@
 use super::{AttributeFormat, Device};
 
+#[derive(Clone)]
 pub struct VertexAttributeStateInfo {
     _format: AttributeFormat,
     _slot: i32,
@@ -54,6 +55,7 @@ impl VertexAttributeStateInfo {
     }
 }
 
+#[derive(Clone)]
 pub struct VertexBufferStateInfo {
     _stride: i64,
     _divisor: i64,

@@ -59,6 +59,9 @@ pub use self::blend_state_api::BlendTargetStateInfo;
 #[cfg(feature = "backend_ash")]
 type BlendStateImpl = self::ash::blend_state_ash::BlendStateImpl;
 
+#[cfg(feature = "backend_vulkano")]
+type BlendStateImpl = self::vk::blend_state_vk::BlendStateVk;
+
 pub type BlendState = TBlendState<BlendStateImpl>;
 //
 
@@ -66,7 +69,7 @@ pub type BlendState = TBlendState<BlendStateImpl>;
 pub use self::buffer_api::BufferInfo;
 
 #[cfg(feature = "backend_vulkano")]
-type BufferImpl<'a> = self::vk::buffer_vk::BufferImpl<'a>;
+type BufferImpl<'a> = self::vk::buffer_vk::BufferVk<'a>;
 
 #[cfg(feature = "backend_wgpu")]
 type BufferImpl<'a> = self::wgpu::buffer_wgpu::BufferImpl<'a>;
@@ -83,6 +86,9 @@ pub use self::color_target_view_api::ColorTargetViewInfo;
 #[cfg(feature = "backend_ash")]
 type ColorTargetViewImpl<'a> = self::ash::color_target_view_ash::ColorTargetViewImpl<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type ColorTargetViewImpl<'a> = self::vk::color_target_view_vk::ColorTargetViewVk<'a>;
+
 pub type ColorTargetView<'a> = TColorTargetView<'a, ColorTargetViewImpl<'a>>;
 //
 
@@ -90,7 +96,7 @@ pub type ColorTargetView<'a> = TColorTargetView<'a, ColorTargetViewImpl<'a>>;
 pub use self::command_buffer_api::CommandBufferInfo;
 
 #[cfg(feature = "backend_vulkano")]
-type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferImpl<'a>;
+type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferVk<'a>;
 
 #[cfg(feature = "backend_wgpu")]
 type CommandBufferImpl<'a> = self::wgpu::command_buffer_wgpu::CommandBuffer<'a>;
@@ -110,7 +116,7 @@ pub type CommandBuffer<'a> = TCommandBufferInterface<'a, CommandBufferImpl<'a>>;
 pub use self::device_api::DeviceInfo;
 
 #[cfg(feature = "backend_vulkano")]
-type DeviceImpl = self::vk::device_vk::DeviceImpl;
+type DeviceImpl = self::vk::device_vk::DeviceVk;
 
 #[cfg(feature = "backend_wgpu")]
 type DeviceImpl = self::wgpu::device_wgpu::DeviceImpl;
@@ -127,6 +133,9 @@ pub use self::depth_stencil_state_api::DepthStencilStateInfo;
 #[cfg(feature = "backend_ash")]
 type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilStateImpl;
 
+#[cfg(feature = "backend_vulkano")]
+type DepthStencilStateImpl = self::vk::depth_stencil_state_vk::DepthStencilStateVk;
+
 pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
 //
 
@@ -135,6 +144,9 @@ pub use self::depth_stencil_view_api::DepthStencilViewInfo;
 
 #[cfg(feature = "backend_ash")]
 type DepthStencilViewImpl<'a> = self::ash::depth_stencil_view_ash::DepthStencilViewImpl<'a>;
+
+#[cfg(feature = "backend_vulkano")]
+type DepthStencilViewImpl<'a> = self::vk::depth_stencil_view_vk::DepthStencilViewVk;
 
 pub type DepthStencilView<'a> = TDepthStencilView<'a, DepthStencilViewImpl<'a>>;
 //
@@ -145,12 +157,18 @@ pub use self::fence_api::FenceInfo;
 #[cfg(feature = "backend_ash")]
 type FenceImpl<'a> = self::ash::fence_ash::FenceAsh<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type FenceImpl<'a> = self::vk::fence_vk::Fence;
+
 pub type Fence<'a> = TFence<'a, FenceImpl<'a>>;
 //
 
 //
 #[cfg(feature = "backend_ash")]
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
+
+#[cfg(feature = "backend_vulkano")]
+type GpuAddressImpl<'a> = self::vk::gpu_address_vk::GpuAddressVk;
 
 pub type GpuAddress<'a> = TGpuAddressInterface<'a, GpuAddressImpl<'a>>;
 //
@@ -160,6 +178,9 @@ pub use self::memory_pool_api::MemoryPoolInfo;
 
 #[cfg(feature = "backend_ash")]
 type MemoryPoolImpl<'a> = self::ash::memory_pool_ash::MemoryPoolImpl<'a>;
+
+#[cfg(feature = "backend_vulkano")]
+type MemoryPoolImpl<'a> = self::vk::memory_pool_vk::MemoryPoolVk;
 
 pub type MemoryPool<'a> = TMemoryPoolInterface<'a, MemoryPoolImpl<'a>>;
 // -------------------------------------------------------------------
@@ -174,20 +195,23 @@ type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline<'a>;
 #[cfg(feature = "backend_ash")]
 type PipelineImpl<'a> = self::ash::pipeline_ash::PipelineImpl<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type PipelineImpl<'a> = self::vk::pipeline_vk::PipelineVk;
+
 pub type Pipeline<'a> = TPipelineInterface<'a, PipelineImpl<'a>>;
 //-----------------------------------------------------------------------------
 
 // Queue
 pub use self::queue_api::QueueInfo;
 
-#[cfg(feature = "backend_vulkano")]
-type QueueImpl<'a> = self::vk::queue_vk::QueueImpl<'a>;
-
 #[cfg(feature = "backend_wgpu")]
 type QueueImpl<'a> = self::wgpu::queue_wgpu::QueueImpl<'a>;
 
 #[cfg(feature = "backend_ash")]
 type QueueImpl<'a> = self::ash::queue_ash::QueueImpl<'a>;
+
+#[cfg(feature = "backend_vulkano")]
+type QueueImpl<'a> = self::vk::queue_vk::QueueVk;
 
 pub type Queue<'a> = TQueueInterface<'a, QueueImpl<'a>>;
 //--------------------------------------------------------------------
@@ -198,6 +222,9 @@ pub use self::rasterizer_state_api::RasterizerStateInfo;
 #[cfg(feature = "backend_ash")]
 type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
 
+#[cfg(feature = "backend_vulkano")]
+type RasterizerStateImpl = self::vk::rasterizer_state_vk::RasterizerStateVk;
+
 pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
 //
 
@@ -207,14 +234,14 @@ pub use self::semaphore_api::SemaphoreInfo;
 #[cfg(feature = "backend_ash")]
 type SemaphoreImpl<'a> = self::ash::semaphore_ash::SemaphoreAsh<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type SemaphoreImpl<'a> = self::vk::semaphore_vk::SemaphoreVk;
+
 pub type Semaphore<'a> = TSemaphore<'a, SemaphoreImpl<'a>>;
 //
 
 // Shader ------------------------------------------------------------
 pub use self::shader_api::ShaderInfo;
-
-#[cfg(feature = "backend_vulkano")]
-type ShaderImpl<'a> = self::vk::shader_vk::ShaderImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
 type ShaderImpl<'a> = self::wgpu::shader_wgpu::ShaderImpl<'a>;
@@ -222,17 +249,20 @@ type ShaderImpl<'a> = self::wgpu::shader_wgpu::ShaderImpl<'a>;
 #[cfg(feature = "backend_ash")]
 type ShaderImpl<'a> = self::ash::shader_ash::ShaderImpl<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type ShaderImpl<'a> = self::vk::shader_vk::ShaderVk;
+
 pub type Shader<'a> = TShaderInterface<'a, ShaderImpl<'a>>;
 //--------------------------------------------------------------------
 
 // SwapChain
 pub use self::swap_chain_api::SwapChainInfo;
 
-#[cfg(feature = "backend_vulkano")]
-pub use self::vk::swap_chain_vk::SwapChain;
-
 #[cfg(feature = "backend_ash")]
 type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
+
+#[cfg(feature = "backend_vulkano")]
+type SwapChainImpl<'a> = self::vk::swap_chain_vk::SwapChainVk<'a>;
 
 pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
@@ -247,6 +277,9 @@ pub use self::texture_api::TextureSubresourceRange;
 #[cfg(feature = "backend_ash")]
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
 
+#[cfg(feature = "backend_vulkano")]
+type TextureImpl<'a> = self::vk::texture_vk::TextureVk;
+
 pub type Texture<'a> = TTexture<'a, TextureImpl<'a>>;
 //
 
@@ -258,6 +291,9 @@ pub use self::vertex_state_api::VertexStateInfo;
 #[cfg(feature = "backend_ash")]
 type VertexStateImpl = self::ash::vertex_state_ash::VertexStateImpl;
 
+#[cfg(feature = "backend_vulkano")]
+type VertexStateImpl = self::vk::vertex_state_vk::VertexStateVk;
+
 pub type VertexState = TVertexState<VertexStateImpl>;
 //
 
@@ -268,6 +304,9 @@ pub use self::viewport_scissor_state_api::ViewportStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type ViewportScissorStateImpl = self::ash::viewport_scissor_state_ash::ViewportScissorStateImpl;
+
+#[cfg(feature = "backend_vulkano")]
+type ViewportScissorStateImpl = self::vk::viewport_scissor_state_vk::ViewportScissorStateVk;
 
 pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl>;
 //
@@ -346,6 +385,7 @@ pub enum DepthStencilClearMode {
     DepthStencil,
 }
 
+#[derive(Clone)]
 pub enum AttributeFormat {
     Float32_32,
     Float32_32_32,
