@@ -25,6 +25,7 @@ impl<'a> BlendStateInfo<'a> {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct BlendTargetStateInfo {}
 
 impl BlendTargetStateInfo {
