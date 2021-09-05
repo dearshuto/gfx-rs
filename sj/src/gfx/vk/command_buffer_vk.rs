@@ -1,3 +1,6 @@
+use vulkano::sync;
+use vulkano::sync::GpuFuture;
+
 use super::command_builders::{
     ClearColorCommandBuilder, ClearDepthStencilCommandBuilder, Command, CopyImageCommandBuilder,
     CopyImageToBufferCommandBuilder, DispatchCommandBuilder, DrawIndexedInstancedCommandBuilder,
@@ -151,11 +154,11 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
 
     fn draw_instanced(
         &mut self,
-        primitive_topology: crate::gfx::PrimitiveTopology,
-        vertex_count: i32,
-        vertex_offset: i32,
-        instance_count: i32,
-        base_instance: i32,
+        _primitive_topology: crate::gfx::PrimitiveTopology,
+        _vertex_count: i32,
+        _vertex_offset: i32,
+        _instance_count: i32,
+        _base_instance: i32,
     ) {
         // let builder = DrawInstancedCommandBuilder::new(
         //     primitive_topology,
@@ -266,5 +269,26 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         self._commands.push(command);
     }
 
-    fn flush_memory(&mut self, gpu_access_flags: GpuAccess) {}
+    fn flush_memory(&mut self, _gpu_access_flags: GpuAccess) {}
+}
+
+impl<'a> CommandBufferVk<'a> {
+    pub fn build(&self, queue: std::sync::Arc<vulkano::device::Queue>) {
+        let builder = vulkano::command_buffer::AutoCommandBufferBuilder::primary(
+            self._device.to_data().get_device_impl().clone(),
+            self._device.to_data().get_queue().family(),
+            vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
+        )
+        .unwrap();
+
+        let command_buffer = builder.build().unwrap();
+
+        let future = vulkano::sync::now(self._device.to_data().get_device_impl().clone())
+            .then_execute(queue, command_buffer)
+            .unwrap()
+            .then_signal_fence_and_flush()
+            .unwrap();
+
+        future.wait(None).unwrap();
+    }
 }
