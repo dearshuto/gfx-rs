@@ -1,4 +1,5 @@
 use crate::gfx::shader_api::IShaderImpl;
+use vulkano::pipeline::shader::ShaderModule;
 
 pub struct ShaderVk {
     _vertex_shader_module: Option<std::sync::Arc<vulkano::pipeline::shader::ShaderModule>>,
@@ -8,21 +9,31 @@ pub struct ShaderVk {
 
 impl<'a> IShaderImpl<'a> for ShaderVk {
     fn new(device: &'a crate::gfx::Device, info: &crate::gfx::ShaderInfo) -> Self {
-        let vertex_shader_source = info.get_vertex_shader_binary().unwrap();
         let device_vk = device.to_data().get_device_impl();
 
-        unsafe {
-            let shader_module = vulkano::pipeline::shader::ShaderModule::new(
-                device_vk.clone(),
-                vertex_shader_source,
-            )
-            .unwrap();
+        let vertex_shader_module = match info.get_vertex_shader_binary() {
+            Some(vertex_shader_source) => unsafe {
+                Some(ShaderModule::new(device_vk.clone(), vertex_shader_source).unwrap())
+            },
+            None => None,
+        };
+        let pixel_shader_module = match info.get_pixel_shader_binary() {
+            Some(pixel_shader_source) => unsafe {
+                Some(ShaderModule::new(device_vk.clone(), pixel_shader_source).unwrap())
+            },
+            None => None,
+        };
+        let compute_shader_module = match info.get_compute_shader_binary() {
+            Some(compute_shader_source) => unsafe {
+                Some(ShaderModule::new(device_vk.clone(), compute_shader_source).unwrap())
+            },
+            None => None,
+        };
 
-            Self {
-                _vertex_shader_module: Some(shader_module),
-                _pixel_shader_module: None,
-                _compute_shader_module: None,
-            }
+        Self {
+            _vertex_shader_module: vertex_shader_module,
+            _pixel_shader_module: pixel_shader_module,
+            _compute_shader_module: compute_shader_module,
         }
     }
 }
