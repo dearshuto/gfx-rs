@@ -17,11 +17,13 @@ pub struct BufferVk<'a> {
 impl<'a> IBufferImpl<'a> for BufferVk<'a> {
     fn new(
         device: &'a Device,
-        _info: &BufferInfo,
+        info: &BufferInfo,
         _memory_pool: &'a crate::gfx::MemoryPool,
         _offset: i64,
-        _size: u64,
+        size: u64,
     ) -> Self {
+        assert!(info.get_size() <= size);
+
         let device_vk = device.to_data().get_device_impl();
         let buffer = unsafe {
             vulkano::buffer::CpuAccessibleBuffer::<Data128>::uninitialized(
