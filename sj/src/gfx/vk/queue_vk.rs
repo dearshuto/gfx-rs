@@ -14,17 +14,15 @@ impl<'a> IQueueImpl<'a> for QueueVk {
         }
     }
 
-    fn execute(&mut self, _command_buffer: &'a CommandBuffer<'a>) {
-        todo!()
+    fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>) {
+        command_buffer.to_data().build(self._queue_impl.clone());
     }
 
     fn present(&mut self, _swap_chain: &mut SwapChain, _present_interval: i32) {
         todo!()
     }
 
-    fn flush(&mut self) {
-        todo!()
-    }
+    fn flush(&mut self) {}
 
     fn sync(&self) {
         self._queue_impl.wait().unwrap();
