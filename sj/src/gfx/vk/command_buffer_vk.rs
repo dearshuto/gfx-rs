@@ -23,9 +23,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         }
     }
 
-    fn begin(&mut self) {
-        todo!()
-    }
+    fn begin(&mut self) {}
 
     fn end(&mut self) {
         let device_vk = self._device.to_data().get_device_impl();
