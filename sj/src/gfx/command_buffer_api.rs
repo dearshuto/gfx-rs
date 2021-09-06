@@ -1,5 +1,5 @@
+use crate::gfx::clear_color_value::ClearColorValue;
 use super::{
-    common::ClearColorValue,
     texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
     Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,

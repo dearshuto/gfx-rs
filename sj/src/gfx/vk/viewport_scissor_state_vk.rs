@@ -4,27 +4,26 @@ use crate::gfx::viewport_scissor_state_api::{
 use crate::gfx::Device;
 
 pub struct ViewportScissorStateVk {
-    _viewport: Vec<vulkano::pipeline::viewport::Viewport>,
-    _scissor: Vec<vulkano::pipeline::viewport::Scissor>,
+    _viewport_state_info_array: Vec<ViewportStateInfo>,
+    _scissor_state_info_array: Vec<ScissorStateInfo>,
 }
 
 impl<'a> IViewportScissorState<'a> for ViewportScissorStateVk {
     fn new(_device: &'a Device, info: &ViewportScissorStateInfo) -> Self {
-        let viewports = info
-            .get_viewport_state_info_array()
-            .iter()
-            .map(ViewportStateInfo::to_vk)
-            .collect::<Vec<vulkano::pipeline::viewport::Viewport>>();
-        let scissors = info
-            .get_scissor_state_info_array()
-            .iter()
-            .map(ScissorStateInfo::to_vk)
-            .collect::<Vec<vulkano::pipeline::viewport::Scissor>>();
-
         Self {
-            _viewport: viewports,
-            _scissor: scissors,
+            _viewport_state_info_array: info.get_viewport_state_info_array().to_vec(),
+            _scissor_state_info_array: info.get_scissor_state_info_array().to_vec(),
         }
+    }
+}
+
+impl ViewportScissorStateVk {
+    pub fn get_viewport_state_info_array(&self) -> &[ViewportStateInfo] {
+        &self._viewport_state_info_array
+    }
+
+    pub fn get_scissor_state_info_array(&self) -> &[ScissorStateInfo] {
+        &self._scissor_state_info_array
     }
 }
 

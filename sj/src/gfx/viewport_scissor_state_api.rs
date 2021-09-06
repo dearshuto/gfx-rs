@@ -38,6 +38,7 @@ impl<'a> ViewportScissorStateInfo<'a> {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct ViewportStateInfo {
     _origin_x: f32,
     _origin_y: f32,
@@ -92,6 +93,7 @@ impl ViewportStateInfo {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct ScissorStateInfo {
     _origin_x: i32,
     _origin_y: i32,

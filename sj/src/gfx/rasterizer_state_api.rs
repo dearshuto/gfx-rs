@@ -1,5 +1,6 @@
 use super::Device;
 
+#[derive(Clone, Copy, Debug)]
 pub struct RasterizerStateInfo {}
 
 impl RasterizerStateInfo {

@@ -7,10 +7,8 @@ mod draw_indexed_instanced_command_builder;
 mod draw_instanced_command_builder;
 mod set_constant_buffer_command_builder;
 mod set_pipeline_command_builder;
-mod set_render_targets_command_builder;
 mod set_unordered_access_buffer_command_builder;
 mod set_vertex_buffer_command_builder;
-mod set_viewport_scissor_state_command_builder;
 
 use vulkano::pipeline::vertex::VertexDefinition;
 
@@ -23,10 +21,13 @@ pub use self::draw_indexed_instanced_command_builder::DrawIndexedInstancedComman
 pub use self::draw_instanced_command_builder::DrawInstancedCommandBuilder;
 pub use self::set_constant_buffer_command_builder::SetConstnatBufferCommandBuilder;
 pub use self::set_pipeline_command_builder::SetPipelineCommandBuilder;
-pub use self::set_render_targets_command_builder::SetRenderTargetsCommandBuilder;
 pub use self::set_unordered_access_buffer_command_builder::SetUnorderedAccessBufferCommandBuilder;
 pub use self::set_vertex_buffer_command_builder::SetVertexBufferCommandBuilder;
-pub use self::set_viewport_scissor_state_command_builder::SetViewportScissorStateBuilder;
+
+pub mod graphics_command_builder;
+pub mod compute_command_builder;
+pub use self::graphics_command_builder::GraphicsCommandBuilder;
+pub use self::compute_command_builder::ComputeCommandBuilder;
 
 pub type VkAutoCommandBufferBuilder = vulkano::command_buffer::AutoCommandBufferBuilder<
     vulkano::command_buffer::PrimaryAutoCommandBuffer<
@@ -35,7 +36,6 @@ pub type VkAutoCommandBufferBuilder = vulkano::command_buffer::AutoCommandBuffer
 >;
 
 pub enum Command {
-    SetViewportScissorState(SetViewportScissorStateBuilder),
     SetPipeline(SetPipelineCommandBuilder),
     SetConstantBuffer(SetConstnatBufferCommandBuilder),
     SetUnorderedAccessBuffer(SetUnorderedAccessBufferCommandBuilder),
@@ -46,14 +46,12 @@ pub enum Command {
     ClearDepthStencil(ClearDepthStencilCommandBuilder),
     CopyImage(CopyImageCommandBuilder),
     CopyImageToBuffer(CopyImageToBufferCommandBuilder),
-    SetRenderTargets(SetRenderTargetsCommandBuilder),
     SetVertexBuffer(SetVertexBufferCommandBuilder),
 }
 
 impl Command {
     pub fn build(&self, command_builder: VkAutoCommandBufferBuilder) -> VkAutoCommandBufferBuilder {
         match &self {
-            Command::SetViewportScissorState(ref builder) => builder.build(command_builder),
             Command::SetPipeline(ref builder) => builder.build(command_builder),
             Command::SetConstantBuffer(ref builder) => builder.build(command_builder),
             Command::SetUnorderedAccessBuffer(ref builder) => builder.build(command_builder),
@@ -64,7 +62,6 @@ impl Command {
             Command::DrawInstanced(ref builder) => builder.build(command_builder),
             Command::DrawIndexedInstanced(ref builder) => builder.build(command_builder),
             Command::Dispatch(ref builder) => builder.build(command_builder),
-            Command::SetRenderTargets(ref builder) => builder.build(command_builder),
             Command::SetVertexBuffer(ref builder) => builder.build(command_builder),
         }
     }

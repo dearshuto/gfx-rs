@@ -1,6 +1,6 @@
 use super::Device;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct DepthStencilStateInfo {
     _is_depth_test_enabled: bool,
     _is_depth_write_enabled: bool,

@@ -18,5 +18,5 @@ pub mod texture_vk;
 pub mod vertex_state_vk;
 pub mod viewport_scissor_state_vk;
 
-mod common;
+pub mod common;
 mod command_builders;

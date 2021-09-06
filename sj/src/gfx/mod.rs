@@ -2,6 +2,7 @@ use bitflags;
 
 mod blend_state_api;
 mod buffer_api;
+mod clear_color_value;
 mod color_target_view_api;
 mod command_buffer_api;
 mod common;
@@ -196,7 +197,7 @@ type PipelineImpl<'a> = self::wgpu::pipeline_wgpu::Pipeline<'a>;
 type PipelineImpl<'a> = self::ash::pipeline_ash::PipelineImpl<'a>;
 
 #[cfg(feature = "backend_vulkano")]
-type PipelineImpl<'a> = self::vk::pipeline_vk::PipelineVk;
+type PipelineImpl<'a> = self::vk::pipeline_vk::PipelineVk<'a>;
 
 pub type Pipeline<'a> = TPipelineInterface<'a, PipelineImpl<'a>>;
 //-----------------------------------------------------------------------------
