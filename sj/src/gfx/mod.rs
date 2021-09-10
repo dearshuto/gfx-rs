@@ -70,7 +70,7 @@ pub type BlendState = TBlendState<BlendStateImpl>;
 pub use self::buffer_api::BufferInfo;
 
 #[cfg(feature = "backend_vulkano")]
-type BufferImpl<'a> = self::vk::buffer_vk::BufferVk<'a>;
+type BufferImpl<'a, TType> = self::vk::buffer_vk::BufferVk<'a, TType>;
 
 #[cfg(feature = "backend_wgpu")]
 type BufferImpl<'a> = self::wgpu::buffer_wgpu::BufferImpl<'a>;
@@ -78,7 +78,7 @@ type BufferImpl<'a> = self::wgpu::buffer_wgpu::BufferImpl<'a>;
 #[cfg(feature = "backend_ash")]
 type BufferImpl<'a> = self::ash::buffer_ash::BufferImpl<'a>;
 
-pub type Buffer<'a> = TBufferInterface<'a, BufferImpl<'a>>;
+pub type Buffer<'a, TType> = TBufferInterface<'a, BufferImpl<'a, TType>, TType>;
 // -------------------------------------------------------------------
 
 // ColorTargetView

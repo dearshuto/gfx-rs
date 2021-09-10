@@ -1,8 +1,6 @@
 use crate::gfx::common::command_builder::IComputeCommandBuilder;
 
-pub struct ComputeCommandBuilder {
-	
-}
+pub struct ComputeCommandBuilder {}
 
 impl<'a> IComputeCommandBuilder<'a> for ComputeCommandBuilder {
     fn build(&self) {

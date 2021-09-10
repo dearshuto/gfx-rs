@@ -1,20 +1,17 @@
-use crate::gfx::buffer_api::{BufferInfo, IBufferImpl, MappedData};
+use crate::gfx::buffer_api::{BufferInfo, IBufferImpl};
 use crate::gfx::Device;
+use std::ops::{Deref, DerefMut};
+use vulkano::buffer::CpuAccessibleBuffer;
 
-use super::common::{Data1024, Data128, Data2048, Data256, Data4096, Data512, Data64};
-
-pub struct BufferVk<'a> {
+pub struct BufferVk<'a, TType> {
     _device: &'a Device,
-    _buffer64: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data64>>>,
-    _buffer128: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data128>>>,
-    _buffer256: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data256>>>,
-    _buffer512: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data512>>>,
-    _buffer1024: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data1024>>>,
-    _buffer2048: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data2048>>>,
-    _buffer4096: Option<std::sync::Arc<vulkano::buffer::CpuAccessibleBuffer<Data4096>>>,
+    _buffer: std::sync::Arc<CpuAccessibleBuffer<TType>>,
 }
 
-impl<'a> IBufferImpl<'a> for BufferVk<'a> {
+impl<'a, TType> IBufferImpl<'a, TType> for BufferVk<'a, TType>
+where
+    TType: 'static,
+{
     fn new(
         device: &'a Device,
         info: &BufferInfo,
@@ -26,7 +23,7 @@ impl<'a> IBufferImpl<'a> for BufferVk<'a> {
 
         let device_vk = device.to_data().get_device_impl();
         let buffer = unsafe {
-            vulkano::buffer::CpuAccessibleBuffer::<Data128>::uninitialized(
+            vulkano::buffer::CpuAccessibleBuffer::<TType>::uninitialized(
                 device_vk.clone(),
                 vulkano::buffer::BufferUsage::all(),
                 true,
@@ -36,13 +33,7 @@ impl<'a> IBufferImpl<'a> for BufferVk<'a> {
 
         Self {
             _device: device,
-            _buffer64: None,
-            _buffer128: Some(buffer),
-            _buffer256: None,
-            _buffer512: None,
-            _buffer1024: None,
-            _buffer2048: None,
-            _buffer4096: None,
+            _buffer: buffer,
         }
     }
 
@@ -50,18 +41,16 @@ impl<'a> IBufferImpl<'a> for BufferVk<'a> {
         1
     }
 
-    fn map<T>(&self) -> &mut T {
-        todo!()
+    fn map(&self) {}
+
+    fn read<F: FnMut(&TType)>(&self, mut action: F) {
+        let mapped_data = self._buffer.read().unwrap();
+        action(mapped_data.deref());
     }
 
-    fn map_as_slice<U>(&self, _count: usize) -> &[U] {
-        todo!()
-    }
-
-    fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
-        let buffer = self._buffer128.as_ref().unwrap().read().unwrap();
-        let raw_ptr = buffer.buffer.as_ptr() as *mut std::ffi::c_void;
-        MappedData::new(raw_ptr, count)
+    fn write<F: FnMut(&mut TType)>(&self, mut action: F) {
+        let mut mapped_data = self._buffer.write().unwrap();
+        action(mapped_data.deref_mut());
     }
 
     fn unmap(&self) {}

@@ -7,12 +7,12 @@ type VkGraphicsPipeline<T> = vulkano::pipeline::GraphicsPipeline<T>;
 use super::common::Float3232;
 
 pub struct PipelineVk<'a> {
-	_rasterizer_state_info: Option<RasterizerStateInfo>,
-	_depth_stencil_state_info: Option<DepthStencilStateInfo>,
-	_vertex_entry_point: Option<GraphicsEntryPoint<'a>>,
+    _rasterizer_state_info: Option<RasterizerStateInfo>,
+    _depth_stencil_state_info: Option<DepthStencilStateInfo>,
+    _vertex_entry_point: Option<GraphicsEntryPoint<'a>>,
     //Option<std::sync::Arc<VkGraphicsPipeline<SingleBufferDefinition<Float3232>>>>,
     //_compute_pipeline: Option<std::sync::Arc<vulkano::pipeline::ComputePipeline>>,
-	_is_graphics: bool,
+    _is_graphics: bool,
 }
 
 impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
@@ -21,7 +21,7 @@ impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
 
         // This definition describes the layout of this stage.
         let vertex_layout = vulkano::pipeline::layout::PipelineLayout::new(
-			device_vk.clone(),
+            device_vk.clone(),
             // No descriptor sets.
             vec![],
             // No push constants.
@@ -52,8 +52,8 @@ impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
                 .get_vertex_shader_module()
                 .graphics_entry_point(
                     std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0"),
-					[],
-					None,
+                    [],
+                    None,
                     <()>::descriptors(),
                     vertex_input,
                     vertex_output,
@@ -139,10 +139,10 @@ impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
         // );
 
         Self {
-			_rasterizer_state_info: Some(*info.get_rasterizer_state()),
-			_depth_stencil_state_info: Some(*info.get_depth_stencil_state()),
-			_vertex_entry_point: Some(vert_main),
-			_is_graphics: true,
+            _rasterizer_state_info: Some(*info.get_rasterizer_state()),
+            _depth_stencil_state_info: Some(*info.get_depth_stencil_state()),
+            _vertex_entry_point: Some(vert_main),
+            _is_graphics: true,
             //_graphics_pipeline: None, //Some(graphics_pipeline),
             //_compute_pipeline: None,
         }
@@ -181,19 +181,19 @@ impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
 }
 
 impl<'a> PipelineVk<'a> {
-	pub fn is_graphics(&self) -> bool {
-		self._is_graphics
-	}
+    pub fn is_graphics(&self) -> bool {
+        self._is_graphics
+    }
 
-	pub fn get_rasterizer_state_info(&self) -> &RasterizerStateInfo {
-		&self._rasterizer_state_info.as_ref().unwrap()
-	}
+    pub fn get_rasterizer_state_info(&self) -> &RasterizerStateInfo {
+        &self._rasterizer_state_info.as_ref().unwrap()
+    }
 
-	pub fn get_depth_stencil_state_info(&self) -> &DepthStencilStateInfo {
-		&self._depth_stencil_state_info.as_ref().unwrap()
-	}
+    pub fn get_depth_stencil_state_info(&self) -> &DepthStencilStateInfo {
+        &self._depth_stencil_state_info.as_ref().unwrap()
+    }
 
-	pub fn get_vertex_entry_point(&self) -> &GraphicsEntryPoint {
-		self._vertex_entry_point.as_ref().unwrap()
-	}
+    pub fn get_vertex_entry_point(&self) -> &GraphicsEntryPoint {
+        self._vertex_entry_point.as_ref().unwrap()
+    }
 }

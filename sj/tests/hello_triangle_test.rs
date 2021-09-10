@@ -1,6 +1,11 @@
-use image::{self, GenericImage};
 use image::Pixel;
-use sj::gfx::{Buffer, BufferInfo, BufferTextureCopyRegion, ColorTargetView, ColorTargetViewInfo, CommandBuffer, CommandBufferInfo, Device, DeviceInfo, GpuAccess, GpuAddress, ImageFormat, MemoryPool, MemoryPoolInfo, MemoryPoolProperty, PipelineStageBit, Queue, QueueInfo, Texture, TextureInfo, TextureState, TextureSubresourceRange};
+use image::{self, GenericImage};
+use sj::gfx::{
+    Buffer, BufferInfo, BufferTextureCopyRegion, ColorTargetView, ColorTargetViewInfo,
+    CommandBuffer, CommandBufferInfo, Device, DeviceInfo, GpuAccess, GpuAddress, ImageFormat,
+    MemoryPool, MemoryPoolInfo, MemoryPoolProperty, PipelineStageBit, Queue, QueueInfo, Texture,
+    TextureInfo, TextureState, TextureSubresourceRange,
+};
 
 #[test]
 fn ash() {
@@ -111,7 +116,7 @@ fn ash() {
                 MemoryPoolProperty::CPU_CACHED | MemoryPoolProperty::GPU_CACHED,
             ),
     );
-    let vertex_buffer = sj::gfx::Buffer::new(
+    let vertex_buffer = sj::gfx::Buffer::<[f32; 6]>::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
@@ -121,13 +126,15 @@ fn ash() {
         128,
     );
     {
-        let mut a = vertex_buffer.map_as_slice_mut::<f32>(6);
-        a[0] = 0.0;
-        a[1] = 1.0;
-        a[2] = -1.0;
-        a[3] = -1.0;
-        a[4] = 1.0;
-        a[5] = -1.0;
+        vertex_buffer.map();
+        vertex_buffer.write(|a| {
+            a[0] = 0.0;
+            a[1] = 1.0;
+            a[2] = -1.0;
+            a[3] = -1.0;
+            a[4] = 1.0;
+            a[5] = -1.0;
+        });
     }
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
@@ -140,7 +147,7 @@ fn ash() {
             )
             .set_size(4 * 640 * 480),
     );
-    let mut out_buffer = Buffer::new(
+    let mut out_buffer = Buffer::<[u8; 4 * 640 * 480]>::new(
         &device,
         &BufferInfo::new()
             .set_size(4 * 640 * 480)
@@ -155,7 +162,7 @@ fn ash() {
 
     command_buffer.begin();
     command_buffer.clear_color(&mut color_target_view, 0.25, 0.25, 0.4, 1.0, None);
-	command_buffer.set_pipeline(&pipeline);
+    command_buffer.set_pipeline(&pipeline);
     command_buffer.set_render_targets(&[&color_target_view], None);
     command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
     command_buffer.set_vertex_buffer(0, &GpuAddress::new(&vertex_buffer));
@@ -190,12 +197,14 @@ fn ash() {
 
     let width = 640;
     let height = 480;
-    let pixel_data = out_buffer.map_as_slice::<u8>(4 * width * height).to_vec();
+    out_buffer.map();
+    let mut pixel_data = Vec::new();
+    out_buffer.read(|x| pixel_data = x.to_vec());
     out_buffer.invalidate_mapped_range(0, 4 * 640 * 480);
     let mut image_buffer = image::DynamicImage::new_rgb8(640, 480);
 
-	//let expected_data = include_bytes!("./resources/expected/ash/simple_triangle.png").to_vec();
-	//let expected_image = image::RgbImage::from_raw(640, 480, expected_data.to_vec()).unwrap();
+    //let expected_data = include_bytes!("./resources/expected/ash/simple_triangle.png").to_vec();
+    //let expected_image = image::RgbImage::from_raw(640, 480, expected_data.to_vec()).unwrap();
 
     for x in 0..640 {
         for y in 0..480 {
@@ -210,16 +219,16 @@ fn ash() {
                 image::Rgba::from_channels(red as u8, green as u8, blue as u8, 0),
             );
 
-			// let expected = expected_image.get_pixel(x as u32, y as u32);
-			// let expected_red = expected[0];
-			// let expected_blue = expected[1];
-			// let expected_green = expected[2];
-			// println!("{}", expected_red);
-			// assert_eq!(red, expected_red);
-			// assert_eq!(green, expected_green);
-			// assert_eq!(blue, expected_blue);
+            // let expected = expected_image.get_pixel(x as u32, y as u32);
+            // let expected_red = expected[0];
+            // let expected_blue = expected[1];
+            // let expected_green = expected[2];
+            // println!("{}", expected_red);
+            // assert_eq!(red, expected_red);
+            // assert_eq!(green, expected_green);
+            // assert_eq!(blue, expected_blue);
         }
     }
     let result = image_buffer.save(target_directory);
-	assert!(result.is_ok());
+    assert!(result.is_ok());
 }

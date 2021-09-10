@@ -16,7 +16,7 @@ mod tests {
                     MemoryPoolProperty::CPU_CACHED | MemoryPoolProperty::GPU_CACHED,
                 ),
         );
-        let _buffer = Buffer::new(
+        let _buffer = Buffer::<i32>::new(
             &device,
             &BufferInfo::new()
                 .set_size(512)
@@ -37,7 +37,7 @@ mod tests {
                 MemoryPoolProperty::CPU_CACHED | MemoryPoolProperty::GPU_CACHED,
             ),
         );
-        let _buffer = Buffer::new(
+        let _buffer = Buffer::<i32>::new(
             &device,
             &BufferInfo::new()
                 .set_size(512)

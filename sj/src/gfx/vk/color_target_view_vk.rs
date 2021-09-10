@@ -5,7 +5,7 @@ use vulkano::image::ImageAccess;
 
 pub struct ColorTargetViewVk<'a> {
     _device: &'a Device,
-	_image_access: Arc<dyn ImageAccess>,
+    _image_access: Arc<dyn ImageAccess>,
 }
 
 impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewVk<'a> {
@@ -14,13 +14,13 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewVk<'a> {
 
         Self {
             _device: device,
-			_image_access: image_access,
+            _image_access: image_access,
         }
     }
 }
 
 impl<'a> ColorTargetViewVk<'a> {
-	pub fn clone_image(&self) -> std::sync::Arc<dyn ImageAccess> {
-		self._image_access.clone()
-	}
+    pub fn clone_image(&self) -> std::sync::Arc<dyn ImageAccess> {
+        self._image_access.clone()
+    }
 }

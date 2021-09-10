@@ -5,9 +5,13 @@ use crate::gfx::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use crate::gfx::{Device, GpuAccess, Pipeline, ViewportScissorState};
 
 //use crate::gfx::common::command_builder::CommandBuilder;
-use super::command_builders::GraphicsCommandBuilder;
 use super::command_builders::ComputeCommandBuilder;
-type CommandBuilder<'a> = crate::gfx::common::command_builder::CommandBuilder<'a, GraphicsCommandBuilder<'a>, ComputeCommandBuilder>;
+use super::command_builders::GraphicsCommandBuilder;
+type CommandBuilder<'a> = crate::gfx::common::command_builder::CommandBuilder<
+    'a,
+    GraphicsCommandBuilder<'a>,
+    ComputeCommandBuilder,
+>;
 
 pub struct CommandBufferVk<'a> {
     _device: &'a Device,
@@ -49,24 +53,27 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
     }
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
-		self._commands.last_mut().unwrap().set_viewport_scissor_state(viewport_scissor_state);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_viewport_scissor_state(viewport_scissor_state);
     }
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
-		let command = if pipeline.to_data().is_graphics()
-		{
-			let builder = GraphicsCommandBuilder::new(self._device.to_data().get_device_impl().clone(), pipeline);
-			let command = CommandBuilder::Graphics(builder);
-			command
-		}
-		else
-		{
-			let builder = ComputeCommandBuilder{};
-			let command = CommandBuilder::Compute(builder);
-			command
-		};
+        let command = if pipeline.to_data().is_graphics() {
+            let builder = GraphicsCommandBuilder::new(
+                self._device.to_data().get_device_impl().clone(),
+                pipeline,
+            );
+            let command = CommandBuilder::Graphics(builder);
+            command
+        } else {
+            let builder = ComputeCommandBuilder {};
+            let command = CommandBuilder::Compute(builder);
+            command
+        };
 
-		self._commands.push(command);
+        self._commands.push(command);
     }
 
     fn set_constant_buffer(
@@ -76,7 +83,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         gpu_address: &crate::gfx::GpuAddress,
         size: usize,
     ) {
-		self._commands.last_mut().unwrap().set_constant_buffer(slot, stage, gpu_address, size);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_constant_buffer(slot, stage, gpu_address, size);
     }
 
     fn set_unordered_access_buffer(
@@ -86,7 +96,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         gpu_address: &crate::gfx::GpuAddress,
         size: u64,
     ) {
-		self._commands.last_mut().unwrap().set_unordered_access_buffer(slot, stage, gpu_address, size);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_unordered_access_buffer(slot, stage, gpu_address, size);
     }
 
     fn clear_color(
@@ -134,11 +147,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         color_target_views: &[&crate::gfx::ColorTargetView],
         depth_stencil_state_view: Option<&crate::gfx::DepthStencilView>,
     ) {
-		self._commands.last_mut().unwrap().set_render_targets(color_target_views, depth_stencil_state_view);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
     fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &crate::gfx::GpuAddress) {
-		self._commands.last_mut().unwrap().set_vertex_buffer(buffer_index, gpu_address);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_vertex_buffer(buffer_index, gpu_address);
     }
 
     fn draw(
@@ -147,7 +166,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         vertex_count: i32,
         vertex_offset: i32,
     ) {
-		self._commands.last_mut().unwrap().draw(primitive_topology, vertex_count, vertex_offset);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .draw(primitive_topology, vertex_count, vertex_offset);
     }
 
     fn draw_instanced(
@@ -158,10 +180,13 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-		self._commands
-			.last_mut()
-			.unwrap()
-			.draw_instanced(primitive_topology, vertex_count, vertex_offset, instance_count, base_instance);
+        self._commands.last_mut().unwrap().draw_instanced(
+            primitive_topology,
+            vertex_count,
+            vertex_offset,
+            instance_count,
+            base_instance,
+        );
     }
 
     fn draw_indexed(
@@ -172,10 +197,13 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         index_count: i32,
         base_vertex: i32,
     ) {
-		self._commands
-			.last_mut()
-			.unwrap()
-			.draw_indexed(primitive_topology, index_format, gpu_address, index_count, base_vertex);
+        self._commands.last_mut().unwrap().draw_indexed(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+        );
     }
 
     fn draw_indexed_instanced(
@@ -188,7 +216,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         _instance_count: i32,
         _base_instance: i32,
     ) {
-		todo!();
+        todo!();
     }
 
     fn draw_indirect(&mut self, _gpu_address: &crate::gfx::GpuAddress) {
@@ -196,7 +224,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
     }
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
-		self._commands.last_mut().unwrap().dispatch(group_count_x, group_count_y, group_count_z);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .dispatch(group_count_x, group_count_y, group_count_z);
     }
 
     fn set_texture_state_transition(
@@ -234,15 +265,15 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         // self._commands.push(command);
     }
 
-    fn copy_image_to_buffer(
+    fn copy_image_to_buffer<TType: 'static>(
         &mut self,
-        _dst_buffer: &mut crate::gfx::Buffer,
+        _dst_buffer: &mut crate::gfx::Buffer<TType>,
         _src_texture: &crate::gfx::Texture,
         _copy_region: &crate::gfx::BufferTextureCopyRegion,
     ) {
-    //     let builder = CopyImageToBufferCommandBuilder::new(dst_buffer, src_texture, copy_region);
-    //     let command = Command::CopyImageToBuffer(builder);
-    //     self._commands.push(command);
+        //     let builder = CopyImageToBufferCommandBuilder::new(dst_buffer, src_texture, copy_region);
+        //     let command = Command::CopyImageToBuffer(builder);
+        //     self._commands.push(command);
     }
 
     fn flush_memory(&mut self, _gpu_access_flags: GpuAccess) {}

@@ -1,10 +1,10 @@
-use crate::gfx::clear_color_value::ClearColorValue;
 use super::{
     texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
     Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,
     ShaderStage, Texture, TextureCopyRegion, TextureState, ViewportScissorState,
 };
+use crate::gfx::clear_color_value::ClearColorValue;
 use std::marker::PhantomData;
 
 pub struct CommandBufferInfo {}
@@ -134,9 +134,9 @@ pub trait ICommandBufferImpl<'a> {
         src_copy_range: TextureCopyRegion,
     );
 
-    fn copy_image_to_buffer(
+    fn copy_image_to_buffer<TType: 'static>(
         &mut self,
-        dst_buffer: &mut Buffer,
+        dst_buffer: &mut Buffer<TType>,
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     );
@@ -365,9 +365,9 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         );
     }
 
-    pub fn copy_image_to_buffer(
+    pub fn copy_image_to_buffer<TType: 'static>(
         &mut self,
-        dst_buffer: &mut Buffer,
+        dst_buffer: &mut Buffer<TType>,
         src_texture: &Texture,
         copy_region: &BufferTextureCopyRegion,
     ) {
