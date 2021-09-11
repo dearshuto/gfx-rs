@@ -4,14 +4,15 @@ use vulkano::pipeline::shader::{GraphicsEntryPoint, SpecializationConstants};
 //use vulkano::pipeline::vertex::SingleBufferDefinition;
 
 type VkGraphicsPipeline<T> = vulkano::pipeline::GraphicsPipeline<T>;
-use super::common::Float3232;
+//use super::common::Float3232;
 
 pub struct PipelineVk<'a> {
     _rasterizer_state_info: Option<RasterizerStateInfo>,
     _depth_stencil_state_info: Option<DepthStencilStateInfo>,
     _vertex_entry_point: Option<GraphicsEntryPoint<'a>>,
+	_pixel_entry_point: Option<GraphicsEntryPoint<'a>>,
     //Option<std::sync::Arc<VkGraphicsPipeline<SingleBufferDefinition<Float3232>>>>,
-    //_compute_pipeline: Option<std::sync::Arc<vulkano::pipeline::ComputePipeline>>,
+    //_compute_pipeline: Option<std::sync::Arc<vulkano::pipeline::ComputePipeline>>,	
     _is_graphics: bool,
 }
 
@@ -61,87 +62,50 @@ impl<'a> IPipelineImpl<'a> for PipelineVk<'a> {
                 )
         };
 
-        // // Same as with our vertex shader, but for fragment one instead.
-        // let fragment_input = unsafe {
-        //     vulkano::pipeline::shader::ShaderInterface::new_unchecked(vec![
-        //         vulkano::pipeline::shader::ShaderInterfaceEntry {
-        //             location: 0..1,
-        //             format: vulkano::format::Format::R32G32B32Sfloat,
-        //             name: Some(std::borrow::Cow::Borrowed("v_color")),
-        //         },
-        //     ])
-        // };
+        // Same as with our vertex shader, but for fragment one instead.
+        let fragment_input = unsafe {
+            vulkano::pipeline::shader::ShaderInterface::new_unchecked(vec![
+                vulkano::pipeline::shader::ShaderInterfaceEntry {
+                    location: 0..1,
+                    format: vulkano::format::Format::R32G32B32Sfloat,
+                    name: Some(std::borrow::Cow::Borrowed("v_color")),
+                },
+            ])
+        };
 
-        // // Note that color fragment color entry will be determined
-        // // automatically by Vulkano.
-        // let fragment_output = unsafe {
-        //     vulkano::pipeline::shader::ShaderInterface::new_unchecked(vec![
-        //         vulkano::pipeline::shader::ShaderInterfaceEntry {
-        //             location: 0..1,
-        //             format: vulkano::format::Format::R32G32B32A32Sfloat,
-        //             name: Some(std::borrow::Cow::Borrowed("f_color")),
-        //         },
-        //     ])
-        // };
+        // Note that color fragment color entry will be determined
+        // automatically by Vulkano.
+        let fragment_output = unsafe {
+            vulkano::pipeline::shader::ShaderInterface::new_unchecked(vec![
+                vulkano::pipeline::shader::ShaderInterfaceEntry {
+                    location: 0..1,
+                    format: vulkano::format::Format::R32G32B32A32Sfloat,
+                    name: Some(std::borrow::Cow::Borrowed("f_color")),
+                },
+            ])
+        };
 
-        // // Layout same as with vertex shader.
-        // let fragment_layout = vulkano::pipeline::layout::PipelineLayoutDesc::new(
-        //     // No descriptor sets.
-        //     vec![],
-        //     // No push constants.
-        //     vec![],
-        // )
-        // .unwrap();
-        // let frag_main = unsafe {
-        //     info.get_shader()
-        //         .to_data()
-        //         .get_pixel_shader_module()
-        //         .graphics_entry_point(
-        //             std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0"),
-        //             fragment_layout,
-        //             <()>::descriptors(),
-        //             fragment_input,
-        //             fragment_output,
-        //             vulkano::pipeline::shader::GraphicsShaderType::Fragment,
-        //         )
-        // };
-        // let render_pass = std::sync::Arc::new(
-        //     vulkano::single_pass_renderpass!(
-        //         device_vk.clone(),
-        //         attachments: {
-        //             color: {
-        //                 load: Clear,
-        //                 store: Store,
-        //                 format: vulkano::format::Format::R8Unorm, // TODO
-        //                 samples: 1,
-        //             }
-        //         },
-        //         pass: {
-        //             color: [color],
-        //             depth_stencil: {}
-        //         }
-        //     )
-        //     .unwrap(),
-        // );
-        // let graphics_pipeline = std::sync::Arc::new(
-        //     vulkano::pipeline::GraphicsPipeline::start()
-        //         //.vertex_input(SingleBufferDefinition::<Vertex>::new())
-        //         .vertex_shader(vert_main, ())
-        //         .triangle_list()
-        //         .viewports_dynamic_scissors_irrelevant(1)
-        //         .fragment_shader(frag_main, ())
-        //         .cull_mode_front()
-        //         .front_face_counter_clockwise()
-        //         .depth_stencil_disabled()
-        //         .render_pass(vulkano::render_pass::Subpass::from(render_pass.clone(), 0).unwrap())
-        //         .build(device_vk.clone())
-        //         .unwrap(),
-        // );
+        // Layout same as with vertex shader.
+        let frag_main = unsafe {
+            info.get_shader()
+                .to_data()
+                .get_pixel_shader_module()
+                .graphics_entry_point(
+                    std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0"),
+                    [],
+					None,
+                    <()>::descriptors(),
+                    fragment_input,
+                    fragment_output,
+                    vulkano::pipeline::shader::GraphicsShaderType::Fragment,
+                )
+        };
 
         Self {
             _rasterizer_state_info: Some(*info.get_rasterizer_state()),
             _depth_stencil_state_info: Some(*info.get_depth_stencil_state()),
             _vertex_entry_point: Some(vert_main),
+			_pixel_entry_point: Some(frag_main),
             _is_graphics: true,
             //_graphics_pipeline: None, //Some(graphics_pipeline),
             //_compute_pipeline: None,
@@ -193,7 +157,11 @@ impl<'a> PipelineVk<'a> {
         &self._depth_stencil_state_info.as_ref().unwrap()
     }
 
-    pub fn get_vertex_entry_point(&self) -> &GraphicsEntryPoint {
-        self._vertex_entry_point.as_ref().unwrap()
-    }
+	pub fn clone_vertex_entry_point(&self) -> GraphicsEntryPoint {
+		self._vertex_entry_point.as_ref().unwrap().clone()
+	}
+
+	pub fn clone_pixel_entry_point(&self) -> GraphicsEntryPoint {
+		self._pixel_entry_point.as_ref().unwrap().clone()
+	}	
 }

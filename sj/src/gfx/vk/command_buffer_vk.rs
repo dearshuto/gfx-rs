@@ -31,21 +31,6 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
     fn begin(&mut self) {}
 
     fn end(&mut self) {
-        // let device_vk = self._device.to_data().get_device_impl();
-        // let queue_vk = self._device.to_data().get_queue();
-
-        // let mut command_builder = vulkano::command_buffer::AutoCommandBufferBuilder::primary(
-        //     device_vk.clone(),
-        //     queue_vk.family(),
-        //     vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
-        // )
-        // .unwrap();
-
-        // for command in &self._commands {
-        //     command_builder = command.build(command_builder);
-        // }
-
-        // self._command_buffer = Some(command_builder.build().unwrap());
     }
 
     fn reset(&mut self) {
@@ -239,7 +224,6 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
         _new_state: crate::gfx::TextureState,
         _new_stage_bit: crate::gfx::PipelineStageBit,
     ) {
-        todo!()
     }
 
     fn copy_image(
@@ -281,15 +265,22 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferVk<'a> {
 
 impl<'a> CommandBufferVk<'a> {
     pub fn build(&self, queue: std::sync::Arc<vulkano::device::Queue>) {
-        let builder = vulkano::command_buffer::AutoCommandBufferBuilder::primary(
+        let mut builder = vulkano::command_buffer::AutoCommandBufferBuilder::primary(
             self._device.to_data().get_device_impl().clone(),
             self._device.to_data().get_queue().family(),
             vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
-        )
-        .unwrap();
-
+        )           
+			.unwrap();
+		
+		for command in &self._commands {
+			match command {
+				CommandBuilder::Graphics(ref command_builder) => command_builder.build(&mut builder),
+				CommandBuilder::Compute(ref _command_builder) => panic!(),
+				CommandBuilder::Phantom(_) => todo!(),
+			};
+		}
         let command_buffer = builder.build().unwrap();
-
+		
         let future = vulkano::sync::now(self._device.to_data().get_device_impl().clone())
             .then_execute(queue, command_buffer)
             .unwrap()

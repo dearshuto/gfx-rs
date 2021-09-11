@@ -1,9 +1,9 @@
 use crate::gfx::buffer_api::{BufferInfo, IBufferImpl};
 use crate::gfx::Device;
 use std::ops::{Deref, DerefMut};
-use vulkano::buffer::CpuAccessibleBuffer;
+use vulkano::buffer::{BufferAccess, CpuAccessibleBuffer};
 
-pub struct BufferVk<'a, TType> {
+pub struct BufferVk<'a, TType: 'static> {
     _device: &'a Device,
     _buffer: std::sync::Arc<CpuAccessibleBuffer<TType>>,
 }
@@ -58,4 +58,12 @@ where
     fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
 
     fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
+}
+
+impl<'a, TType> BufferVk<'a, TType>
+	where TType: 'static + Send + Sync
+{
+	pub fn clone_buffer_access(&self) -> std::sync::Arc<dyn BufferAccess> {
+ 		self._buffer.clone()
+	}
 }

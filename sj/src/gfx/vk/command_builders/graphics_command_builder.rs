@@ -1,17 +1,22 @@
-use vulkano::{
-    command_buffer::AutoCommandBufferBuilder,
-    image::{view::ImageView, AttachmentImage, ImageUsage},
-    pipeline::viewport::{Scissor, Viewport},
-    render_pass::{Framebuffer, FramebufferAbstract, RenderPass},
-};
+use vulkano::{buffer::BufferAccess, command_buffer::{DynamicState, PrimaryAutoCommandBuffer, SubpassContents, pool::CommandPoolBuilderAlloc}, image::{view::ImageView, AttachmentImage, ImageUsage}, pipeline::{
+        vertex::VertexSource,
+        viewport::{Scissor, Viewport},
+        GraphicsPipelineAbstract,
+    }, render_pass::{Framebuffer, FramebufferAbstract, RenderPass, Subpass}};
 
 use crate::gfx::{
     common::command_builder::IGraphicsCommandBuilder, DepthStencilStateInfo, Pipeline,
     PrimitiveTopology, RasterizerStateInfo, ScissorStateInfo, ViewportStateInfo,
 };
 
+use super::draw_command::{
+    DrawCommand, IndexedDrawCommandInfo, IndexedInstancedDrawInfo, InstancedDrawCommandInfo,
+    SimpleDrawCommandInfo,
+};
+
 pub struct GraphicsCommandBuilder<'a> {
     _device: std::sync::Arc<vulkano::device::Device>,
+    _pipeline: &'a Pipeline<'a>,
     _rasterizer_state_info: RasterizerStateInfo,
     _depth_stencil_state_info: DepthStencilStateInfo,
     _viewport_state_info_array: Option<Vec<ViewportStateInfo>>,
@@ -19,6 +24,8 @@ pub struct GraphicsCommandBuilder<'a> {
     _primitive_topology: Option<PrimitiveTopology>,
     _render_pass: Option<std::sync::Arc<RenderPass>>,
     _frame_buffer: Option<std::sync::Arc<dyn FramebufferAbstract>>,
+    _vertex_buffer: [Option<std::sync::Arc<dyn BufferAccess>>; 8],
+    _draw_command: Vec<DrawCommand>,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
@@ -31,6 +38,7 @@ impl<'a> GraphicsCommandBuilder<'a> {
 
         Self {
             _device: device,
+            _pipeline: pipeline,
             _rasterizer_state_info: *pipeline.to_data().get_rasterizer_state_info(),
             _depth_stencil_state_info: *pipeline.to_data().get_depth_stencil_state_info(),
             _viewport_state_info_array: None,
@@ -38,50 +46,57 @@ impl<'a> GraphicsCommandBuilder<'a> {
             _primitive_topology: None,
             _render_pass: None,
             _frame_buffer: None,
+            _vertex_buffer: std::default::Default::default(),
+            _draw_command: Vec::new(),
             _marker: std::marker::PhantomData,
         }
     }
 
-    pub fn build<L, P>(
+    pub fn build<P>(
         &self,
-        command_builder: AutoCommandBufferBuilder<L, P>,
-    ) -> AutoCommandBufferBuilder<L, P> {
-        let _graphics_pipeline_builder = vulkano::pipeline::GraphicsPipeline::start()
-            .viewports_dynamic_scissors_irrelevant(1)
-            .cull_mode_front()
-            .depth_write(true)
-            //.vertex_shader()
-            .depth_stencil_disabled();
+        command_builder: &mut vulkano::command_buffer::AutoCommandBufferBuilder<PrimaryAutoCommandBuffer<P::Alloc>, P>,
+    )
+	where
+		P: CommandPoolBuilderAlloc,
+	{
+        let graphics_pipeline_builder = GraphicsPipelineBuilder(
+            vulkano::pipeline::GraphicsPipeline::start()
+                .vertex_shader(self._pipeline.to_data().clone_vertex_entry_point(), ())
+				.fragment_shader(self._pipeline.to_data().clone_pixel_entry_point(), ())
+                .render_pass(Subpass::from(self._render_pass.as_ref().unwrap().clone(), 0).unwrap())
+        )
+        .push_rasterizer_state(&self._rasterizer_state_info)
+        .push_depth_stencil_state(&self._depth_stencil_state_info)
+        .push_primitive_topology(&self._primitive_topology.as_ref().unwrap())
+        .push_viewport_scissors(
+            self._viewport_state_info_array.as_ref().unwrap(),
+            self._scissor_state_info_array.as_ref().unwrap(),
+        );
+        let pipeline = std::sync::Arc::new(
+            graphics_pipeline_builder
+                .0
+                .build(self._device.clone())
+                .unwrap(),
+        );
+        let vertex_buffers: Vec<std::sync::Arc<dyn BufferAccess>> = self
+            ._vertex_buffer
+            .iter()
+            .filter(|x| x.is_some())
+            .map(|x| x.as_ref().unwrap().clone())
+            .collect();
+        let dynamic_state = DynamicState {
+            line_width: None,
+            viewports: None,
+            scissors: None,
+            compare_mask: None,
+            write_mask: None,
+            reference: None,
+        };
 
-        let _graphics_command_builder_wrap =
-            GraphicsPipelineBuilder(vulkano::pipeline::GraphicsPipeline::start())
-                .push_rasterizer_state(&self._rasterizer_state_info)
-                .push_depth_stencil_state(&self._depth_stencil_state_info)
-                .push_primitive_topology(&self._primitive_topology.as_ref().unwrap())
-                .push_viewport_scissors(
-                    self._viewport_state_info_array.as_ref().unwrap(),
-                    self._scissor_state_info_array.as_ref().unwrap(),
-                );
-
-        // let render_pass = std::sync::Arc::new(
-        //     vulkano::single_pass_renderpass!(
-        //         device_vk.clone(),
-        //         attachments: {
-        //             color: {
-        //                 load: Clear,
-        //                 store: Store,
-        //                 format: vulkano::format::Format::R8Unorm, // TODO
-        //                 samples: 1,
-        //             }
-        //         },
-        //         pass: {
-        //             color: [color],
-        //             depth_stencil: {}
-        //         }
-        //     )
-        //     .unwrap(),
-        // );
         command_builder
+			.begin_render_pass(self._frame_buffer.unwrap().clone(), SubpassContents::Inline, [])
+            //.draw(pipeline, &dynamic_state, vertex_buffers, (), ())
+            .unwrap();
     }
 }
 
@@ -110,20 +125,20 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsCommandBuilder<'a> {
 
     fn set_constant_buffer(
         &mut self,
-        slot: i32,
-        stage: crate::gfx::ShaderStage,
-        gpu_address: &crate::gfx::GpuAddress,
-        size: usize,
+        _slot: i32,
+        _stage: crate::gfx::ShaderStage,
+        _gpu_address: &crate::gfx::GpuAddress,
+        _size: usize,
     ) {
         todo!()
     }
 
     fn set_unordered_access_buffer(
         &mut self,
-        slot: i32,
-        stage: crate::gfx::ShaderStage,
-        gpu_address: &crate::gfx::GpuAddress,
-        size: u64,
+        _slot: i32,
+        _stage: crate::gfx::ShaderStage,
+        _gpu_address: &crate::gfx::GpuAddress,
+        _size: u64,
     ) {
         todo!()
     }
@@ -192,27 +207,38 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsCommandBuilder<'a> {
     }
 
     fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &crate::gfx::GpuAddress) {
-        todo!()
+        let buffer = gpu_address.to_data().clone_buffer_access();
+        self._vertex_buffer[buffer_index as usize] = Some(buffer);
     }
 
     fn draw(
         &mut self,
         primitive_topology: crate::gfx::PrimitiveTopology,
-        vertex_count: i32,
-        vertex_offset: i32,
+        _vertex_count: i32,
+        _vertex_offset: i32,
     ) {
-        todo!()
+        self._primitive_topology = Some(primitive_topology);
+        //     self._draw_command.push(
+        // 		DrawCommand::Simple(SimpleDrawCommandInfo::new(primitive_topology, vertex_count, vertex_offset)),
+        // 	);
     }
 
     fn draw_instanced(
         &mut self,
-        _primitive_topology: crate::gfx::PrimitiveTopology,
-        _vertex_count: i32,
-        _vertex_offset: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        primitive_topology: crate::gfx::PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        todo!()
+        self._draw_command
+            .push(DrawCommand::Instanced(InstancedDrawCommandInfo::new(
+                primitive_topology,
+                vertex_count,
+                vertex_offset,
+                instance_count,
+                base_instance,
+            )));
     }
 
     fn draw_indexed(
@@ -223,7 +249,15 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsCommandBuilder<'a> {
         index_count: i32,
         base_vertex: i32,
     ) {
-        todo!()
+        let info = IndexedDrawCommandInfo::new(
+            primitive_topology,
+            index_format,
+            gpu_address.to_data().clone_buffer_access(),
+            index_count,
+            base_vertex,
+        );
+        let command = DrawCommand::Indexed(info);
+        self._draw_command.push(command);
     }
 
     fn draw_indexed_instanced(
@@ -236,7 +270,17 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsCommandBuilder<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-        todo!()
+        let info = IndexedInstancedDrawInfo::new(
+            primitive_topology,
+            index_format,
+            gpu_address.to_data().clone_buffer_access(),
+            index_count,
+            base_vertex,
+            instance_count,
+            base_instance,
+        );
+        let command = DrawCommand::IndexedInstancing(info);
+        self._draw_command.push(command);
     }
 }
 
@@ -300,17 +344,56 @@ impl<'vs, 'tcs, 'tes, 'gs, 'fs, Vdef, Vss, Tcss, Tess, Gss, Fss>
         Self(self.0.viewports_scissors(viewport_scissors))
     }
 
-    // pub fn push_viewport_scissor_state(self, viewport_state_info: &ViewportStateInfo, scissor_state_info: &ScissorStateInfo) -> Self {
+    fn push_draw_simple_command<V, Gp>(
+        mut self,
+        info: &SimpleDrawCommandInfo,
+        graphics_pipeline: Gp,
+        vertex_buffers: V,
+    ) where
+        Gp: GraphicsPipelineAbstract + VertexSource<V> + Send + Sync + 'static + Clone,
+    {
+        let mut dynamic_state = DynamicState {
+            line_width: None,
+            viewports: None,
+            scissors: None,
+            compare_mask: None,
+            write_mask: None,
+            reference: None,
+        };
+        //self.0.draw(graphics_pipeline, &dynamic_state, vertex_buffers, (), ()).unwrap();
+    }
+}
 
-    // 	let viewport = vulkano::pipeline::viewport::Viewport{
-    // 		origin: [viewport_state_info.get_origin_x(), viewport_state_info.get_origin_y()],
-    // 		dimensions: [viewport_state_info.get_width(), viewport_state_info.get_height()],
-    // 		depth_range: 0.0..1.0,
-    // 	};
-    // 	let scissor = vulkano::pipeline::viewport::Scissor{
-    // 		origin: [scissor_state_info.get_origin_x(), scissor_state_info.get_origin_y()],
-    // 		dimensions: [scissor_state_info.get_width() as u32, scissor_state_info.get_height() as u32],
-    // 	};
-    // 	Self(self.0.viewports_scissors([(viewport, scissor)]))
-    // }
+struct AutoCommandBufferBuilder<T, P>(vulkano::command_buffer::AutoCommandBufferBuilder<T, P>);
+
+impl<T, P> AutoCommandBufferBuilder<T, P> {
+    pub fn push_draw_command<V, Gp>(
+        self,
+        draw_command: &DrawCommand,
+        graphics_pipeline: std::sync::Arc<Gp>,
+    ) -> Self
+    where
+        Gp: GraphicsPipelineAbstract + VertexSource<V> + Send + Sync + 'static + Clone,
+    {
+        match draw_command {
+            &DrawCommand::Simple(ref info) => panic!(),
+            &DrawCommand::Instanced(ref info) => self.push_draw_instanced_command(info),
+            &DrawCommand::Indexed(ref info) => self.push_draw_indexed_command(info),
+            &DrawCommand::IndexedInstancing(ref info) => {
+                self.push_draw_indexed_instanced_command(info)
+            }
+        }
+    }
+
+    fn push_draw_instanced_command(self, info: &InstancedDrawCommandInfo) -> Self {
+        self
+    }
+
+    fn push_draw_indexed_command(self, info: &IndexedDrawCommandInfo) -> Self {
+        self
+    }
+
+    fn push_draw_indexed_instanced_command(self, info: &IndexedInstancedDrawInfo) -> Self {
+        self
+    }
 }

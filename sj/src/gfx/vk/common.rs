@@ -34,7 +34,7 @@ impl VertexInput for Float323232Float323232Float3232 {}
 pub trait IData {}
 
 pub struct Data64 {
-    buffer: [u8; 64],
+    _buffer: [u8; 64],
 }
 //vulkano::impl_vertex!(Data64, buffer);
 impl IData for Data64 {}
