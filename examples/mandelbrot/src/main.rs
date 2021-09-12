@@ -69,8 +69,8 @@ fn main() {
 
     // 画面いっぱいに四角形を描く
     let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
-    {
-        let mut mapped_data = vertex_buffer.map_as_slice_mut::<f32>(12);
+    vertex_buffer.map();
+    vertex_buffer.write::<[f32; 12]>(|mapped_data| {
         mapped_data[0] = -1.0;
         mapped_data[1] = 1.0;
         mapped_data[2] = -1.0;
@@ -84,7 +84,7 @@ fn main() {
         mapped_data[9] = -1.0;
         mapped_data[10] = 1.0;
         mapped_data[11] = 1.0;
-    }
+    });
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
