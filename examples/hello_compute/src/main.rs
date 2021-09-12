@@ -51,8 +51,8 @@ fn main() {
     queue.flush();
     queue.sync();
 
-    //buffer.invalidate_mapped_range(0, 64);
-    let mapped_data = buffer.map::<IntData>();
-    println!("{}", mapped_data.value);
-    buffer.unmap();
+    // buffer.map();
+    // buffer.invalidate_mapped_range(0, 64);
+    // buffer.read::<IntData>(|mapped_data| println!("{}", mapped_data.value) );
+    // buffer.unmap();
 }

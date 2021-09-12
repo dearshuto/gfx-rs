@@ -66,10 +66,10 @@ fn main() {
     let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
-        .set_size(256);
-    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 256);
-    {
-        let mut mapped_data = vertex_buffer.map_as_slice_mut::<f32>(8);
+        .set_size(128);
+    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
+    vertex_buffer.map();
+    vertex_buffer.write::<[f32; 8]>(|mapped_data| {
         mapped_data[0] = -0.5;
         mapped_data[1] = 0.5;
         mapped_data[2] = -0.5;
@@ -78,14 +78,14 @@ fn main() {
         mapped_data[5] = -0.5;
         mapped_data[6] = 0.5;
         mapped_data[7] = 0.5;
-    }
+    });
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
     let index_buffer_pool = sj::gfx::MemoryPool::new(
         &device,
         &sj::gfx::MemoryPoolInfo::new()
-            .set_size(256)
+            .set_size(128)
             .set_memory_pool_property(
                 sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
             ),
@@ -97,17 +97,17 @@ fn main() {
             .set_gpu_access_flags(sj::gfx::GpuAccess::INDEX_BUFFER),
         &index_buffer_pool,
         0,
-        256,
+        128,
     );
-    {
-        let mut maapped_data = index_buffer.map_as_slice_mut::<u32>(6);
-        maapped_data[0] = 0;
-        maapped_data[1] = 1;
-        maapped_data[2] = 2;
-        maapped_data[3] = 0;
-        maapped_data[4] = 2;
-        maapped_data[5] = 3;
-    }
+    index_buffer.map();
+    index_buffer.write::<[u32; 6]>(|mapped_data| {
+        mapped_data[0] = 0;
+        mapped_data[1] = 1;
+        mapped_data[2] = 2;
+        mapped_data[3] = 0;
+        mapped_data[4] = 2;
+        mapped_data[5] = 3;
+    });
     index_buffer.flush_mapped_range(0, 128);
     index_buffer.unmap();
 
