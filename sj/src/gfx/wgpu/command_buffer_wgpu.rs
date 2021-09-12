@@ -82,7 +82,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         _alpha: f32,
         _texture_array_range: Option<&crate::gfx::texture_api::TextureArrayRange>,
     ) {
-        todo!()
+        //todo!()
     }
 
     fn clear_depth_stencil(
@@ -204,7 +204,6 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         _new_state: crate::gfx::TextureState,
         _new_stage_bit: crate::gfx::PipelineStageBit,
     ) {
-        todo!()
     }
 
     fn copy_image(
@@ -226,12 +225,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         _src_texture: &crate::gfx::Texture,
         _copy_region: &crate::gfx::BufferTextureCopyRegion,
     ) {
-        todo!()
+        //todo!()
     }
 
-    fn flush_memory(&mut self, _gpu_access_flags: crate::gfx::GpuAccess) {
-        todo!()
-    }
+    fn flush_memory(&mut self, _gpu_access_flags: crate::gfx::GpuAccess) {}
 }
 
 impl<'a> CommandBuffer<'a> {

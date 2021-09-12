@@ -1,7 +1,9 @@
 use crate::gfx::buffer_api::{BufferInfo, IBufferImpl};
 use crate::gfx::{Device, GpuAccess, MemoryPool};
+use std::ops::Deref;
 use std::sync::Arc;
 use std::marker::PhantomData;
+use futures::executor;
 
 pub struct BufferImpl<'a> {
     _device: &'a Device,
@@ -47,7 +49,14 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn map(&self) {    }
 
 	fn read<TType: 'static>(&self, action: fn(&mut TType)) {
-		todo!()
+		let slice = self._buffer_impl.slice(..);
+		let future = slice.map_async(wgpu::MapMode::Read);
+		self._device.to_data().get_device().poll(wgpu::Maintain::Wait);
+		let _awaiter = executor::block_on(future).unwrap();
+		let mapped_range = slice.get_mapped_range();
+		let mapped_data = mapped_range.deref();
+		let mut data: TType = unsafe { std::ptr::read(mapped_data.as_ptr() as *const _) };
+		action(&mut data);
 	}
 
     fn read_with_user_data<TType: 'static, TUserData>(
@@ -55,17 +64,31 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         action: fn(&mut TType, Option<&mut TUserData>),
         user_data: Option<&mut TUserData>,
     ) {
-		todo!()
+		let slice = self._buffer_impl.slice(..);
+		let future = slice.map_async(wgpu::MapMode::Read);
+		self._device.to_data().get_device().poll(wgpu::Maintain::Wait);
+		let _awaiter = executor::block_on(future).unwrap();
+		let mapped_range = slice.get_mapped_range();
+		let mapped_data = mapped_range.deref();
+		let mut data: TType = unsafe { std::ptr::read(mapped_data.as_ptr() as *const _) };
+		action(&mut data, user_data);
 	}
 
     fn write<TType: 'static>(&self, action: fn(&mut TType)) {
-		todo!()
+		let slice = self._buffer_impl.slice(..);
+		let future = slice.map_async(wgpu::MapMode::Write);
+		self._device.to_data().get_device().poll(wgpu::Maintain::Wait);
+		let _awaiter = executor::block_on(future).unwrap();
+		let mapped_range = slice.get_mapped_range();
+		let mapped_data = mapped_range.deref();
+		let mut data: TType = unsafe { std::ptr::read(mapped_data.as_ptr() as *const _) };
+		action(&mut data);
 	}
 
     fn write_with_user_data<TType: 'static, TUserData>(
         &self,
-        action: fn(&mut TType, Option<&mut TUserData>),
-        user_data: Option<&mut TUserData>,
+        _action: fn(&mut TType, Option<&mut TUserData>),
+        _user_data: Option<&mut TUserData>,
     ) {
 		todo!()
 	}
@@ -110,15 +133,15 @@ impl BufferInfo {
             result |= wgpu::BufferUsages::UNIFORM;
         }
         if gpu_access.contains(GpuAccess::READ) {
-            result |= wgpu::BufferUsages::MAP_READ;
+			result |= wgpu::BufferUsages::COPY_SRC;
         }
         if gpu_access.contains(GpuAccess::WRITE) {
-            result |= wgpu::BufferUsages::MAP_WRITE;
+			result |= wgpu::BufferUsages::COPY_DST;
         }
 
-        result |= wgpu::BufferUsages::COPY_SRC;
-        result |= wgpu::BufferUsages::COPY_DST;
-
+		result |= wgpu::BufferUsages::MAP_READ;
+		result |= wgpu::BufferUsages::MAP_WRITE;
+		
         result
     }
 }

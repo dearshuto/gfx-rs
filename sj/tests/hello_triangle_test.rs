@@ -197,12 +197,13 @@ fn ash() {
     let height = 480;
     let mut pixel_data = Vec::new();
     out_buffer.map();
-    out_buffer.read_with_user_data::<[u8; 4 * 640 * 480], Vec<u8>>(
+    out_buffer.read_with_user_data::<&[u8; 4 * 640 * 480], Vec<u8>>(
         |x, pixel_data| {
             *pixel_data.unwrap() = x.to_vec();
         },
         Some(&mut pixel_data),
     );
+	
     out_buffer.invalidate_mapped_range(0, 4 * 640 * 480);
     out_buffer.unmap();
     let mut image_buffer = image::DynamicImage::new_rgb8(640, 480);
