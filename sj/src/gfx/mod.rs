@@ -5,6 +5,7 @@ mod buffer_api;
 mod clear_color_value;
 mod color_target_view_api;
 mod command_buffer_api;
+mod common;
 mod depth_stencil_state_api;
 mod depth_stencil_view_api;
 //mod descriptor_pool_api;

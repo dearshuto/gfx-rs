@@ -1,10 +1,10 @@
 use super::{
-    common::ClearColorValue,
     texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
     Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,
     ShaderStage, Texture, TextureCopyRegion, TextureState, ViewportScissorState,
 };
+use crate::gfx::ClearColorValue;
 use std::marker::PhantomData;
 
 pub struct CommandBufferInfo {}

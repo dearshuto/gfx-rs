@@ -7,7 +7,7 @@ pub struct GpuAddressWgpu {
 }
 
 impl<'a> IGpuAddressImpl<'a> for GpuAddressWgpu {
-    fn new(buffer: &'a crate::gfx::Buffer<'a>) -> Self {
+    fn new<'buffer: 'a>(buffer: &'buffer Buffer<'buffer>) -> Self  {
         Self {
 			_buffer: buffer.to_data().clone_buffer(),
 		}

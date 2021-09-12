@@ -1,9 +1,10 @@
 use super::super::color_target_view_api::IColorTargetViewImpl;
 use super::super::Device;
+use std::sync::Arc;
 
 pub struct ColorTargetViewWgpu<'a> {
     _device: &'a Device,
-    _texture_view: wgpu::TextureView,
+    _texture_view: Arc<wgpu::TextureView>,
 }
 
 impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewWgpu<'a> {
@@ -15,13 +16,17 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewWgpu<'a> {
             .create_view(&wgpu::TextureViewDescriptor::default());
         Self {
             _device: device,
-            _texture_view: texture_view,
+            _texture_view: Arc::new(texture_view),
         }
     }
 }
 
-impl<'a> ColorTargetViewWgpu<'a> {
+impl<'a> ColorTargetViewWgpu<'a> {	
     pub fn get_texture_view(&self) -> &wgpu::TextureView {
         &self._texture_view
     }
+
+	pub fn clone_texture_view(&self) -> Arc<wgpu::TextureView> {
+		self._texture_view.clone()
+	}
 }

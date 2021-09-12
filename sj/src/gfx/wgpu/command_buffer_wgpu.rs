@@ -1,15 +1,18 @@
-use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
+use crate::gfx::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
-use super::command_builder::compute_pass_command_builder::ComputePassCommandBuilder;
-use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
-use super::command_builder::CommandBuilder;
+//use super::command_builder::compute_pass_command_builder::ComputePassCommandBuilder
+//;use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
+
+use crate::gfx::common::command_builder::CommandBuilder;
+use super::command_builder::GraphicsPassCommandBuilder;
+use super::command_builder::ComputePassCommandBuilder;
 
 pub struct CommandBuffer<'a> {
     _device: &'a Device,
-    _commands: Vec<CommandBuilder<'a>>,
+    _commands: Vec<CommandBuilder<'a, GraphicsPassCommandBuilder<'a>, ComputePassCommandBuilder<'a>>>,
 }
 
 impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
@@ -51,7 +54,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: GpuAddress<'a>,
+        gpu_address: &GpuAddress,
         size: usize,
     ) {
         self._commands
@@ -64,13 +67,13 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &'a GpuAddress,
+        gpu_address: & GpuAddress,
         size: u64,
     ) {
-        self._commands
-            .last_mut()
-            .unwrap()
-            .set_unordered_access_buffer(slot, stage, gpu_address, size);
+        // self._commands
+        //     .last_mut()
+        //     .unwrap()
+        //     .set_unordered_access_buffer(slot, stage, gpu_address, size);
     }
 
     fn clear_color(
@@ -98,20 +101,20 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn set_render_targets(
         &mut self,
-        color_target_views: &'a [&'a ColorTargetView],
+        color_target_views: & [& ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-        self._commands
-            .last_mut()
-            .unwrap()
-            .set_render_targets(color_target_views, depth_stencil_state_view);
+        // self._commands
+        //     .last_mut()
+        //     .unwrap()
+        //     .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &'a GpuAddress<'a>) {
-        self._commands
-            .last_mut()
-            .unwrap()
-            .set_vertex_buffer(buffer_index, gpu_address);
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+        // self._commands
+        //     .last_mut()
+        //     .unwrap()
+        //     .set_vertex_buffer(buffer_index, gpu_address);
     }
 
     fn draw(
@@ -162,30 +165,32 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn draw_indexed_instanced(
         &mut self,
-        primitive_topology: PrimitiveTopology,
-        index_format: IndexFormat,
-        gpu_address: &GpuAddress,
-        index_count: i32,
-        base_vertex: i32,
-        instance_count: i32,
-        base_instance: i32,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: IndexFormat,
+        _gpu_address: &GpuAddress,
+        _index_count: i32,
+        _base_vertex: i32,
+        _instance_count: i32,
+        _base_instance: i32,
     ) {
-        self._commands.last_mut().unwrap().draw_indexed_instanced(
-            primitive_topology,
-            index_format,
-            gpu_address,
-            index_count,
-            base_vertex,
-            instance_count,
-            base_instance,
-        );
+		todo!();
+        // self._commands.last_mut().unwrap().draw_indexed_instanced(
+        //     primitive_topology,
+        //     index_format,
+        //     gpu_address,
+        //     index_count,
+        //     base_vertex,
+        //     instance_count,
+        //     base_instance,
+        // );
     }
 
-    fn draw_indirect(&mut self, gpu_address: &GpuAddress) {
-        self._commands
-            .last_mut()
-            .unwrap()
-            .draw_indirect(gpu_address);
+    fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
+		todo!()
+        // self._commands
+        //     .last_mut()
+        //     .unwrap()
+        //     .draw_indirect(gpu_address);
     }
 
     fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
@@ -239,6 +244,10 @@ impl<'a> CommandBuffer<'a> {
             .get_device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
+		for _command in &self._commands {
+			
+		}
+		
         command_encoder
     }
 }

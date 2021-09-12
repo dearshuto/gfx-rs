@@ -1,4 +1,5 @@
 use crate::gfx::{Device, GpuAddress, Pipeline, ShaderStage};
+use crate::gfx::common::command_builder::IComputeCommandBuilder;
 use std::sync::Arc;
 
 pub struct ComputePassCommandBuilder<'a> {
@@ -46,33 +47,39 @@ impl<'a> ComputePassCommandBuilder<'a> {
             self._dispatch_count_z,
         );
     }
+}
 
-    pub fn set_constant_buffer(
+impl<'a> IComputeCommandBuilder<'a> for ComputePassCommandBuilder<'a> {
+    fn build(&self) {
+        todo!()
+    }
+
+    fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
+        todo!()
+    }
+
+    fn set_constant_buffer(
         &mut self,
         slot: i32,
-        _stage: ShaderStage,
-        gpu_address: GpuAddress<'a>,
-        _size: usize,
+        stage: crate::gfx::ShaderStage,
+        gpu_address: &crate::gfx::GpuAddress,
+        size: usize,
     ) {
         self._buffers[slot as usize] = Some(gpu_address.to_data().clone_buffer());
     }
 
-    pub fn set_unordered_access_buffer(
+    fn set_unordered_access_buffer(
         &mut self,
         slot: i32,
-        _stage: ShaderStage,
-        gpu_address: &'a GpuAddress,
-        _size: u64,
+        stage: crate::gfx::ShaderStage,
+        gpu_address: &crate::gfx::GpuAddress,
+        size: u64,
     ) {
-		assert!(0 <= slot);
+        assert!(0 <= slot);
 		self._buffer_binding[slot as usize] = Some(gpu_address.to_data().clone_buffer());
     }
 
-    pub fn set_vertex_buffer(&mut self, _buffer_index: i32, _gpu_address: &GpuAddress) {
-        assert!(false);
-    }
-
-    pub fn dispatch(&mut self, _group_count_x: u32, _group_count_y: u32, _group_count_z: u32) {
+    fn dispatch(&mut self, group_count_x: u32, group_count_y: u32, group_count_z: u32) {
         // let device_wgpu = self._device.to_data().get_device();
         // let bind_group_layout =
         //     device_wgpu.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
