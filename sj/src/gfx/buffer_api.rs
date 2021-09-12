@@ -1,4 +1,4 @@
-use super::{Device, GpuAccess, GpuAddress, MemoryPool};
+use super::{Device, GpuAccess, MemoryPool};
 use std::marker::PhantomData;
 
 pub struct BufferInfo {
@@ -138,7 +138,7 @@ where
         self.buffer_impl.invalidate_mapped_range(offset, size);
     }
 
-    pub fn to_data(&self) -> &T {
+    pub fn to_data(&'a self) -> &'a T {
         &self.buffer_impl
     }
 }

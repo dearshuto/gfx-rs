@@ -14,7 +14,7 @@ pub trait IQueueImpl<'a> {
 
     //	fn present(&self, swap_chain: &impl super::swap_chain::TSwapChain);
 
-    fn execute(&mut self, command_buffer: &CommandBuffer<'a>);
+    fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>);
 
     fn present(&mut self, _swap_chain: &mut SwapChain, _present_interval: i32);
 
@@ -41,7 +41,7 @@ impl<'a, T: IQueueImpl<'a>> TQueueInterface<'a, T> {
         }
     }
 
-    pub fn execute(&mut self, command_buffer: &CommandBuffer<'a>) {
+    pub fn execute(&mut self, command_buffer: &'a CommandBuffer<'a>) {
         self.queue_impl.execute(command_buffer);
     }
 

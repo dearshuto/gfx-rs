@@ -1,7 +1,7 @@
 use super::Buffer;
 
 pub trait IGpuAddressImpl<'a> {
-    fn new(buffer: &'a Buffer<'a>) -> Self;
+    fn new<'buffer: 'a>(buffer: &'buffer Buffer<'buffer>) -> Self;
 
     fn offset(&mut self, offset: i64);
 }
@@ -15,7 +15,7 @@ where
 }
 
 impl<'a, T: IGpuAddressImpl<'a>> TGpuAddressInterface<'a, T> {
-    pub fn new(buffer: &'a Buffer<'a>) -> Self {
+    pub fn new<'buffer: 'a>(buffer: &'buffer Buffer<'buffer>) -> Self {
         Self {
             _impl: T::new(buffer),
             _phantom: std::marker::PhantomData,
