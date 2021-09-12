@@ -2,7 +2,7 @@ use ash::version::DeviceV1_0;
 use ash::vk::DeviceSize;
 use std::marker::PhantomData;
 
-use super::super::buffer_api::{BufferInfo, IBufferImpl, MappedData};
+use super::super::buffer_api::{BufferInfo, IBufferImpl};
 use super::super::{Device, GpuAccess, MemoryPool};
 
 pub struct BufferImpl<'a> {
@@ -72,10 +72,11 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         256
     }
 
-    fn map<T>(&self) -> &mut T {
+    fn map(&self) {}
+
+    fn read<TType: 'static>(&self, action: fn(&mut TType)) {
         let device_impl = self._device.to_data().get_device();
         let device_memory = self._memory_pool.to_data().get_memory_pool();
-
         unsafe {
             let mapped_data = device_impl
                 .map_memory(
@@ -85,14 +86,17 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
                     ash::vk::MemoryMapFlags::empty(),
                 )
                 .unwrap();
-            &mut *(mapped_data as *mut T)
+            action(&mut *(mapped_data as *mut TType));
         }
     }
 
-    fn map_as_slice<T>(&self, count: usize) -> &[T] {
+    fn read_with_user_data<TType: 'static, TUserData>(
+        &self,
+        action: fn(&mut TType, Option<&mut TUserData>),
+        user_data: Option<&mut TUserData>,
+    ) {
         let device_impl = self._device.to_data().get_device();
         let device_memory = self._memory_pool.to_data().get_memory_pool();
-
         unsafe {
             let mapped_data = device_impl
                 .map_memory(
@@ -102,14 +106,13 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
                     ash::vk::MemoryMapFlags::empty(),
                 )
                 .unwrap();
-            std::slice::from_raw_parts(mapped_data as *mut T, count)
+            action(&mut *(mapped_data as *mut TType), user_data);
         }
     }
 
-    fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
+    fn write<TType: 'static>(&self, action: fn(&mut TType)) {
         let device_impl = self._device.to_data().get_device();
         let device_memory = self._memory_pool.to_data().get_memory_pool();
-
         unsafe {
             let mapped_data = device_impl
                 .map_memory(
@@ -119,7 +122,27 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
                     ash::vk::MemoryMapFlags::empty(),
                 )
                 .unwrap();
-            MappedData::<U>::new(mapped_data, count)
+            action(&mut *(mapped_data as *mut TType));
+        }
+    }
+
+    fn write_with_user_data<TType: 'static, TUserData>(
+        &self,
+        action: fn(&mut TType, Option<&mut TUserData>),
+        user_data: Option<&mut TUserData>,
+    ) {
+        let device_impl = self._device.to_data().get_device();
+        let device_memory = self._memory_pool.to_data().get_memory_pool();
+        unsafe {
+            let mapped_data = device_impl
+                .map_memory(
+                    device_memory,
+                    self._offset as DeviceSize,
+                    self._size,
+                    ash::vk::MemoryMapFlags::empty(),
+                )
+                .unwrap();
+            action(&mut *(mapped_data as *mut TType), user_data);
         }
     }
 

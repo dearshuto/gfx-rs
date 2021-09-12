@@ -92,10 +92,15 @@ fn main() {
         0,
         constant_buffer_info.get_size(),
     );
-    {
-        let mut mapped_data = constant_buffer.map::<ConstantBuffer>();
-        mapped_data.pv = projection_matrix * view_matrix;
-    }
+
+    let mut pv = projection_matrix * view_matrix;
+    constant_buffer.map();
+    constant_buffer.write_with_user_data::<ConstantBuffer, glm::Mat4x4>(
+        |x, user_data| {
+            x.pv = *user_data.unwrap();
+        },
+        Some(&mut pv),
+    );
     constant_buffer.flush_mapped_range(0, std::mem::size_of::<ConstantBuffer>() as u64);
     constant_buffer.unmap();
 
@@ -116,8 +121,8 @@ fn main() {
         0,
         (std::mem::size_of::<f32>() * 27) as u64,
     );
-    {
-        let mut vertex_data = vertex_buffer.map_as_slice_mut::<f32>(18);
+    vertex_buffer.map();
+    vertex_buffer.write::<[f32; 18]>(|vertex_data| {
         vertex_data[0] = 0.0;
         vertex_data[1] = 1.0;
         vertex_data[2] = 0.0;
@@ -141,7 +146,7 @@ fn main() {
         vertex_data[15] = 0.0;
         vertex_data[16] = 0.0;
         vertex_data[17] = 1.0;
-    }
+    });
     vertex_buffer.flush_mapped_range(0, 0x40 /*(std::mem::size_of::<f32>() * 9) as u64*/);
     vertex_buffer.unmap();
 

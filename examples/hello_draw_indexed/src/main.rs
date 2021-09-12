@@ -9,8 +9,9 @@ fn main() {
     let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
     let (_scan_buffers, scan_buffer_views) = swap_chain.get_scan_buffers_and_views();
 
-    let vertex_shader_source = include_bytes!("../resources/shaders/mandelbrot_vs.spv");
-    let pixel_shader_source = include_bytes!("../resources/shaders/mandelbrot_fs.spv");
+    let vertex_shader_source =
+        include_bytes!("../resources/shaders/hello_graphics_pipeline_vs.spv");
+    let pixel_shader_source = include_bytes!("../resources/shaders/hello_graphics_pipeline_fs.spv");
     let shader_info = sj::gfx::ShaderInfo::new()
         .set_vertex_shader_binary(vertex_shader_source)
         .set_pixel_shader_binary(pixel_shader_source);
@@ -66,27 +67,49 @@ fn main() {
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
-
-    // 画面いっぱいに四角形を描く
     let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
     vertex_buffer.map();
-    vertex_buffer.write::<[f32; 12]>(|mapped_data| {
-        mapped_data[0] = -1.0;
-        mapped_data[1] = 1.0;
-        mapped_data[2] = -1.0;
-        mapped_data[3] = -1.0;
-        mapped_data[4] = 1.0;
-        mapped_data[5] = -1.0;
-
-        mapped_data[6] = -1.0;
-        mapped_data[7] = 1.0;
-        mapped_data[8] = 1.0;
-        mapped_data[9] = -1.0;
-        mapped_data[10] = 1.0;
-        mapped_data[11] = 1.0;
+    vertex_buffer.write::<[f32; 8]>(|mapped_data| {
+        mapped_data[0] = -0.5;
+        mapped_data[1] = 0.5;
+        mapped_data[2] = -0.5;
+        mapped_data[3] = -0.5;
+        mapped_data[4] = 0.5;
+        mapped_data[5] = -0.5;
+        mapped_data[6] = 0.5;
+        mapped_data[7] = 0.5;
     });
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
+
+    let index_buffer_pool = sj::gfx::MemoryPool::new(
+        &device,
+        &sj::gfx::MemoryPoolInfo::new()
+            .set_size(128)
+            .set_memory_pool_property(
+                sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
+            ),
+    );
+    let index_buffer = sj::gfx::Buffer::new(
+        &device,
+        &sj::gfx::BufferInfo::new()
+            .set_size((std::mem::size_of::<u32>() * 6) as u64)
+            .set_gpu_access_flags(sj::gfx::GpuAccess::INDEX_BUFFER),
+        &index_buffer_pool,
+        0,
+        128,
+    );
+    index_buffer.map();
+    index_buffer.write::<[u32; 6]>(|mapped_data| {
+        mapped_data[0] = 0;
+        mapped_data[1] = 1;
+        mapped_data[2] = 2;
+        mapped_data[3] = 0;
+        mapped_data[4] = 2;
+        mapped_data[5] = 3;
+    });
+    index_buffer.flush_mapped_range(0, 128);
+    index_buffer.unmap();
 
     let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
 
@@ -103,20 +126,25 @@ fn main() {
         let command_buffer = &mut command_buffers[index];
         command_buffer.begin();
         {
+            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
             command_buffer.set_pipeline(&pipeline);
             command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
             command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
             command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 
-            let vertex_count = 6;
-            let vertex_offset = 0;
-            command_buffer.draw(
+            let index_count = 6;
+            let base_vertex = 0;
+            let index_buffer_gpu_address = sj::gfx::GpuAddress::new(&index_buffer);
+            command_buffer.draw_indexed(
                 sj::gfx::PrimitiveTopology::TriangleList,
-                vertex_count,
-                vertex_offset,
+                sj::gfx::IndexFormat::Uint32,
+                &index_buffer_gpu_address,
+                index_count,
+                base_vertex,
             );
 
-            command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER);
+            command_buffer
+                .flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE);
         }
         command_buffer.end();
     }

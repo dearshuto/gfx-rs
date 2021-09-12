@@ -35,6 +35,14 @@ impl DeviceImpl {
     pub fn get_queue_family_index(&self) -> u32 {
         self._queue_family_index
     }
+
+    pub fn get_surface_loader(&self) -> &ash::extensions::khr::Surface {
+        &self._surface_loader
+    }
+
+    pub fn get_surface(&self) -> ash::vk::SurfaceKHR {
+        self._surface.unwrap()
+    }
 }
 
 impl TDeviceImpl for DeviceImpl {

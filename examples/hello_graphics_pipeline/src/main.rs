@@ -68,15 +68,15 @@ fn main() {
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
     let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
-    {
-        let mut a = vertex_buffer.map_as_slice_mut::<f32>(6);
-        a[0] = 0.0;
-        a[1] = 1.0;
-        a[2] = -1.0;
-        a[3] = -1.0;
-        a[4] = 1.0;
-        a[5] = -1.0;
-    }
+    vertex_buffer.map();
+    vertex_buffer.write::<[f32; 6]>(|x| {
+        x[0] = 0.0;
+        x[1] = 1.0;
+        x[2] = -1.0;
+        x[3] = -1.0;
+        x[4] = 1.0;
+        x[5] = -1.0;
+    });
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
@@ -96,7 +96,7 @@ fn main() {
         command_buffer.begin();
         {
             command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
-			command_buffer.set_pipeline(&pipeline);
+            command_buffer.set_pipeline(&pipeline);
             command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
             command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
             command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
