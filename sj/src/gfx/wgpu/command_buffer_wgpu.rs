@@ -1,10 +1,8 @@
 use crate::gfx::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
-use super::super::{
+use crate::gfx::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
-//use super::command_builder::compute_pass_command_builder::ComputePassCommandBuilder
-//;use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
 
 use crate::gfx::common::command_builder::CommandBuilder;
 use super::command_builder::GraphicsPassCommandBuilder;
@@ -25,7 +23,11 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {}
+    fn end(&mut self) {
+		for command in &mut self._commands {
+			command.build();
+		}
+	}
 
     fn reset(&mut self) {
         self._commands.clear();
@@ -70,10 +72,10 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         gpu_address: & GpuAddress,
         size: u64,
     ) {
-        // self._commands
-        //     .last_mut()
-        //     .unwrap()
-        //     .set_unordered_access_buffer(slot, stage, gpu_address, size);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_unordered_access_buffer(slot, stage, gpu_address, size);
     }
 
     fn clear_color(
@@ -104,17 +106,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         color_target_views: & [& ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-        // self._commands
-        //     .last_mut()
-        //     .unwrap()
-        //     .set_render_targets(color_target_views, depth_stencil_state_view);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
     fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
-        // self._commands
-        //     .last_mut()
-        //     .unwrap()
-        //     .set_vertex_buffer(buffer_index, gpu_address);
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_vertex_buffer(buffer_index, gpu_address);
     }
 
     fn draw(
@@ -238,14 +240,18 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
 impl<'a> CommandBuffer<'a> {
     pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
-        let command_encoder = self
+        let mut command_encoder = self
             ._device
             .to_data()
             .get_device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-		for _command in &self._commands {
-			
+		for command in &self._commands {
+			match command {
+				CommandBuilder::Graphics(ref graphics_command) => graphics_command.push_command(&mut command_encoder),
+				CommandBuilder::Compute(ref compute_command) => compute_command.build(&mut command_encoder),
+				CommandBuilder::Phantom(ref _marker) => panic!(),
+			}
 		}
 		
         command_encoder

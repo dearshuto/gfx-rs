@@ -9,7 +9,6 @@ pub struct QueueImpl<'a>
 
 impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
     fn new(device: &'a Device, _info: &QueueInfo) -> Self {
-        let device_impl = device.to_data().get_device();
         QueueImpl {
             _device: device,
         }

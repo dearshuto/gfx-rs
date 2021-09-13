@@ -7,6 +7,8 @@ where
 {
     Graphics(TGraphics),
     Compute(TCompute),
+
+	#[allow(dead_code)]
     Phantom(std::marker::PhantomData<&'a ()>),
 }
 
@@ -15,6 +17,14 @@ where
     TGraphics: IGraphicsCommandBuilder<'a>,
     TCompute: IComputeCommandBuilder<'a>,
 {
+	pub fn build(&mut self) {
+		match self {
+			Self::Graphics(ref mut builder) => builder.build(),
+			Self::Compute(ref mut builder) => builder.build(),
+			Self::Phantom(ref _marker) => panic!(),
+		}
+	}
+	
     pub fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
         match self {
             Self::Graphics(ref mut builder) => {
@@ -70,7 +80,7 @@ where
             Self::Graphics(ref mut builder) => {
                 builder.set_render_targets(color_target_views, depth_stencil_state_view)
             }
-            Self::Compute(ref builder) => builder.build(),
+            Self::Compute(ref _builder) => panic!(),
             Self::Phantom(ref _g) => panic!(),
         };
     }
@@ -152,7 +162,7 @@ where
 }
 
 pub trait IGraphicsCommandBuilder<'a> {
-    fn build(&self);
+    fn build(&mut self);
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState);
 
@@ -218,7 +228,7 @@ pub trait IGraphicsCommandBuilder<'a> {
 }
 
 pub trait IComputeCommandBuilder<'a> {
-    fn build(&self);
+    fn build(&mut self);
 
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>);
 

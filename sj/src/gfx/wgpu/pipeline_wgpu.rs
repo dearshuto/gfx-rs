@@ -1,5 +1,5 @@
 use super::super::pipeline_api::{ComputePipelineInfo, GraphicsPipelineInfo, IPipelineImpl};
-use super::super::{Device, Shader};
+use super::super::Device;
 use std::sync::Arc;
 
 pub struct Pipeline {
@@ -61,6 +61,14 @@ impl Pipeline {
         self._compute_pipeline.is_some()
     }
 
+	pub fn clone_vertex_shader_module(&self) -> Arc<wgpu::ShaderModule> {
+		self._vertex_shader_module.as_ref().unwrap().clone()
+	}
+
+	pub fn clone_pixel_shader_module(&self) -> Arc<wgpu::ShaderModule> {
+		self._pixel_shader_module.as_ref().unwrap().clone()
+	}
+	
 	pub fn get_compute_pipeline(&self) -> &wgpu::ComputePipeline {
 		&self._compute_pipeline.as_ref().unwrap()
 	}
