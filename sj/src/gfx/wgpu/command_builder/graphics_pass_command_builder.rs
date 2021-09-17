@@ -127,32 +127,62 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
 
 impl<'a> IGraphicsCommandBuilder<'a> for GraphicsPassCommandBuilder<'a> {
     fn build(&mut self) {
-        let render_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: None,
-            vertex: wgpu::VertexState {
-                module: &self._vertex_shader_module,
-                entry_point: "main",
-                buffers: &[],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &self._pixel_shader_module,
-                entry_point: "main",
-                targets: &[],
-            }),
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-        };
-        self._render_pipeline = Some(
+		let pipeline_layout = self._device.to_data().get_device().create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+			label: None,
+			bind_group_layouts: &[],
+			push_constant_ranges: &[],
+		});
+		let target = wgpu::ColorTargetState{ format: wgpu::TextureFormat::Rgba8Unorm, blend: None, write_mask: wgpu::ColorWrites::all() };
+        // let render_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
+        //     label: None,
+        //     layout: Some(&pipeline_layout),
+        //     vertex: wgpu::VertexState {
+        //         module: &self._vertex_shader_module,
+        //         entry_point: "main",
+        //         buffers: &[],
+        //     },
+        //     fragment: Some(wgpu::FragmentState {
+        //         module: &self._pixel_shader_module,
+        //         entry_point: "main",
+        //         targets: &[target],
+        //     }),
+        //     primitive: wgpu::PrimitiveState::default(),
+        //     depth_stencil: None,
+        //     multisample: wgpu::MultisampleState::default(),
+        // };
+        // self._render_pipeline = Some(
+        //     self._device
+        //         .to_data()
+        //         .get_device()
+        //         .create_render_pipeline(&render_pipeline_descriptor),		
+        // );
+
+		let _aa  = 
             self._device
-                .to_data()
-                .get_device()
-                .create_render_pipeline(&render_pipeline_descriptor),
-        );
+            .to_data()
+            .get_device()
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+				label: None,
+				//layout: Some(&pipeline_layout),
+				layout: None,
+				vertex: wgpu::VertexState {
+					module: &self._vertex_shader_module, 
+					entry_point: "vs_main",
+					buffers: &[],
+				},
+				fragment: Some(wgpu::FragmentState {
+					module: &self._pixel_shader_module,
+					entry_point: "fs_main",
+					targets: &[target],
+				}),
+				primitive: wgpu::PrimitiveState::default(),
+				depth_stencil: None,
+				multisample: wgpu::MultisampleState::default(),
+			});
+		println!("ONE");
     }
 
-    fn set_viewport_scissor_state(&mut self, _viewport_scissor_state: &'a ViewportScissorState) {
+    fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
         self._viewport_scissor_state = Some(*viewport_scissor_state.to_data());
     }
 

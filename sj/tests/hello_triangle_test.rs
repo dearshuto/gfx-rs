@@ -2,7 +2,7 @@ use image::Pixel;
 use image::{self, GenericImage};
 use sj::gfx::{
     Buffer, BufferInfo, BufferTextureCopyRegion, ColorTargetView, ColorTargetViewInfo,
-    CommandBuffer, CommandBufferInfo, Device, DeviceInfo, GpuAccess, GpuAddress, ImageFormat,
+    CommandBuffer, CommandBufferInfo, Device, DeviceInfo, GpuAccess, ImageFormat,
     MemoryPool, MemoryPoolInfo, MemoryPoolProperty, PipelineStageBit, Queue, QueueInfo, Texture,
     TextureInfo, TextureState, TextureSubresourceRange,
 };
@@ -193,11 +193,11 @@ fn ash() {
     target_directory.pop();
     target_directory.push("test.png");
 
-    let width = 640;
-    let height = 480;
+    const WIDTH: usize = 640;
+    const HEIGHT: usize = 480;
     let mut pixel_data = Vec::new();
     out_buffer.map();
-    out_buffer.read_with_user_data::<&[u8; 4 * 640 * 480], Vec<u8>>(
+    out_buffer.read_with_user_data::<&[u8; 4 * WIDTH * HEIGHT], Vec<u8>>(
         |x, pixel_data| {
             *pixel_data.unwrap() = x.to_vec();
         },

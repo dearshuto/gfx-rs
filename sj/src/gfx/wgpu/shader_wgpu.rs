@@ -2,9 +2,13 @@ use super::super::shader_api::IShaderImpl;
 use super::super::shader_api::ShaderInfo;
 use super::super::Device;
 use std::sync::Arc;
+use std::borrow::Cow;
 use std::marker::PhantomData;
 
 pub struct ShaderImpl<'a> {
+	_vertex_shader_source: Option<String>,
+	_pixel_shader_source: Option<String>,
+	_compute_shader_source: Option<String>,
     _vertex_shader_module: Option<Arc<wgpu::ShaderModule>>,
     _pixel_shader_module: Option<Arc<wgpu::ShaderModule>>,
     _compute_shader_module: Option<Arc<wgpu::ShaderModule>>,
@@ -24,7 +28,7 @@ impl<'a> ShaderImpl<'a> {
 		self._compute_shader_module.as_ref().unwrap().clone()
 	}
 
-    fn create_shader_module(device: &wgpu::Device, sprv_binary: &[u8]) -> wgpu::ShaderModule {
+    fn create_shader_module(device: &wgpu::Device, sprv_binary: &[u8]) -> (wgpu::ShaderModule, String) {
         let options = naga::front::spv::Options {
             //adjust_coordinate_space: !self.features.contains(hal::Features::NDC_Y_UP),
             strict_capabilities: true,
@@ -39,34 +43,47 @@ impl<'a> ShaderImpl<'a> {
         .validate(&module)
         .unwrap();
 
-        let piixel_shader_source = &*naga::back::wgsl::write_string(&module, &module_info).unwrap();
-        let shader_source = std::borrow::Cow::Borrowed(piixel_shader_source);
-
+        let shader_source_string = naga::back::wgsl::write_string(&module, &module_info).unwrap();
+		let shader_source_str: &str = &shader_source_string;
+        let shader_source = std::borrow::Cow::Borrowed(shader_source_str);
+		println!("{}", shader_source);
+		
         let shader_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(shader_source),
         });
-        shader_module
+        (shader_module, shader_source_string)
     }
 }
 
 impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
     fn new(device: &'a Device, info: &ShaderInfo) -> Self {
-        let vertex_shader_module = match info.get_vertex_shader_binary() {
-            Some(vertex_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
+		let shader = Arc::new(device.to_data().get_device().create_shader_module(&wgpu::ShaderModuleDescriptor {
+			label: None,
+			source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("shader.wgsl"))),
+		}));
+		
+        let (vertex_shader_module, vertex_shader_source) = match info.get_vertex_shader_binary() {
+            Some(vertex_shader_binary) => {
+				let (module, source) = ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &vertex_shader_binary,
-            ))),
-            None => None,
+				);
+				(Some(Arc::new(module)), Some(source))
+			},
+            None => (None, None),
         };
-        let pixel_shader_module = match info.get_pixel_shader_binary() {
-            Some(pixel_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
+        let (pixel_shader_module, pixel_shader_source) = match info.get_pixel_shader_binary() {
+            Some(pixel_shader_binary) => {
+				let (module, source) = ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &pixel_shader_binary,
-            ))),
-            None => None,
+				);
+				(Some(Arc::new(module)), Some(source))
+			},
+            None => (None, None),
         };
-        let compute_shader_module = match info.get_compute_shader_binary() {
+        let _compute_shader_module = match info.get_compute_shader_binary() {
             Some(compute_shader_binary) => Some(Arc::new(ShaderImpl::create_shader_module(
                 device.to_data().get_device(),
                 &compute_shader_binary,
@@ -75,9 +92,15 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
         };
 
         Self {
-            _vertex_shader_module: vertex_shader_module,
-            _pixel_shader_module: pixel_shader_module,
-            _compute_shader_module: compute_shader_module,
+			_vertex_shader_source: vertex_shader_source,
+			_pixel_shader_source: pixel_shader_source,
+			_compute_shader_source: None,
+            // _vertex_shader_module: vertex_shader_module,
+            // _pixel_shader_module: pixel_shader_module,
+            _vertex_shader_module: Some(shader.clone()),
+            _pixel_shader_module: Some(shader.clone()),
+			
+            _compute_shader_module: None,//compute_shader_module,
             _marker: PhantomData,
         }
     }

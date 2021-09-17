@@ -4,7 +4,24 @@ use std::sync::Arc;
 
 pub struct ColorTargetViewWgpu<'a> {
     _device: &'a Device,
-    _texture_view: Arc<wgpu::TextureView>,
+    _texture_view: Option<Arc<wgpu::TextureView>>,
+}
+
+impl<'a> ColorTargetViewWgpu<'a> {
+	pub fn new_from_swap_chain(device: &'a Device) -> Self{
+		Self {
+			_device: device,
+			_texture_view: None,
+		}
+	}
+
+	pub fn clone_texture_view(&self) -> Arc<wgpu::TextureView> {
+		self._texture_view.as_ref().unwrap().clone()
+	}
+
+	pub fn set_texture_view(&mut self, texture_view: wgpu::TextureView) {
+		self._texture_view = Some(Arc::new(texture_view));
+	}
 }
 
 impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewWgpu<'a> {
@@ -16,17 +33,7 @@ impl<'a> IColorTargetViewImpl<'a> for ColorTargetViewWgpu<'a> {
             .create_view(&wgpu::TextureViewDescriptor::default());
         Self {
             _device: device,
-            _texture_view: Arc::new(texture_view),
+            _texture_view: Some(Arc::new(texture_view)),
         }
     }
-}
-
-impl<'a> ColorTargetViewWgpu<'a> {	
-    pub fn get_texture_view(&self) -> &wgpu::TextureView {
-        &self._texture_view
-    }
-
-	pub fn clone_texture_view(&self) -> Arc<wgpu::TextureView> {
-		self._texture_view.clone()
-	}
 }

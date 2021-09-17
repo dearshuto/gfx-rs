@@ -108,7 +108,7 @@ fn set_render_target_test() {
     let render_targets = [&color_target_view];
     command_buffer.begin();
     command_buffer.set_pipeline(&graphics_pipeline);
-    command_buffer.set_render_targets(&render_targets, None);
+    //command_buffer.set_render_targets(&render_targets, None);
     command_buffer.end();
 }
 
@@ -122,31 +122,31 @@ fn set_graphics_pipeline_test() {
         .set_pixel_shader_binary(&pixel_shader_binary);
     let shader = sj::gfx::Shader::new(&device, &shader_info);
 
-    // let rasterizer_state_info = RasterizerStateInfo::new();
-    // let depth_stencil_state_info = DepthStencilStateInfo::new();
-    // let blend_target_state_info_array = [BlendTargetStateInfo::new()];
-    // let blend_state_info =
-    //     BlendStateInfo::new().set_target_state_info(&blend_target_state_info_array);
-    // let vertex_attribute_state_info_array = [VertexAttributeStateInfo::new()
-    //     .set_slot(0)
-    //     .set_format(AttributeFormat::Float32_32)
-    //     .set_offset(0)
-    //     .set_buffer_index(0)];
-    // let vertex_buffer_state_info_array =
-    //     [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<f32>() as i64)];
-    // let vertex_state_info = VertexStateInfo::new()
-    //     .set_attribute_state_info_array(&vertex_attribute_state_info_array)
-    //     .set_buffer_state_info_array(&vertex_buffer_state_info_array);
-    // let graphics_pipeline_info = GraphicsPipelineInfo::new()
-    //     .set_shader(&shader)
-    //     .set_rasterizer_state(&rasterizer_state_info)
-    //     .set_depth_stencil_state(&depth_stencil_state_info)
-    //     .set_blend_stae(&blend_state_info)
-    //     .set_vertex_state_info(&vertex_state_info);
-    // let graphics_pipeline = Pipeline::new_as_graphics(&device, &graphics_pipeline_info);
+    let rasterizer_state_info = RasterizerStateInfo::new();
+    let depth_stencil_state_info = DepthStencilStateInfo::new();
+    let blend_target_state_info_array = [BlendTargetStateInfo::new()];
+    let blend_state_info =
+        BlendStateInfo::new().set_target_state_info(&blend_target_state_info_array);
+    let vertex_attribute_state_info_array = [VertexAttributeStateInfo::new()
+        .set_slot(0)
+        .set_format(AttributeFormat::Float32_32)
+        .set_offset(0)
+        .set_buffer_index(0)];
+    let vertex_buffer_state_info_array =
+        [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<f32>() as i64)];
+    let vertex_state_info = VertexStateInfo::new()
+        .set_attribute_state_info_array(&vertex_attribute_state_info_array)
+        .set_buffer_state_info_array(&vertex_buffer_state_info_array);
+    let graphics_pipeline_info = GraphicsPipelineInfo::new()
+        .set_shader(&shader)
+        .set_rasterizer_state(&rasterizer_state_info)
+        .set_depth_stencil_state(&depth_stencil_state_info)
+        .set_blend_stae(&blend_state_info)
+        .set_vertex_state_info(&vertex_state_info);
+    let graphics_pipeline = Pipeline::new_as_graphics(&device, &graphics_pipeline_info);
 
-    // let mut command_buffer = CommandBuffer::new(&device, &CommandBufferInfo::new());
-    // command_buffer.begin();
-    // command_buffer.set_pipeline(&graphics_pipeline);
-    // command_buffer.end();
+    let mut command_buffer = CommandBuffer::new(&device, &CommandBufferInfo::new());
+    command_buffer.begin();
+    command_buffer.set_pipeline(&graphics_pipeline);
+    command_buffer.end();
 }
