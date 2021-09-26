@@ -1,8 +1,6 @@
-use crate::gfx::{
-    common::command_builder::IGraphicsCommandBuilder,
-    wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu, ColorTargetView, DepthStencilView,
-    Device, Pipeline, ViewportScissorState,
-};
+use crate::gfx::{AttributeFormat, ColorTargetView, DepthStencilView, Device, Pipeline, ViewportScissorState};
+use crate::gfx::common::command_builder::IGraphicsCommandBuilder;
+use crate::gfx::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu;
 use std::sync::Arc;
 
 pub struct GraphicsPassCommandBuilder<'a> {
@@ -87,42 +85,6 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             draw_command.push_draw_command(&mut render_pass);
         }
     }
-
-    // fn create_bind_group(&self) -> wgpu::BindGroup {
-    // 	todo!()
-    // let device_wgpu = self._device.to_data().get_device();
-    // let bind_group_layout = self
-    //     ._pipeline
-    //     .to_data()
-    //     .get_shader()
-    //     .to_data()
-    //     .get_bind_group_layout();
-
-    // let slice = self._constant_buffers[0]
-    //     .as_ref()
-    //     .unwrap()
-    //     .to_data()
-    //     .get_buffer()
-    //     .get_buffer()
-    //     .slice(..);
-
-    // let entrices = [
-    //     wgpu::BindGroupEntry {
-    //         binding: 0,
-    //         resource: wgpu::BindingResource::Buffer(slice),
-    //     },
-    //     wgpu::BindGroupEntry {
-    //         binding: 1,
-    //         resource: wgpu::BindingResource::Buffer(slice),
-    //     },
-    // ];
-
-    // device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
-    //     label: None,
-    //     layout: bind_group_layout,
-    //     entries: &entrices,
-    // })
-    //}
 }
 
 impl<'a> IGraphicsCommandBuilder<'a> for GraphicsPassCommandBuilder<'a> {
@@ -133,53 +95,41 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsPassCommandBuilder<'a> {
 			push_constant_ranges: &[],
 		});
 		let target = wgpu::ColorTargetState{ format: wgpu::TextureFormat::Rgba8Unorm, blend: None, write_mask: wgpu::ColorWrites::all() };
-        // let render_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
-        //     label: None,
-        //     layout: Some(&pipeline_layout),
-        //     vertex: wgpu::VertexState {
-        //         module: &self._vertex_shader_module,
-        //         entry_point: "main",
-        //         buffers: &[],
-        //     },
-        //     fragment: Some(wgpu::FragmentState {
-        //         module: &self._pixel_shader_module,
-        //         entry_point: "main",
-        //         targets: &[target],
-        //     }),
-        //     primitive: wgpu::PrimitiveState::default(),
-        //     depth_stencil: None,
-        //     multisample: wgpu::MultisampleState::default(),
-        // };
-        // self._render_pipeline = Some(
-        //     self._device
-        //         .to_data()
-        //         .get_device()
-        //         .create_render_pipeline(&render_pipeline_descriptor),		
-        // );
-
-		let _aa  = 
+		let attributes: Vec<wgpu::VertexAttribute> = self._pipeline.to_data().get_attribute_state_info_array()
+			.iter()
+			.map(|info| wgpu::VertexAttribute{
+				format: info.get_format().to_wgpu(),
+				offset: info.get_offset() as u64,
+				shader_location: info.get_slot() as u32,
+			}).collect();
+		let vertex_buffers = vec![wgpu::VertexBufferLayout{
+			array_stride: self._pipeline.to_data().get_buffer_state_info_array()[0].get_stride() as wgpu::BufferAddress,
+			step_mode: wgpu::VertexStepMode::Vertex,
+			attributes: &attributes
+		}];
+		
+		let render_pipeline = 
             self._device
             .to_data()
             .get_device()
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
 				label: None,
-				//layout: Some(&pipeline_layout),
-				layout: None,
+				layout: Some(&pipeline_layout),
 				vertex: wgpu::VertexState {
-					module: &self._vertex_shader_module, 
-					entry_point: "vs_main",
-					buffers: &[],
+					module: &self._vertex_shader_module,
+					entry_point: "main",
+					buffers: &vertex_buffers,
 				},
 				fragment: Some(wgpu::FragmentState {
 					module: &self._pixel_shader_module,
-					entry_point: "fs_main",
+					entry_point: "main",
 					targets: &[target],
 				}),
 				primitive: wgpu::PrimitiveState::default(),
 				depth_stencil: None,
 				multisample: wgpu::MultisampleState::default(),
 			});
-		println!("ONE");
+		self._render_pipeline = Some(render_pipeline);
     }
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {
@@ -283,4 +233,13 @@ impl DrawCommand {
             }
         }
     }
+}
+
+impl AttributeFormat {
+	pub fn to_wgpu(&self) -> wgpu::VertexFormat {
+		match self {
+			AttributeFormat::Float32_32 => wgpu::VertexFormat::Float32x2,
+			AttributeFormat::Float32_32_32 => wgpu::VertexFormat::Float32x3,
+		}
+	}
 }

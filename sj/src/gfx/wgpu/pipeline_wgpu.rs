@@ -1,3 +1,5 @@
+use crate::gfx::{VertexAttributeStateInfo, VertexBufferStateInfo};
+
 use super::super::pipeline_api::{ComputePipelineInfo, GraphicsPipelineInfo, IPipelineImpl};
 use super::super::Device;
 use std::sync::Arc;
@@ -9,10 +11,13 @@ pub struct Pipeline {
 	_pixel_bind_grpup: Option<wgpu::BindGroup>,
 	_compute_bind_group: Option<wgpu::BindGroup>,
     _compute_pipeline: Option<wgpu::ComputePipeline>,
+	_vertex_attribute_state_info_array: Option<Vec<VertexAttributeStateInfo>>,
+	_vertex_buffer_state_info_array: Option<Vec<VertexBufferStateInfo>>,
 }
 
 impl<'a> IPipelineImpl<'a> for Pipeline {
     fn new_as_graphics(_device: &'a Device, info: &'a GraphicsPipelineInfo) -> Self {
+		
 		Self {
 			_vertex_shader_module: Some(info.get_shader().to_data().clone_vertex_shader_module()),
 			_pixel_shader_module: Some(info.get_shader().to_data().clone_pixel_shader_module()),
@@ -20,6 +25,8 @@ impl<'a> IPipelineImpl<'a> for Pipeline {
 			_pixel_bind_grpup: None,
 			_compute_bind_group: None,
 			_compute_pipeline: None,
+			_vertex_attribute_state_info_array: Some(info.get_vertex_state_info().get_attribute_state_info_array().to_vec()),
+			_vertex_buffer_state_info_array: Some(info.get_vertex_state_info().get_buffer_state_info_array().to_vec()),
 		}
     }
 
@@ -52,6 +59,8 @@ impl<'a> IPipelineImpl<'a> for Pipeline {
             _pixel_bind_grpup: None,
 			_compute_bind_group: Some(bind_group),
             _compute_pipeline: Some(compute_pipeline),
+			_vertex_attribute_state_info_array: None,
+			_vertex_buffer_state_info_array: None
         }
     }
 }
@@ -75,5 +84,13 @@ impl Pipeline {
 
 	pub fn get_compute_bind_group(&self) -> &wgpu::BindGroup {
 		&self._compute_bind_group.as_ref().unwrap()
+	}
+
+	pub fn get_attribute_state_info_array(&self) -> &[VertexAttributeStateInfo] {
+		&self._vertex_attribute_state_info_array.as_ref().unwrap()
+	}
+
+	pub fn get_buffer_state_info_array(&self) -> &[VertexBufferStateInfo] {
+		&self._vertex_buffer_state_info_array.as_ref().unwrap()
 	}
 }

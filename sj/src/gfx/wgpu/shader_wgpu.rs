@@ -48,7 +48,7 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
             ShaderImpl::create_shader_module(device_impl, info.get_pixel_shader_binary());
         let compute_shader_module =
             ShaderImpl::create_shader_module(device_impl, info.get_compute_shader_binary());
-
+		
         Self {
             _vertex_shader_module: vertex_shader_module,
             _pixel_shader_module: pixel_shader_module,
