@@ -15,7 +15,7 @@ winit = "0.24.0"
 libloading = "0.7"
 vulkano =  {version = "0.24.0", optional = true}
 vulkano-win = {version = "0.24.0", optional = true}
-wgpu = {version = "0.10.0", optional = true}
+wgpu = {version = "0.10.0", features = ["spirv"], optional = true}
 naga = {version = "0.6.1", features = ["spv-in", "wgsl-out"], optional = true}
 ash = {version = "0.32.1", optional = true}
 raw-window-handle = { version = "0.3", optional = true}
