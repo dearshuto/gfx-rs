@@ -6,8 +6,11 @@ fn main()
 	//let source = "#version 310 es\n void main() {}";
 	
 	let mut compiler = shaderc::Compiler::new().unwrap();
-	let options = shaderc::CompileOptions::new().unwrap();
+	let mut options = shaderc::CompileOptions::new().unwrap();
 	//options.set_optimization_level(shaderc::OptimizationLevel::Size);
+	options.set_generate_debug_info();
+	options.set_source_language(shaderc::SourceLanguage::GLSL);
+
 	let binary_result = compiler.compile_into_spirv(
 		source, shaderc::ShaderKind::Compute,
 		"shader.glsl", "main", Some(&options)).unwrap();

@@ -6,7 +6,7 @@ version = "0.21.0"
 [features]
 default = ["backend_wgpu"]
 backend_vulkano = ["vulkano", "vulkano-win"]
-backend_wgpu = ["wgpu", "naga", "futures"]
+backend_wgpu = ["wgpu", "naga", "futures", "spirv-reflect"]
 backend_ash = ["ash", "ash-window", "raw-window-handle", "spirv-reflect"]
 
 [dependencies]

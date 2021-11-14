@@ -14,6 +14,7 @@ pub struct GraphicsPassCommandBuilder<'a> {
     _vertex_buffers: [Option<Arc<wgpu::Buffer>>; 2],
     _constant_buffers: [Option<Arc<wgpu::Buffer>>; 32],
     _bind_group: Option<wgpu::BindGroup>,
+	_bind_group_layout: Option<wgpu::BindGroupLayout>,
     _vertex_offset: u32,
     _vertrex_count: u32,
     _draw_commands: Vec<DrawCommand>,
@@ -32,6 +33,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             _vertex_buffers: std::default::Default::default(),
             _constant_buffers: std::default::Default::default(),
             _bind_group: None,
+			_bind_group_layout: None,
             _vertex_offset: 0,
             _vertrex_count: 0,
             _draw_commands: Vec::new(),
@@ -56,7 +58,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             .collect();
         let render_pass_descriptor = wgpu::RenderPassDescriptor {
             label: None,
-            color_attachments: &render_pass_color_attachment,
+            color_attachments: &[],//&render_pass_color_attachment,
             depth_stencil_attachment: None,
         };
         let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
@@ -130,6 +132,14 @@ impl<'a> IGraphicsCommandBuilder<'a> for GraphicsPassCommandBuilder<'a> {
 				multisample: wgpu::MultisampleState::default(),
 			});
 		self._render_pipeline = Some(render_pipeline);
+
+		// デスクリプタたちをセット
+		self._bind_group_layout = Some(self._device.to_data().get_device().create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{ label: None, entries: &[] }));
+        self._bind_group = Some(self._device.to_data().get_device().create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self._bind_group_layout.as_ref().unwrap(),
+            entries: &[],
+            label: None,
+        }));
     }
 
     fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &'a ViewportScissorState) {

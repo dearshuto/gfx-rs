@@ -95,9 +95,9 @@ fn main() {
         let command_buffer = &mut command_buffers[index];
         command_buffer.begin();
         {
-            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
+            command_buffer.clear_color(&mut scan_buffer_views[0], 0.25, 0.25, 0.4, 1.0, None);
             command_buffer.set_pipeline(&pipeline);
-            command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
+            command_buffer.set_render_targets(&[&scan_buffer_views[0]], None);
             command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
             command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
 

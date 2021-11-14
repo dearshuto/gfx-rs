@@ -33,10 +33,15 @@ impl<'a> ISwapChainImpl<'a> for SwapChainWgpu<'a> {
 		};
 		surface.configure(&device.to_data().get_device(), &config);
 
+		let current_scan_buffer = device.to_data().get_surface().as_ref().unwrap().get_current_frame().unwrap().output;
+		let current_scan_buffer_view = current_scan_buffer.texture.create_view(&wgpu::TextureViewDescriptor::default());
+		let mut color_target_view = ColorTargetView::new_internal(ColorTargetViewWgpu::new_from_swap_chain(device));
+		color_target_view.to_data_mut().set_texture_view(current_scan_buffer_view);
+
 		Self {
 			_device: device,
 			_textures: Vec::new(),
-			_color_target_views: vec![ColorTargetView::new_internal(ColorTargetViewWgpu::new_from_swap_chain(device))],
+			_color_target_views: vec![color_target_view],
 		}
     }
 
