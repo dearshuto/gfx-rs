@@ -7,9 +7,15 @@ pub struct QueueImpl<'a>
     _device: &'a Device,
 }
 
+impl<'a> QueueImpl<'a>
+{
+	pub fn get_queue(&self) -> &wgpu::Queue {
+		&self._device.to_data().get_queue()
+	}
+}
+
 impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
     fn new(device: &'a Device, _info: &QueueInfo) -> Self {
-        let device_impl = device.to_data().get_device();
         QueueImpl {
             _device: device,
         }
