@@ -12,6 +12,40 @@ pub struct CommandBuffer<'a> {
     _commands: Vec<CommandBuilder<'a>>,
 }
 
+impl<'a> CommandBuffer<'a> {
+    pub fn get_command_count(&self) -> u32 {
+        self._commands.len() as u32
+    }
+
+    pub fn get_bind_group(&self, index: usize) -> &wgpu::BindGroup {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(_) => todo!(),
+            CommandBuilder::Compute(builder) => builder.get_bind_group(),
+        }
+    }
+
+    pub fn get_dispatch_count(&self, index: usize) -> (u32, u32, u32) {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(_) => todo!(),
+            CommandBuilder::Compute(builder) => builder.get_dispatch_count(),
+        }
+    }
+
+    pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
+        let mut _command_encoder = self
+            ._device
+            .to_data()
+            .get_device()
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        // for command in &self._commands {
+        // 	command.build(&mut command_encoder);
+        // }
+
+        _command_encoder
+    }
+}
+
 impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
     fn new(device: &'a Device, _info: &CommandBufferInfo) -> Self {
         CommandBuffer {
@@ -22,7 +56,9 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {}
+    fn end(&mut self) {
+        self._commands.last_mut().unwrap().build();
+    }
 
     fn reset(&mut self) {
         self._commands.clear();
@@ -38,7 +74,8 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
     fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
         if pipeline.to_data().is_compute() {
             let builder = ComputePassCommandBuilder::new(self._device);
-            let command = CommandBuilder::Compute(builder);
+            let mut command = CommandBuilder::Compute(builder);
+            command.set_pipeline(pipeline);
             self._commands.push(command);
         } else {
             let builder = GraphicsPassCommandBuilder::new(self._device, pipeline);
@@ -231,17 +268,5 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
 
     fn flush_memory(&mut self, _gpu_access_flags: crate::gfx::GpuAccess) {
         todo!()
-    }
-}
-
-impl<'a> CommandBuffer<'a> {
-    pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
-        let command_encoder = self
-            ._device
-            .to_data()
-            .get_device()
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-        command_encoder
     }
 }

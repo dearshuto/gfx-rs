@@ -36,7 +36,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
     }
 
     pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
-		todo!()
+        todo!()
         // let render_pass_descriptor = wgpu::RenderPassDescriptor {
         //     color_attachments: &self._color_attachment_descriptors,
         //     depth_stencil_attachment: None,
@@ -65,7 +65,10 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         // );
     }
 
-    pub fn set_viewport_scissor_state(&mut self, _viewport_scissor_state: &'a ViewportScissorState) {
+    pub fn set_viewport_scissor_state(
+        &mut self,
+        _viewport_scissor_state: &'a ViewportScissorState,
+    ) {
         //self._viewport_scissor_state = Some(*viewport_scissor_state.to_data());
     }
 
@@ -92,7 +95,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         color_target_views: &[&'a ColorTargetView<'a>],
         _depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-		todo!()
+        todo!()
         // let view = color_target_views[0].to_data().get_texture_view();
         // let color_attachment_descriptor = wgpu::RenderPassColorAttachment {
         //     attachment: view,
@@ -113,8 +116,8 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
     }
 
     pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
-		todo!();
-		//self._vertex_buffers[buffer_index as usize] = Some(gpu_address);
+        todo!();
+        //self._vertex_buffers[buffer_index as usize] = Some(gpu_address);
     }
 
     pub fn draw(
@@ -175,7 +178,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
     }
 
     fn create_bind_group(&self) -> wgpu::BindGroup {
-		todo!()
+        todo!()
         // let device_wgpu = self._device.to_data().get_device();
         // let bind_group_layout = self
         //     ._pipeline
