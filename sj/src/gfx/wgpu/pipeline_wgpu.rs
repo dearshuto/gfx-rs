@@ -15,12 +15,12 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
     }
 
     fn new_as_compute(device: &'a Device, info: ComputePipelineInfo<'a>) -> Self {
-        let shader = info.get_shader().to_data().get_impl();
+        let shader = info.get_shader().to_data().clone_compute_shader_module();
         let compute_pipeline = device.to_data().get_device().create_compute_pipeline(
             &wgpu::ComputePipelineDescriptor {
                 layout: None,
                 label: None,
-                module: shader,
+                module: &shader,
                 entry_point: &"main".to_string(),
             },
         );
@@ -35,7 +35,6 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
                     layout: &bind_group_layout,
                     entries: &[],
                 });
-        let a: wgpu::BindGroup;
 
         Self {
             render_pipeline_impl: None,
@@ -64,6 +63,6 @@ impl<'a> Pipeline<'a> {
     }
 
     pub fn get_shader(&self) -> &Shader {
-		todo!()
+        todo!()
     }
 }
