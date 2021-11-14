@@ -17,12 +17,10 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn new(
         device: &'a Device,
         info: &BufferInfo,
-        _memory_pool: &'a MemoryPool,
+        _memory_pool: Option <&'a MemoryPool>,
         _offset: i64,
         _size: u64,
     ) -> Self {
-        assert!(info.get_size() <= _size);
-
         let slice_size = info.get_size();
         let size = slice_size as wgpu::BufferAddress;
         let buffer = device
@@ -57,7 +55,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
 
     fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
         let _result = self._buffer_impl.slice(..).map_async(wgpu::MapMode::Write);
-        let _result = self._buffer_impl.slice(..).map_async(wgpu::MapMode::Read);
+        //let _result = self._buffer_impl.slice(..).map_async(wgpu::MapMode::Read);
         self._device
             .to_data()
             .get_device()
@@ -102,6 +100,8 @@ impl BufferInfo {
         }
         if gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER) {
             result |= wgpu::BufferUsages::STORAGE;
+			result |= wgpu::BufferUsages::MAP_READ;
+			result |= wgpu::BufferUsages::MAP_WRITE;
         }
         if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
             result |= wgpu::BufferUsages::UNIFORM;

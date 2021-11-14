@@ -37,7 +37,7 @@ pub trait IBufferImpl<'a> {
     fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self;
@@ -74,7 +74,7 @@ where
     pub fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self {
