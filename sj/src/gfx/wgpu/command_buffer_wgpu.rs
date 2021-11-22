@@ -17,6 +17,17 @@ impl<'a> CommandBuffer<'a> {
         self._commands.len() as u32
     }
 
+    pub fn get_compute_pipeline(&self, index: usize) -> &wgpu::ComputePipeline {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(_) => todo!(),
+            CommandBuilder::Compute(builder) => builder.get_pipeline(),
+        }
+    }
+
+    pub fn get_graphics_pipeline(&self, _index: usize) -> &wgpu::RenderPipeline {
+        todo!()
+    }
+
     pub fn get_bind_group(&self, index: usize) -> &wgpu::BindGroup {
         match &self._commands[index as usize] {
             CommandBuilder::Graphics(_) => todo!(),
