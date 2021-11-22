@@ -1,4 +1,8 @@
+use crate::gfx::Buffer;
+
 pub trait IGpuAddressImpl<'a> {
+    fn new(buffet: &'a Buffer<'a>) -> Self;
+
     fn offset(&mut self, offset: i64);
 }
 
@@ -11,9 +15,9 @@ where
 }
 
 impl<'a, T: IGpuAddressImpl<'a>> TGpuAddressInterface<'a, T> {
-    pub fn new(impl_instance: T) -> Self {
+    pub fn new(buffer: &'a Buffer<'a>) -> Self {
         Self {
-            _impl: impl_instance,
+            _impl: T::new(buffer),
             _phantom: std::marker::PhantomData,
         }
     }

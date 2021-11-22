@@ -5,10 +5,11 @@ use super::super::buffer_api::{BufferInfo, IBufferImpl};
 use super::super::{Device, GpuAccess, MemoryPool};
 use super::gpu_address_wgpu::GpuAddressWgpu;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 pub struct BufferImpl<'a> {
     _device: &'a Device,
-    _buffer_impl: wgpu::Buffer,
+    _buffer_impl: Arc<wgpu::Buffer>,
     _size: usize,
     _marker: PhantomData<&'a i32>,
 }
@@ -17,7 +18,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn new(
         device: &'a Device,
         info: &BufferInfo,
-        _memory_pool: Option <&'a MemoryPool>,
+        _memory_pool: Option<&'a MemoryPool>,
         _offset: i64,
         _size: u64,
     ) -> Self {
@@ -35,7 +36,7 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
 
         BufferImpl {
             _device: device,
-            _buffer_impl: buffer,
+            _buffer_impl: Arc::new(buffer),
             _size: info.get_size() as usize,
             _marker: PhantomData,
         }
@@ -70,20 +71,15 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
     fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
 
     fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
-
-    fn get_gpu_address(&self) -> GpuAddress {
-        let instance = GpuAddressWgpu::new(self);
-        GpuAddress::new(instance)
-    }
 }
 
 impl<'a> BufferImpl<'a> {
-    pub fn get_buffer(&self) -> &wgpu::Buffer {
-        &self._buffer_impl
+    pub fn clone_buffer(&self) -> Arc<wgpu::Buffer> {
+        self._buffer_impl.clone()
     }
 
-    pub fn get_buffer_mut(&mut self) -> &mut wgpu::Buffer {
-        &mut self._buffer_impl
+    pub fn get_buffer(&self) -> &wgpu::Buffer {
+        &self._buffer_impl
     }
 }
 
@@ -100,8 +96,8 @@ impl BufferInfo {
         }
         if gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER) {
             result |= wgpu::BufferUsages::STORAGE;
-			result |= wgpu::BufferUsages::MAP_READ;
-			result |= wgpu::BufferUsages::MAP_WRITE;
+            result |= wgpu::BufferUsages::MAP_READ;
+            result |= wgpu::BufferUsages::MAP_WRITE;
         }
         if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
             result |= wgpu::BufferUsages::UNIFORM;

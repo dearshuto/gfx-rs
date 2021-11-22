@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 pub struct Pipeline<'a> {
     render_pipeline_impl: Option<wgpu::RenderPipeline>,
     compute_pipeline_impl: Option<wgpu::ComputePipeline>,
+    _shader: &'a Shader<'a>,
     _marker: PhantomData<&'a i32>,
 }
 
@@ -29,6 +30,7 @@ impl<'a> IPipelineImpl<'a> for Pipeline<'a> {
         Self {
             render_pipeline_impl: None,
             compute_pipeline_impl: Some(compute_pipeline),
+            _shader: info.get_shader(),
             _marker: PhantomData,
         }
     }
@@ -48,6 +50,6 @@ impl<'a> Pipeline<'a> {
     }
 
     pub fn get_shader(&self) -> &Shader {
-        todo!()
+        self._shader
     }
 }

@@ -4,8 +4,8 @@ pub mod graphics_pass_command_builder;
 use self::compute_pass_command_builder::ComputePassCommandBuilder;
 use self::graphics_pass_command_builder::GraphicsPassCommandBuilder;
 use crate::gfx::{
-    ColorTargetView, DepthStencilView, GpuAddress, IndexFormat, PrimitiveTopology, ShaderStage,
-    ViewportScissorState,
+    ColorTargetView, DepthStencilView, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology,
+    ShaderStage, ViewportScissorState,
 };
 
 pub enum CommandBuilder<'a> {
@@ -14,10 +14,19 @@ pub enum CommandBuilder<'a> {
 }
 
 impl<'a> CommandBuilder<'a> {
-    pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
-        match &self {
-            Self::Graphics(ref builder) => builder.build(command_encoder),
-            Self::Compute(ref builder) => builder.build(command_encoder),
+    pub fn build(&mut self) {
+        match self {
+            Self::Graphics(ref mut _builder) => todo!(), /*builder.build(command_encoder)*/
+            Self::Compute(ref mut builder) => builder.build(),
+        }
+    }
+
+    pub fn set_pipeline(&mut self, pipeline: &'a Pipeline<'a>) {
+        match self {
+            Self::Graphics(ref mut _builder) => todo!(),
+            Self::Compute(ref mut builder) => {
+                builder.set_pipeline(pipeline);
+            }
         }
     }
 
