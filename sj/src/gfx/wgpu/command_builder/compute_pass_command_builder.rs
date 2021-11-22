@@ -104,6 +104,16 @@ impl<'a> ComputePassCommandBuilder<'a> {
         self._dispatch_count_z = group_count_z;
     }
 
+    pub fn get_pipeline(&self) -> &wgpu::ComputePipeline {
+        &self
+            ._pipeline
+            .unwrap()
+            .to_data()
+            .get_compute_pipeline()
+            .as_ref()
+            .unwrap()
+    }
+
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
         self._bind_group.as_ref().unwrap()
     }
