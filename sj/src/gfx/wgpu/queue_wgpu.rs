@@ -1,3 +1,8 @@
+use winit::event::Event;
+use winit::event::WindowEvent;
+use winit::event_loop::ControlFlow;
+use winit::platform::run_return::EventLoopExtRunReturn;
+
 use super::super::queue_api::QueueInfo;
 use super::super::CommandBuffer;
 use super::super::Device;
@@ -46,7 +51,25 @@ impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
         queue_wgpu.submit(Some(command_encoder.finish()));
     }
 
-    fn present(&mut self, _swap_chain: &mut crate::gfx::SwapChain, _present_interval: i32) {}
+    fn present(&mut self, swap_chain: &mut crate::gfx::SwapChain, _present_interval: i32) {
+        let swap_chain_impl = swap_chain.to_data_mut();
+        swap_chain_impl
+            .get_event_loop_mut()
+            .run_return(|event, _, control_flow| {
+                match event {
+                    Event::WindowEvent {
+                        event: WindowEvent::CloseRequested,
+                        ..
+                    } => {
+                        // TODO: quit
+                    }
+                    Event::MainEventsCleared => {
+                        *control_flow = ControlFlow::Exit;
+                    }
+                    _ => (),
+                }
+            });
+    }
 
     fn flush(&mut self) {}
 

@@ -1,11 +1,32 @@
+use winit::event_loop::EventLoop;
+use winit::window::Window;
+
 use super::super::swap_chain_api::{ISwapChainImpl, SwapChainInfo};
 use super::super::{ColorTargetView, Device};
 
-pub struct SwapChainWgpu {}
+pub struct SwapChainWgpu<'a> {
+    _event_loop: &'a mut EventLoop<()>,
+    _window: &'a Window,
+}
 
-impl<'a> ISwapChainImpl<'a> for SwapChainWgpu {
-    fn new(_device: &Device, _info: &'a mut SwapChainInfo<'a>) -> Self {
-        todo!();
+impl<'a> SwapChainWgpu<'a> {
+    pub fn get_event_loop(&self) -> &EventLoop<()> {
+        &self._event_loop
+    }
+
+    pub fn get_event_loop_mut(&mut self) -> &mut EventLoop<()> {
+        self._event_loop
+    }
+}
+
+impl<'a> ISwapChainImpl<'a> for SwapChainWgpu<'a> {
+    fn new(_device: &Device, info: &'a mut SwapChainInfo<'a>) -> Self {
+        let (event_loop, window) = info.get_layer().get_event_loop_and_window_mut();
+
+        Self {
+            _event_loop: event_loop,
+            _window: window,
+        }
     }
 
     fn get_scan_buffer_views_mut(&mut self) -> &mut [ColorTargetView<'a>] {

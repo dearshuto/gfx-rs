@@ -262,7 +262,7 @@ pub use self::vk::swap_chain_vk::SwapChain;
 type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type SwapChainImpl<'a> = self::wgpu::swap_chain_wgpu::SwapChainWgpu;
+type SwapChainImpl<'a> = self::wgpu::swap_chain_wgpu::SwapChainWgpu<'a>;
 
 pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
