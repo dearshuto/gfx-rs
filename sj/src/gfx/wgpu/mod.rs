@@ -13,6 +13,7 @@ pub mod memory_pool_wgpu;
 pub mod pipeline_wgpu;
 pub mod queue_wgpu;
 pub mod rasterizer_state_wgpu;
+pub mod scan_buffer_view_wgpu;
 pub mod semaphore_wgpu;
 pub mod shader_wgpu;
 pub mod swap_chain_wgpu;

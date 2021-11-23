@@ -8,18 +8,16 @@ pub struct BlendStateWgpu {
 impl IBlendStateImpl for BlendStateWgpu {
     fn new(_device: &Device, _info: &BlendStateInfo) -> Self {
         let blend_descriptor = wgpu::BlendState {
-            color: wgpu::BlendComponent
-			{
-				src_factor: wgpu::BlendFactor::Zero,
-				dst_factor: wgpu::BlendFactor::One,
-				operation: wgpu::BlendOperation::Add,
-			},
-            alpha: wgpu::BlendComponent
-			{
-				src_factor: wgpu::BlendFactor::Zero,
-				dst_factor: wgpu::BlendFactor::One,
-				operation: wgpu::BlendOperation::Add,
-			},
+            color: wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::Zero,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
+            alpha: wgpu::BlendComponent {
+                src_factor: wgpu::BlendFactor::Zero,
+                dst_factor: wgpu::BlendFactor::One,
+                operation: wgpu::BlendOperation::Add,
+            },
         };
 
         Self {

@@ -1,19 +1,38 @@
+use std::ops::Range;
+
+use wgpu::RenderPipeline;
+
 use crate::gfx::{
-    wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu, ColorTargetView, DepthStencilView,
-    Device, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology, ShaderStage,
-    ViewportScissorState,
+    wgpu::{
+        scan_buffer_view_wgpu::ScanBufferViewWgpu,
+        viewport_scissor_state_wgpu::ViewportScissorStateWgpu,
+    },
+    ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
+    PrimitiveTopology, ScanBufferView, ShaderStage, ViewportScissorState,
 };
 
 pub struct GraphicsPassCommandBuilder<'a> {
     _device: &'a Device,
     _pipeline: &'a Pipeline<'a>,
+    _bind_group: Option<wgpu::BindGroup>,
+    _render_pipeline: Option<RenderPipeline>,
     _color_attachment_descriptors: Vec<wgpu::RenderPassColorAttachment<'a>>,
     _viewport_scissor_state: Option<ViewportScissorStateWgpu>,
+    // _unordered_access_buffers: [Option<std::sync::Arc<wgpu::Buffer>>; 32],
     _vertex_buffers: [Option<GpuAddress<'a>>; 2],
-    _constant_buffers: [Option<GpuAddress<'a>>; 32],
-    _bind_group: Option<wgpu::BindGroup>,
+    //_constant_buffers: [Option<GpuAddress<'a>>; 32],
+    // _vertex_offset: u32,
+    // _vertrex_count: u32,
+
+    // レンダーターゲット
+    _view: Option<ScanBufferViewWgpu>,
+
+    // 描画コマンド
+    _primitive_topology: PrimitiveTopology,
+    _vertex_count: u32,
     _vertex_offset: u32,
-    _vertrex_count: u32,
+    _instance_count: u32,
+    _base_instance: u32,
 }
 
 impl<'a> GraphicsPassCommandBuilder<'a> {
@@ -21,48 +40,66 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         Self {
             _device: device,
             _pipeline: pipeline,
+            _bind_group: None,
+            _render_pipeline: None,
             _color_attachment_descriptors: Vec::new(),
             _viewport_scissor_state: None,
             _vertex_buffers: std::default::Default::default(),
-            _constant_buffers: std::default::Default::default(),
-            _bind_group: None,
+            // _constant_buffers: std::default::Default::default(),
+            // _vertex_offset: 0,
+            // _vertrex_count: 0,
+            _view: None,
+            _primitive_topology: PrimitiveTopology::TriangleList,
+            _vertex_count: 0,
             _vertex_offset: 0,
-            _vertrex_count: 0,
+            _instance_count: 0,
+            _base_instance: 0,
         }
     }
 
-    pub fn update_descriptors(&mut self) {
-        //self._bind_group = Some(self.create_bind_group());
-    }
+    pub fn build(&mut self) {
+        let pipeline_impl = self._pipeline.to_data();
+        let shader_impl = self._pipeline.to_data().get_shader();
+        let vertex_buffers = [wgpu::VertexBufferLayout {
+            array_stride: (std::mem::size_of::<f32>() * 2) as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: shader_impl.to_data().get_vertex_attributes(),
+        }];
 
-    pub fn build(&self, command_encoder: &mut wgpu::CommandEncoder) {
-        todo!()
-        // let render_pass_descriptor = wgpu::RenderPassDescriptor {
-        //     color_attachments: &self._color_attachment_descriptors,
-        //     depth_stencil_attachment: None,
-        // };
-        // let mut render_pass = command_encoder.begin_render_pass(&render_pass_descriptor);
+        // バインドグループ
+        self._bind_group = Some(self.create_bind_group());
 
-        // // ビューポートシザー
-        // self._viewport_scissor_state
-        //     .as_ref()
-        //     .unwrap()
-        //     .push(&mut render_pass);
-
-        // // デスクリプタたちをセット
-        // render_pass.set_bind_group(0, self._bind_group.as_ref().unwrap(), &[]);
-
-        // // 頂点バッファ
-        // //GraphicsPassCommandBuilder::push_vertex_buffers(&mut render_pass, &self._vertex_buffers);
-
-        // // 描画コマンド
-        // render_pass.draw(
-        //     std::ops::Range {
-        //         start: self._vertex_offset,
-        //         end: self._vertrex_count,
-        //     },
-        //     std::ops::Range { start: 0, end: 1 },
-        // );
+        // 描画パイプライン
+        let render_pipeline = self._device.to_data().get_device().create_render_pipeline(
+            &wgpu::RenderPipelineDescriptor {
+                label: None,
+                layout: Some(
+                    self._pipeline
+                        .to_data()
+                        .get_shader()
+                        .to_data()
+                        .get_pipeline_layout(),
+                ),
+                vertex: wgpu::VertexState {
+                    module: shader_impl.to_data().get_vertex_shader_module(),
+                    entry_point: "main",
+                    buffers: &vertex_buffers,
+                },
+                primitive: pipeline_impl.create_primitive_state(wgpu::IndexFormat::Uint32),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: shader_impl.to_data().get_pixel_shader_module(),
+                    entry_point: "main",
+                    targets: &[wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    }],
+                }),
+            },
+        );
+        self._render_pipeline = Some(render_pipeline);
     }
 
     pub fn set_viewport_scissor_state(
@@ -74,20 +111,26 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
 
     pub fn set_constant_buffer(
         &mut self,
-        slot: i32,
-        stage: ShaderStage,
-        gpu_address: GpuAddress<'a>,
-        size: usize,
+        _slot: i32,
+        _stage: ShaderStage,
+        _gpu_address: GpuAddress<'a>,
+        _size: usize,
     ) {
+        todo!()
     }
 
     pub fn set_unordered_access_buffer(
         &mut self,
-        slot: i32,
-        stage: ShaderStage,
-        gpu_address: &GpuAddress,
-        size: u64,
+        _slot: i32,
+        _stage: ShaderStage,
+        _gpu_address: &GpuAddress,
+        _size: u64,
     ) {
+        todo!()
+    }
+
+    pub fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView) {
+        self._view = Some(view.move_data());
     }
 
     pub fn set_render_targets(
@@ -95,29 +138,23 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         color_target_views: &[&'a ColorTargetView<'a>],
         _depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
-        todo!()
-        // let view = color_target_views[0].to_data().get_texture_view();
-        // let color_attachment_descriptor = wgpu::RenderPassColorAttachment {
-        //     attachment: view,
-        //     resolve_target: None,
-        //     ops: wgpu::Operations {
-        //         load: wgpu::LoadOp::Clear(wgpu::Color {
-        //             r: 0.1,
-        //             g: 0.2,
-        //             b: 0.3,
-        //             a: 1.0,
-        //         }),
-        //         store: true,
-        //     },
-        // };
-        // self._color_attachment_descriptors.clear();
-        // self._color_attachment_descriptors
-        //     .push(color_attachment_descriptor);
+        // TODO: MRT
+        let view = color_target_views[0].to_data().get_texture_view();
+        let color_attachment_descriptor = wgpu::RenderPassColorAttachment {
+            view,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                store: true,
+            },
+        };
+        self._color_attachment_descriptors.clear();
+        self._color_attachment_descriptors
+            .push(color_attachment_descriptor);
     }
 
     pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
-        todo!();
-        //self._vertex_buffers[buffer_index as usize] = Some(gpu_address);
+        self._vertex_buffers[buffer_index as usize] = Some(gpu_address);
     }
 
     pub fn draw(
@@ -137,8 +174,11 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-        // self._vertrex_count = vertex_count as u32;
-        // self._vertex_offset = vertex_offset as u32;
+        self._primitive_topology = primitive_topology;
+        self._vertex_count = vertex_count as u32;
+        self._vertex_offset = vertex_offset as u32;
+        self._instance_count = instance_count as u32;
+        self._base_instance = base_instance as u32;
     }
 
     pub fn draw_indexed(
@@ -169,32 +209,62 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         todo!()
     }
 
-    fn create_render_pass_descriptor(&self) -> wgpu::RenderPassDescriptor {
-        wgpu::RenderPassDescriptor {
-            color_attachments: &[],
-            depth_stencil_attachment: None,
-            label: None,
-        }
+    pub fn get_vertex_buffer(&self) -> &wgpu::Buffer {
+        self._vertex_buffers[0]
+            .as_ref()
+            .unwrap()
+            .to_data()
+            .get_buffer()
+            .get_buffer()
     }
 
+    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+        self._bind_group.as_ref().unwrap()
+    }
+
+    pub fn get_render_pipeline(&self) -> &wgpu::RenderPipeline {
+        self._render_pipeline.as_ref().unwrap()
+    }
+
+    pub fn get_vertices_range(&self) -> Range<u32> {
+        self._vertex_offset..(self._vertex_offset + self._vertex_count)
+    }
+
+    pub fn get_instance_range(&self) -> Range<u32> {
+        self._base_instance..(self._base_instance + self._instance_count)
+    }
+
+    // pub fn get_primitive_topology(&self) -> wgpu::PrimitiveTopology {
+    // 	match self._primitive_topology {
+    // 		PrimitiveTopology::PointList => wgpu::PrimitiveTopology::PointList,
+    // 		PrimitiveTopology::TriangleList => wgpu::PrimitiveTopology::TriangleList,
+    // 	}
+    // }
+
+    // pub fn get_vertex_count(&self) -> u32 {
+    // 	self._vertex_count
+    // }
+
+    // pub fn get_vertex_offset(&self) -> u32 {
+    // 	self._vertex_offset
+    // }
+
+    // fn create_render_pass_descriptor(&self) -> wgpu::RenderPassDescriptor {
+    //     wgpu::RenderPassDescriptor {
+    //         color_attachments: &[],
+    //         depth_stencil_attachment: None,
+    //         label: None,
+    //     }
+    // }
+
     fn create_bind_group(&self) -> wgpu::BindGroup {
-        todo!()
-        // let device_wgpu = self._device.to_data().get_device();
-        // let bind_group_layout = self
-        //     ._pipeline
-        //     .to_data()
-        //     .get_shader()
-        //     .to_data()
-        //     .get_bind_group_layout();
-
-        // let slice = self._constant_buffers[0]
-        //     .as_ref()
-        //     .unwrap()
-        //     .to_data()
-        //     .get_buffer()
-        //     .get_buffer()
-        //     .slice(..);
-
+        let device_wgpu = self._device.to_data().get_device();
+        let bind_group_layout = self
+            ._pipeline
+            .to_data()
+            .get_shader()
+            .to_data()
+            .get_bind_group_layout();
         // let entrices = [
         //     wgpu::BindGroupEntry {
         //         binding: 0,
@@ -206,11 +276,11 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         //     },
         // ];
 
-        // device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
-        //     label: None,
-        //     layout: bind_group_layout,
-        //     entries: &entrices,
-        // })
+        device_wgpu.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: bind_group_layout,
+            entries: &[],
+        })
     }
 
     // fn push_vertex_buffers(

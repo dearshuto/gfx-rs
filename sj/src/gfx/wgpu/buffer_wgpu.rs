@@ -1,9 +1,7 @@
 use crate::gfx::buffer_api::MappedData;
-use crate::gfx::GpuAddress;
 
 use super::super::buffer_api::{BufferInfo, IBufferImpl};
 use super::super::{Device, GpuAccess, MemoryPool};
-use super::gpu_address_wgpu::GpuAddressWgpu;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -66,7 +64,9 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         MappedData::new(ptr as *mut std::ffi::c_void, count)
     }
 
-    fn unmap(&self) {}
+    fn unmap(&self) {
+        self._buffer_impl.unmap();
+    }
 
     fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
 
@@ -102,13 +102,9 @@ impl BufferInfo {
         if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
             result |= wgpu::BufferUsages::UNIFORM;
         }
-        if gpu_access.contains(GpuAccess::READ) {
-            result |= wgpu::BufferUsages::MAP_READ;
-        }
-        if gpu_access.contains(GpuAccess::WRITE) {
-            result |= wgpu::BufferUsages::MAP_WRITE;
-        }
 
+        result |= wgpu::BufferUsages::MAP_READ;
+        result |= wgpu::BufferUsages::MAP_WRITE;
         result |= wgpu::BufferUsages::COPY_SRC;
         result |= wgpu::BufferUsages::COPY_DST;
 

@@ -15,6 +15,7 @@ mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
 mod rasterizer_state_api;
+mod scan_buffer_view_api;
 mod semaphore_api;
 mod shader_api;
 mod swap_chain_api;
@@ -26,6 +27,7 @@ use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
 use self::color_target_view_api::TColorTargetView;
 use self::command_buffer_api::TCommandBufferInterface;
+use self::command_buffer_api::TScanBufferCommandBuffer;
 use self::depth_stencil_state_api::TDepthStencilState;
 use self::depth_stencil_view_api::TDepthStencilView;
 //use self::descriptor_pool_api::TDescriptorInterface;
@@ -36,6 +38,7 @@ use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
 use self::queue_api::TQueueInterface;
 use self::rasterizer_state_api::TRasterizerStateInterface;
+use self::scan_buffer_view_api::TScanBufferView;
 use self::semaphore_api::TSemaphore;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
@@ -99,7 +102,7 @@ pub use self::command_buffer_api::CommandBufferInfo;
 type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type CommandBufferImpl<'a> = self::wgpu::command_buffer_wgpu::CommandBuffer<'a>;
+type CommandBufferImpl<'a> = self::wgpu::command_buffer_wgpu::CommandBufferWgpu<'a>;
 
 #[cfg(feature = "backend_ash")]
 type CommandBufferImpl<'a> = self::ash::command_buffer_ash::CommandBufferImpl<'a>;
@@ -225,6 +228,21 @@ type RasterizerStateImpl = self::wgpu::rasterizer_state_wgpu::RasterizerStateWgp
 pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
 //
 
+// ScanBufferView
+#[cfg(feature = "backend_wgpu")]
+type ScanBufferViewImpl = self::wgpu::scan_buffer_view_wgpu::ScanBufferViewWgpu;
+
+pub type ScanBufferView = TScanBufferView<ScanBufferViewImpl>;
+//
+
+#[cfg(feature = "backend_wgpu")]
+type ScanBufferCommandBufferImpl<'a> =
+    self::wgpu::command_buffer_wgpu::ScanBufferCommandBufferWgpu<'a>;
+
+pub type ScanBufferCommandBuffer<'a> =
+    TScanBufferCommandBuffer<'a, ScanBufferCommandBufferImpl<'a>>;
+//
+
 // Semaphore
 pub use self::semaphore_api::SemaphoreInfo;
 
@@ -306,7 +324,8 @@ pub use self::viewport_scissor_state_api::ViewportStateInfo;
 type ViewportScissorStateImpl = self::ash::viewport_scissor_state_ash::ViewportScissorStateImpl;
 
 #[cfg(feature = "backend_wgpu")]
-type ViewportScissorStateImpl<'a> = self::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu;
+type ViewportScissorStateImpl<'a> =
+    self::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu;
 
 pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl<'a>>;
 //

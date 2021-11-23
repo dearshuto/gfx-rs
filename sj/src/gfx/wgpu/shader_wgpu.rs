@@ -7,12 +7,21 @@ pub struct ShaderImpl<'a> {
     _vertex_shader_module: Option<Arc<wgpu::ShaderModule>>,
     _pixel_shader_module: Option<Arc<wgpu::ShaderModule>>,
     _compute_shader_module: Option<Arc<wgpu::ShaderModule>>,
+    _vertex_attributes: Vec<wgpu::VertexAttribute>,
     _bind_group_layout: wgpu::BindGroupLayout,
     _pipeline_layout: wgpu::PipelineLayout,
     _marker: PhantomData<&'a ()>,
 }
 
 impl<'a> ShaderImpl<'a> {
+    pub fn get_vertex_shader_module(&self) -> &wgpu::ShaderModule {
+        &self._vertex_shader_module.as_ref().unwrap()
+    }
+
+    pub fn get_pixel_shader_module(&self) -> &wgpu::ShaderModule {
+        &self._pixel_shader_module.as_ref().unwrap()
+    }
+
     pub fn clone_vertex_shader_module(&self) -> Arc<wgpu::ShaderModule> {
         self._vertex_shader_module.as_ref().unwrap().clone()
     }
@@ -23,6 +32,10 @@ impl<'a> ShaderImpl<'a> {
 
     pub fn clone_compute_shader_module(&self) -> Arc<wgpu::ShaderModule> {
         self._compute_shader_module.as_ref().unwrap().clone()
+    }
+
+    pub fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
+        &self._vertex_attributes
     }
 
     pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
@@ -48,6 +61,21 @@ impl<'a> ShaderImpl<'a> {
         }
     }
 
+    pub fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
+        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
+        module
+            .enumerate_input_variables(None)
+            .unwrap()
+            .into_iter()
+            .map(|x| wgpu::VertexAttribute {
+                format: Self::convert_attribute_format(x.format),
+                offset: 0,
+                shader_location: x.location,
+            })
+            .collect::<Vec<wgpu::VertexAttribute>>()
+            .to_vec()
+    }
+
     pub fn create_bind_group_layout_entries(
         shader_source: &[u8],
     ) -> Vec<wgpu::BindGroupLayoutEntry> {
@@ -56,8 +84,6 @@ impl<'a> ShaderImpl<'a> {
         let shader_stage = module.get_shader_stage();
         let _bindings = module.enumerate_descriptor_bindings(None).unwrap();
         let _sets = module.enumerate_descriptor_sets(None).unwrap();
-        let _aa = module.enumerate_input_variables(None);
-        let _a = 0;
 
         module
             .enumerate_descriptor_bindings(None)
@@ -97,6 +123,24 @@ impl<'a> ShaderImpl<'a> {
             .to_vec()
     }
 
+    fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
+        match format {
+            spirv_reflect::types::ReflectFormat::Undefined => todo!(),
+            spirv_reflect::types::ReflectFormat::R32_UINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32_SINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32_SFLOAT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32_UINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32_SINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
+            spirv_reflect::types::ReflectFormat::R32G32B32_UINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32B32_SINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => todo!(),
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => todo!(),
+        }
+    }
+
     fn convert_shader_stage(
         stage: spirv_reflect::types::ReflectShaderStageFlags,
     ) -> wgpu::ShaderStages {
@@ -118,8 +162,21 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
         let compute_shader_module =
             ShaderImpl::create_shader_module(device_impl, info.get_compute_shader_binary());
 
-        let entries =
-            Self::create_bind_group_layout_entries(info.get_compute_shader_binary().unwrap());
+        let vertex_attributes = if let Some(shader_source) = info.get_vertex_shader_binary() {
+            Self::create_vertex_attributes(&shader_source)
+        } else {
+            Vec::new()
+        };
+        let entries = if info.get_compute_shader_binary().is_some() {
+            Self::create_bind_group_layout_entries(info.get_compute_shader_binary().unwrap())
+        } else {
+            let mut vertex_entries =
+                Self::create_bind_group_layout_entries(info.get_vertex_shader_binary().unwrap());
+            let mut pixel_entries =
+                Self::create_bind_group_layout_entries(info.get_pixel_shader_binary().unwrap());
+            vertex_entries.append(&mut pixel_entries);
+            vertex_entries
+        };
         let bind_group_layout = device.to_data().get_device().create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 label: None,
@@ -141,6 +198,7 @@ impl<'a> IShaderImpl<'a> for ShaderImpl<'a> {
             _vertex_shader_module: vertex_shader_module,
             _pixel_shader_module: pixel_shader_module,
             _compute_shader_module: compute_shader_module,
+            _vertex_attributes: vertex_attributes,
             _bind_group_layout: bind_group_layout,
             _pipeline_layout: pipeline_layout,
             _marker: PhantomData,

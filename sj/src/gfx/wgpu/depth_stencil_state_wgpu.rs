@@ -1,5 +1,5 @@
-use crate::gfx::depth_stencil_state_api::{DepthStencilStateInfo, IDepthStencilStateImpl};
 use super::super::Device;
+use crate::gfx::depth_stencil_state_api::{DepthStencilStateInfo, IDepthStencilStateImpl};
 
 pub struct DepthStencilStateWgpu {
     _depth_stencil_state: wgpu::DepthStencilState,

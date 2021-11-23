@@ -5,7 +5,7 @@ use self::compute_pass_command_builder::ComputePassCommandBuilder;
 use self::graphics_pass_command_builder::GraphicsPassCommandBuilder;
 use crate::gfx::{
     ColorTargetView, DepthStencilView, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology,
-    ShaderStage, ViewportScissorState,
+    ScanBufferView, ShaderStage, ViewportScissorState,
 };
 
 pub enum CommandBuilder<'a> {
@@ -16,7 +16,7 @@ pub enum CommandBuilder<'a> {
 impl<'a> CommandBuilder<'a> {
     pub fn build(&mut self) {
         match self {
-            Self::Graphics(ref mut _builder) => todo!(), /*builder.build(command_encoder)*/
+            Self::Graphics(ref mut builder) => builder.build(),
             Self::Compute(ref mut builder) => builder.build(),
         }
     }
@@ -73,9 +73,16 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
+    pub fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView) {
+        match self {
+            Self::Graphics(ref mut builder) => builder.set_scan_buffer_view_as_render_target(view),
+            Self::Compute(ref mut _builder) => panic!(),
+        }
+    }
+
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &'a [&'a ColorTargetView],
+        color_target_views: &[&'a ColorTargetView<'a>],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         match self {
