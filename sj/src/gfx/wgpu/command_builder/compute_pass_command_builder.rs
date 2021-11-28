@@ -1,9 +1,4 @@
 use crate::gfx::{Device, GpuAddress, Pipeline, ShaderStage};
-use std::sync::Arc;
-
-enum BufferType {
-    UnorderedAccess(std::sync::Arc<wgpu::Buffer>),
-}
 
 pub struct ComputePassCommandBuilder<'a> {
     _device: &'a Device,
@@ -30,12 +25,9 @@ impl<'a> ComputePassCommandBuilder<'a> {
         }
     }
 
-    pub fn end(&mut self) {}
-
     pub fn build(&mut self) {
         let pipeline_impl = self._pipeline.unwrap().to_data();
         let shader_impl = pipeline_impl.get_shader().to_data();
-        let compute_pipeline = pipeline_impl.get_compute_pipeline().unwrap();
 
         let entries = self.create_entries();
         let bind_group =
@@ -47,15 +39,6 @@ impl<'a> ComputePassCommandBuilder<'a> {
                     layout: shader_impl.get_bind_group_layout(),
                     entries: &entries,
                 });
-
-        // let mut compute_pass = command_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor{ label: None });
-        // compute_pass.set_pipeline(&compute_pipeline);
-        // compute_pass.set_bind_group(0, &bind_group, &[]);
-        // compute_pass.dispatch(
-        //     self._dispatch_count_x,
-        //     self._dispatch_count_y,
-        //     self._dispatch_count_z,
-        // );
 
         self._bind_group = Some(bind_group);
     }

@@ -1,3 +1,8 @@
+use std::ops::Range;
+
+use crate::gfx::command_buffer_api::IScanBufferViewCommandBuffer;
+use crate::gfx::{ScanBufferCommandBuffer, ScanBufferView};
+
 use super::super::command_buffer_api::{CommandBufferInfo, ICommandBufferImpl};
 use super::super::{
     Buffer, ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
@@ -7,16 +12,30 @@ use super::command_builder::compute_pass_command_builder::ComputePassCommandBuil
 use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
 use super::command_builder::CommandBuilder;
 
-pub struct CommandBuffer<'a> {
+pub struct CommandBufferWgpu<'a> {
     _device: &'a Device,
     _commands: Vec<CommandBuilder<'a>>,
 }
 
-impl<'a> CommandBuffer<'a> {
+impl<'a> CommandBufferWgpu<'a> {
+    pub fn is_graphics_command(&self, index: usize) -> bool {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(_) => true,
+            CommandBuilder::Compute(_) => false,
+        }
+    }
+
     pub fn get_command_count(&self) -> u32 {
         self._commands.len() as u32
     }
 
+    pub fn is_render_target_scan_buffer_view(&self) -> bool {
+        true // TODO
+    }
+
+    pub fn get_render_target(&self, _index: usize) -> &wgpu::TextureView {
+        todo!()
+    }
     pub fn get_compute_pipeline(&self, index: usize) -> &wgpu::ComputePipeline {
         match &self._commands[index as usize] {
             CommandBuilder::Graphics(_) => todo!(),
@@ -24,42 +43,52 @@ impl<'a> CommandBuffer<'a> {
         }
     }
 
-    pub fn get_graphics_pipeline(&self, _index: usize) -> &wgpu::RenderPipeline {
-        todo!()
+    pub fn get_graphics_pipeline(&self, index: usize) -> &wgpu::RenderPipeline {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(builder) => builder.get_render_pipeline(),
+            CommandBuilder::Compute(_) => panic!(),
+        }
     }
 
     pub fn get_bind_group(&self, index: usize) -> &wgpu::BindGroup {
         match &self._commands[index as usize] {
-            CommandBuilder::Graphics(_) => todo!(),
+            CommandBuilder::Graphics(builder) => builder.get_bind_group(),
             CommandBuilder::Compute(builder) => builder.get_bind_group(),
+        }
+    }
+
+    pub fn get_vertex_buffer(&self, index: usize) -> &wgpu::Buffer {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(builder) => builder.get_vertex_buffer(),
+            CommandBuilder::Compute(_) => todo!(),
+        }
+    }
+
+    pub fn get_draw_vertices_range(&self, index: usize) -> Range<u32> {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(builder) => builder.get_vertices_range(),
+            CommandBuilder::Compute(_) => panic!(),
+        }
+    }
+
+    pub fn get_draw_instance_range(&self, index: usize) -> Range<u32> {
+        match &self._commands[index as usize] {
+            CommandBuilder::Graphics(builder) => builder.get_instance_range(),
+            CommandBuilder::Compute(_) => panic!(),
         }
     }
 
     pub fn get_dispatch_count(&self, index: usize) -> (u32, u32, u32) {
         match &self._commands[index as usize] {
-            CommandBuilder::Graphics(_) => todo!(),
+            CommandBuilder::Graphics(_) => panic!(),
             CommandBuilder::Compute(builder) => builder.get_dispatch_count(),
         }
     }
-
-    pub fn create_command_encoder(&self) -> wgpu::CommandEncoder {
-        let mut _command_encoder = self
-            ._device
-            .to_data()
-            .get_device()
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-        // for command in &self._commands {
-        // 	command.build(&mut command_encoder);
-        // }
-
-        _command_encoder
-    }
 }
 
-impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
+impl<'a> ICommandBufferImpl<'a> for CommandBufferWgpu<'a> {
     fn new(device: &'a Device, _info: &CommandBufferInfo) -> Self {
-        CommandBuffer {
+        Self {
             _device: device,
             _commands: Vec::new(),
         }
@@ -144,9 +173,24 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         todo!()
     }
 
+    fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView) {
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_scan_buffer_view_as_render_target(view);
+    }
+
+    fn set_scan_buffer_view(self, scan_buffer_view: ScanBufferView) -> ScanBufferCommandBuffer<'a> {
+        let instance = ScanBufferCommandBufferWgpu::new_internal(
+            scan_buffer_view.move_data().move_frame(),
+            self,
+        );
+        ScanBufferCommandBuffer::new(instance)
+    }
+
     fn set_render_targets(
         &mut self,
-        color_target_views: &'a [&'a ColorTargetView],
+        color_target_views: &[&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         self._commands
@@ -277,7 +321,48 @@ impl<'a> ICommandBufferImpl<'a> for CommandBuffer<'a> {
         todo!()
     }
 
-    fn flush_memory(&mut self, _gpu_access_flags: crate::gfx::GpuAccess) {
-        todo!()
+    fn flush_memory(&mut self, _gpu_access_flags: crate::gfx::GpuAccess) {}
+}
+
+pub struct ScanBufferCommandBufferWgpu<'a> {
+    _frame: wgpu::SurfaceFrame,
+    _command_buffer: CommandBufferWgpu<'a>,
+}
+
+impl<'a> ScanBufferCommandBufferWgpu<'a> {
+    pub fn new_internal(frame: wgpu::SurfaceFrame, command_buffer: CommandBufferWgpu<'a>) -> Self {
+        Self {
+            _frame: frame,
+            _command_buffer: command_buffer,
+        }
+    }
+
+    pub fn create_texture_view(&self) -> wgpu::TextureView {
+        self._frame
+            .output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default())
+    }
+
+    pub fn get_graphics_pipeline(&self) -> &wgpu::RenderPipeline {
+        self._command_buffer.get_graphics_pipeline(0)
+    }
+
+    pub fn get_bind_group(&self) -> &wgpu::BindGroup {
+        self._command_buffer.get_bind_group(0)
+    }
+
+    pub fn get_vertex_buffer(&self) -> &wgpu::Buffer {
+        self._command_buffer.get_vertex_buffer(0)
+    }
+
+    pub fn get_draw_vertices_range(&self) -> Range<u32> {
+        self._command_buffer.get_draw_vertices_range(0)
+    }
+
+    pub fn get_draw_instance_range(&self) -> Range<u32> {
+        self._command_buffer.get_draw_instance_range(0)
     }
 }
+
+impl<'a> IScanBufferViewCommandBuffer<'a> for ScanBufferCommandBufferWgpu<'a> {}

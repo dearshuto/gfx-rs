@@ -1,4 +1,4 @@
-use super::{Device, GpuAccess, GpuAddress, MemoryPool};
+use super::{Device, GpuAccess, MemoryPool};
 use std::marker::PhantomData;
 
 pub struct BufferInfo {
