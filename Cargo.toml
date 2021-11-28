@@ -1,6 +1,8 @@
 [workspace]
+resolver = "2"
 members = [
     "sj",
+	"examples/clear_color",
 	"examples/hello_graphics_pipeline",
 	"examples/hello_3d",
 	"examples/hello_compute",

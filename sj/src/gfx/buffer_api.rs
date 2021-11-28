@@ -37,7 +37,7 @@ pub trait IBufferImpl<'a> {
     fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self;
@@ -84,7 +84,7 @@ where
     pub fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self {
@@ -138,7 +138,7 @@ where
         self.buffer_impl.invalidate_mapped_range(offset, size);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.buffer_impl
     }
 }

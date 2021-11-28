@@ -1,12 +1,9 @@
 [package]
-name = "mandelbrot"
+name = "clear_color"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]
 sj = { path = "../../sj" }
-winit ="*"
-
-[build-dependencies]
-shaderc = "0.7"
+wgpu = "0.10.0"

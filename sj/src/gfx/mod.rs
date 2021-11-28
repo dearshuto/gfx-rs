@@ -15,6 +15,7 @@ mod memory_pool_api;
 mod pipeline_api;
 mod queue_api;
 mod rasterizer_state_api;
+mod scan_buffer_view_api;
 mod semaphore_api;
 mod shader_api;
 mod swap_chain_api;
@@ -26,6 +27,7 @@ use self::blend_state_api::TBlendState;
 use self::buffer_api::TBufferInterface;
 use self::color_target_view_api::TColorTargetView;
 use self::command_buffer_api::TCommandBufferInterface;
+use self::command_buffer_api::TScanBufferCommandBuffer;
 use self::depth_stencil_state_api::TDepthStencilState;
 use self::depth_stencil_view_api::TDepthStencilView;
 //use self::descriptor_pool_api::TDescriptorInterface;
@@ -36,6 +38,7 @@ use self::memory_pool_api::TMemoryPoolInterface;
 use self::pipeline_api::TPipelineInterface;
 use self::queue_api::TQueueInterface;
 use self::rasterizer_state_api::TRasterizerStateInterface;
+use self::scan_buffer_view_api::TScanBufferView;
 use self::semaphore_api::TSemaphore;
 use self::shader_api::TShaderInterface;
 use self::swap_chain_api::TSwapChain;
@@ -58,6 +61,9 @@ pub use self::blend_state_api::BlendTargetStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type BlendStateImpl = self::ash::blend_state_ash::BlendStateImpl;
+
+#[cfg(feature = "backend_wgpu")]
+type BlendStateImpl = self::wgpu::blend_state_wgpu::BlendStateWgpu;
 
 pub type BlendState = TBlendState<BlendStateImpl>;
 //
@@ -83,6 +89,9 @@ pub use self::color_target_view_api::ColorTargetViewInfo;
 #[cfg(feature = "backend_ash")]
 type ColorTargetViewImpl<'a> = self::ash::color_target_view_ash::ColorTargetViewImpl<'a>;
 
+#[cfg(feature = "backend_wgpu")]
+type ColorTargetViewImpl<'a> = self::wgpu::color_target_view_wgpu::ColorTargetViewWgpu<'a>;
+
 pub type ColorTargetView<'a> = TColorTargetView<'a, ColorTargetViewImpl<'a>>;
 //
 
@@ -93,7 +102,7 @@ pub use self::command_buffer_api::CommandBufferInfo;
 type CommandBufferImpl<'a> = self::vk::command_buffer_vk::CommandBufferImpl<'a>;
 
 #[cfg(feature = "backend_wgpu")]
-type CommandBufferImpl<'a> = self::wgpu::command_buffer_wgpu::CommandBuffer<'a>;
+type CommandBufferImpl<'a> = self::wgpu::command_buffer_wgpu::CommandBufferWgpu<'a>;
 
 #[cfg(feature = "backend_ash")]
 type CommandBufferImpl<'a> = self::ash::command_buffer_ash::CommandBufferImpl<'a>;
@@ -127,6 +136,9 @@ pub use self::depth_stencil_state_api::DepthStencilStateInfo;
 #[cfg(feature = "backend_ash")]
 type DepthStencilStateImpl = self::ash::depth_stencil_state_ash::DepthStencilStateImpl;
 
+#[cfg(feature = "backend_wgpu")]
+type DepthStencilStateImpl = self::wgpu::depth_stencil_state_wgpu::DepthStencilStateWgpu;
+
 pub type DepthStencilState = TDepthStencilState<DepthStencilStateImpl>;
 //
 
@@ -135,6 +147,9 @@ pub use self::depth_stencil_view_api::DepthStencilViewInfo;
 
 #[cfg(feature = "backend_ash")]
 type DepthStencilViewImpl<'a> = self::ash::depth_stencil_view_ash::DepthStencilViewImpl<'a>;
+
+#[cfg(feature = "backend_wgpu")]
+type DepthStencilViewImpl<'a> = self::wgpu::depth_stencil_view_wgpu::DepthStencilViewWgpu;
 
 pub type DepthStencilView<'a> = TDepthStencilView<'a, DepthStencilViewImpl<'a>>;
 //
@@ -145,12 +160,18 @@ pub use self::fence_api::FenceInfo;
 #[cfg(feature = "backend_ash")]
 type FenceImpl<'a> = self::ash::fence_ash::FenceAsh<'a>;
 
+#[cfg(feature = "backend_wgpu")]
+type FenceImpl<'a> = self::wgpu::fence_wgpu::FenceWgpu;
+
 pub type Fence<'a> = TFence<'a, FenceImpl<'a>>;
 //
 
 //
 #[cfg(feature = "backend_ash")]
 type GpuAddressImpl<'a> = self::ash::gpu_address_ash::GpuAddressImpl<'a>;
+
+#[cfg(feature = "backend_wgpu")]
+type GpuAddressImpl<'a> = self::wgpu::gpu_address_wgpu::GpuAddressWgpu<'a>;
 
 pub type GpuAddress<'a> = TGpuAddressInterface<'a, GpuAddressImpl<'a>>;
 //
@@ -160,6 +181,9 @@ pub use self::memory_pool_api::MemoryPoolInfo;
 
 #[cfg(feature = "backend_ash")]
 type MemoryPoolImpl<'a> = self::ash::memory_pool_ash::MemoryPoolImpl<'a>;
+
+#[cfg(feature = "backend_wgpu")]
+type MemoryPoolImpl<'a> = self::wgpu::memory_pool_wgpu::MemoryPoolWgpu;
 
 pub type MemoryPool<'a> = TMemoryPoolInterface<'a, MemoryPoolImpl<'a>>;
 // -------------------------------------------------------------------
@@ -198,7 +222,25 @@ pub use self::rasterizer_state_api::RasterizerStateInfo;
 #[cfg(feature = "backend_ash")]
 type RasterizerStateImpl = self::ash::rasterizer_state_ash::RasterizerStateImpl;
 
+#[cfg(feature = "backend_wgpu")]
+type RasterizerStateImpl = self::wgpu::rasterizer_state_wgpu::RasterizerStateWgpu;
+
 pub type RasterizerState = TRasterizerStateInterface<RasterizerStateImpl>;
+//
+
+// ScanBufferView
+#[cfg(feature = "backend_wgpu")]
+type ScanBufferViewImpl = self::wgpu::scan_buffer_view_wgpu::ScanBufferViewWgpu;
+
+pub type ScanBufferView = TScanBufferView<ScanBufferViewImpl>;
+//
+
+#[cfg(feature = "backend_wgpu")]
+type ScanBufferCommandBufferImpl<'a> =
+    self::wgpu::command_buffer_wgpu::ScanBufferCommandBufferWgpu<'a>;
+
+pub type ScanBufferCommandBuffer<'a> =
+    TScanBufferCommandBuffer<'a, ScanBufferCommandBufferImpl<'a>>;
 //
 
 // Semaphore
@@ -206,6 +248,9 @@ pub use self::semaphore_api::SemaphoreInfo;
 
 #[cfg(feature = "backend_ash")]
 type SemaphoreImpl<'a> = self::ash::semaphore_ash::SemaphoreAsh<'a>;
+
+#[cfg(feature = "backend_wgpu")]
+type SemaphoreImpl<'a> = self::wgpu::semaphore_wgpu::SemaphoreWgpu;
 
 pub type Semaphore<'a> = TSemaphore<'a, SemaphoreImpl<'a>>;
 //
@@ -234,6 +279,9 @@ pub use self::vk::swap_chain_vk::SwapChain;
 #[cfg(feature = "backend_ash")]
 type SwapChainImpl<'a> = self::ash::swap_chain_ash::SwapChainImpl<'a>;
 
+#[cfg(feature = "backend_wgpu")]
+type SwapChainImpl<'a> = self::wgpu::swap_chain_wgpu::SwapChainWgpu<'a>;
+
 pub type SwapChain<'a> = TSwapChain<'a, SwapChainImpl<'a>>;
 //
 
@@ -247,6 +295,9 @@ pub use self::texture_api::TextureSubresourceRange;
 #[cfg(feature = "backend_ash")]
 type TextureImpl<'a> = self::ash::texture_ash::TextureImpl<'a>;
 
+#[cfg(feature = "backend_wgpu")]
+type TextureImpl<'a> = self::wgpu::texture_wgpu::TextureWgpu<'a>;
+
 pub type Texture<'a> = TTexture<'a, TextureImpl<'a>>;
 //
 
@@ -257,6 +308,9 @@ pub use self::vertex_state_api::VertexStateInfo;
 
 #[cfg(feature = "backend_ash")]
 type VertexStateImpl = self::ash::vertex_state_ash::VertexStateImpl;
+
+#[cfg(feature = "backend_wgpu")]
+type VertexStateImpl = self::wgpu::vertex_state_wgpu::VertexStateWgpu;
 
 pub type VertexState = TVertexState<VertexStateImpl>;
 //
@@ -269,7 +323,11 @@ pub use self::viewport_scissor_state_api::ViewportStateInfo;
 #[cfg(feature = "backend_ash")]
 type ViewportScissorStateImpl = self::ash::viewport_scissor_state_ash::ViewportScissorStateImpl;
 
-pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl>;
+#[cfg(feature = "backend_wgpu")]
+type ViewportScissorStateImpl<'a> =
+    self::wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu;
+
+pub type ViewportScissorState<'a> = TViewportScissorState<'a, ViewportScissorStateImpl<'a>>;
 //
 
 bitflags! {
