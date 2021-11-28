@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 sj = { path = "../../sj" }
-winit ="*"
+winit ="0.24.0"
 
 [build-dependencies]
 shaderc = "0.7"

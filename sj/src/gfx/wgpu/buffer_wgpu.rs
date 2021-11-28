@@ -1,3 +1,5 @@
+use crate::gfx::buffer_api::MappedData;
+
 use super::super::buffer_api::{BufferInfo, IBufferImpl};
 use super::super::{Device, GpuAccess, MemoryPool};
 use std::marker::PhantomData;
@@ -42,13 +44,45 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         0b1
     }
 
-    fn map<T>(&self) -> &mut T {
-        todo!();
+    // fn map_as_slice<U>(&self, _count: usize) -> &[U] {
+    //     todo!();
+    // }
+
+    fn map(&self) {
+        todo!()
     }
 
-    fn map_as_slice<U>(&self, _count: usize) -> &[U] {
-        todo!();
+    fn read<TType: 'static>(&self, _action: fn(&mut TType)) {
+        todo!()
     }
+
+    fn read_with_user_data<TType: 'static, TUserData>(
+        &self,
+        _action: fn(&mut TType, Option<&mut TUserData>),
+        _user_data: Option<&mut TUserData>,
+    ) {
+        todo!()
+    }
+
+    fn write<TType: 'static>(&self, _action: fn(&mut TType)) {
+
+    }
+
+    fn write_with_user_data<TType: 'static, TUserData>(
+        &self,
+        _action: fn(&mut TType, Option<&mut TUserData>),
+        _user_data: Option<&mut TUserData>,
+    ) {
+        todo!()
+    }
+
+    fn unmap(&self) {
+        self._buffer_impl.unmap();
+    }
+
+    fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
+
+    fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
 
     fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
         let _result = self._buffer_impl.slice(..).map_async(wgpu::MapMode::Write);
@@ -61,14 +95,6 @@ impl<'a> IBufferImpl<'a> for BufferImpl<'a> {
         let ptr = self._buffer_impl.slice(..).get_mapped_range_mut().as_ptr();
         MappedData::new(ptr as *mut std::ffi::c_void, count)
     }
-
-    fn unmap(&self) {
-        self._buffer_impl.unmap();
-    }
-
-    fn flush_mapped_range(&self, _offset: i64, _size: u64) {}
-
-    fn invalidate_mapped_range(&self, _offset: i64, _size: u64) {}
 }
 
 impl<'a> BufferImpl<'a> {
