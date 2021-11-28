@@ -3,7 +3,8 @@ use super::{
     texture_api::{TextureArrayRange, TextureSubresource, TextureSubresourceRange},
     Buffer, BufferTextureCopyRegion, ColorTargetView, DepthStencilClearMode, DepthStencilView,
     Device, GpuAccess, GpuAddress, IndexFormat, Pipeline, PipelineStageBit, PrimitiveTopology,
-    ShaderStage, Texture, TextureCopyRegion, TextureState, ViewportScissorState,
+    ScanBufferCommandBuffer, ScanBufferView, ShaderStage, Texture, TextureCopyRegion, TextureState,
+    ViewportScissorState,
 };
 use std::marker::PhantomData;
 
@@ -32,7 +33,7 @@ pub trait ICommandBufferImpl<'a> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     );
 
@@ -65,13 +66,17 @@ pub trait ICommandBufferImpl<'a> {
         texture_array_range: Option<&TextureArrayRange>,
     );
 
+    fn set_scan_buffer_view(self, scan_buffer_view: ScanBufferView) -> ScanBufferCommandBuffer<'a>;
+
+    fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView);
+
     fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &[&'a ColorTargetView],
         depth_stencil_state_view: Option<&DepthStencilView>,
     );
 
-    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress);
+    fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>);
 
     fn draw(
         &mut self,
@@ -181,7 +186,7 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         &mut self,
         slot: i32,
         stage: ShaderStage,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         size: usize,
     ) {
         self.command_buffer_impl
@@ -237,16 +242,24 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         );
     }
 
+    pub fn set_scan_buffer_view(
+        self,
+        scan_buffer_view: ScanBufferView,
+    ) -> ScanBufferCommandBuffer<'a> {
+        self.command_buffer_impl
+            .set_scan_buffer_view(scan_buffer_view)
+    }
+
     pub fn set_render_targets(
         &mut self,
-        color_target_views: &[&ColorTargetView],
+        color_target_views: &[&'a ColorTargetView<'a>],
         depth_stencil_state_view: Option<&DepthStencilView>,
     ) {
         self.command_buffer_impl
             .set_render_targets(color_target_views, depth_stencil_state_view);
     }
 
-    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: &GpuAddress) {
+    pub fn set_vertex_buffer(&mut self, buffer_index: i32, gpu_address: GpuAddress<'a>) {
         self.command_buffer_impl
             .set_vertex_buffer(buffer_index, gpu_address);
     }
@@ -379,11 +392,31 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
         self.command_buffer_impl.flush_memory(gpu_access_flags);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.command_buffer_impl
     }
 
-    pub fn to_data_mut(&'a mut self) -> &'a mut T {
+    pub fn to_data_mut(&mut self) -> &mut T {
         &mut self.command_buffer_impl
+    }
+}
+
+pub trait IScanBufferViewCommandBuffer<'a> {}
+
+pub struct TScanBufferCommandBuffer<'a, T: IScanBufferViewCommandBuffer<'a>> {
+    _impl: T,
+    _marker: std::marker::PhantomData<&'a ()>,
+}
+
+impl<'a, T: IScanBufferViewCommandBuffer<'a>> TScanBufferCommandBuffer<'a, T> {
+    pub fn new(instance: T) -> Self {
+        Self {
+            _impl: instance,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    pub fn move_data(self) -> T {
+        self._impl
     }
 }

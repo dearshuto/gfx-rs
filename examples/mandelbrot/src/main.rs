@@ -1,3 +1,6 @@
+use winit::platform::run_return::EventLoopExtRunReturn;
+use winit::{event::Event, event_loop::ControlFlow};
+
 fn main() {
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
@@ -5,9 +8,8 @@ fn main() {
     let device_info = sj::gfx::DeviceInfo::new().set_layer(Some(&layer));
     let device = sj::gfx::Device::new(&device_info);
 
-    let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
+    let mut swap_shain_info = sj::gfx::SwapChainInfo::new();
     let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
-    let (_scan_buffers, scan_buffer_views) = swap_chain.get_scan_buffers_and_views();
 
     let vertex_shader_source = include_bytes!("../resources/shaders/mandelbrot_vs.spv");
     let pixel_shader_source = include_bytes!("../resources/shaders/mandelbrot_fs.spv");
@@ -16,21 +18,21 @@ fn main() {
         .set_pixel_shader_binary(pixel_shader_source);
     let shader = sj::gfx::Shader::new(&device, &shader_info);
 
-    let viewport_state_info = [sj::gfx::ViewportStateInfo::new()
-        .set_origin_x(0.0)
-        .set_origin_y(0.0)
-        .set_width(640.0)
-        .set_height(480.0)];
-    let scissor_state_info = [sj::gfx::ScissorStateInfo::new()
-        .set_origin_x(0)
-        .set_origin_y(0)
-        .set_width(640)
-        .set_height(480)];
-    let viewport_scissor_state_info = sj::gfx::ViewportScissorStateInfo::new()
-        .set_viewport_state_info_array(&viewport_state_info)
-        .set_scissor_state_info_array(&scissor_state_info);
-    let viewport_scissor_state =
-        sj::gfx::ViewportScissorState::new(&device, &viewport_scissor_state_info);
+    // let viewport_state_info = [sj::gfx::ViewportStateInfo::new()
+    //     .set_origin_x(0.0)
+    //     .set_origin_y(0.0)
+    //     .set_width(640.0)
+    //     .set_height(480.0)];
+    // let scissor_state_info = [sj::gfx::ScissorStateInfo::new()
+    //     .set_origin_x(0)
+    //     .set_origin_y(0)
+    //     .set_width(640)
+    //     .set_height(480)];
+    // let viewport_scissor_state_info = sj::gfx::ViewportScissorStateInfo::new()
+    //     .set_viewport_state_info_array(&viewport_state_info)
+    //     .set_scissor_state_info_array(&scissor_state_info);
+    // let _viewport_scissor_state =
+    //     sj::gfx::ViewportScissorState::new(&device, &viewport_scissor_state_info);
 
     let vertex_attribute_state_info_array = [sj::gfx::VertexAttributeStateInfo::new()
         .set_slot(0)
@@ -57,20 +59,14 @@ fn main() {
         .set_shader(&shader);
     let pipeline = sj::gfx::Pipeline::new_as_graphics(&device, &graphics_pipeline_create_info);
 
-    let memory_pool_info = sj::gfx::MemoryPoolInfo::new()
-        .set_size(8 * 1024 * 1024)
-        .set_memory_pool_property(
-            sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
-        );
-    let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
 
     // 画面いっぱいに四角形を描く
-    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
-    vertex_buffer.map();
-    vertex_buffer.write::<[f32; 12]>(|mapped_data| {
+    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, None, 0, 0);
+    {
+        let mut mapped_data = vertex_buffer.map_as_slice_mut::<f32>(12);
         mapped_data[0] = -1.0;
         mapped_data[1] = 1.0;
         mapped_data[2] = -1.0;
@@ -84,52 +80,58 @@ fn main() {
         mapped_data[9] = -1.0;
         mapped_data[10] = 1.0;
         mapped_data[11] = 1.0;
-    });
+    }
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
     let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
 
-    let command_buffer_info = sj::gfx::CommandBufferInfo::new();
-    let mut command_buffers = [
-        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
-        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
-    ];
-
     let queue_info = sj::gfx::QueueInfo::new();
     let mut queue = sj::gfx::Queue::new(&device, &queue_info);
 
-    for index in 0..command_buffers.len() {
-        let command_buffer = &mut command_buffers[index];
-        command_buffer.begin();
-        {
-            command_buffer.set_pipeline(&pipeline);
-            command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
-            command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-            command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
+    loop {
+        layer
+            .get_event_loop_mut()
+            .run_return(|event, _, control_flow| {
+                *control_flow = ControlFlow::Wait;
 
-            let vertex_count = 6;
-            let vertex_offset = 0;
-            command_buffer.draw(
-                sj::gfx::PrimitiveTopology::TriangleList,
-                vertex_count,
-                vertex_offset,
-            );
+                match event {
+                    Event::RedrawRequested(_) => {
+                        queue.sync_semaphore(&mut semaphore);
 
-            command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER);
-        }
-        command_buffer.end();
-    }
+                        let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view();
+                        let mut command_buffer = sj::gfx::CommandBuffer::new(
+                            &device,
+                            &sj::gfx::CommandBufferInfo::new(),
+                        );
 
-    for _i in 0..500 {
-        let index = swap_chain.acquire_next_scan_buffer_index(Some(&mut semaphore), None);
-        queue.sync_semaphore(&mut semaphore);
+                        command_buffer.begin();
+                        command_buffer.set_pipeline(&pipeline);
+                        command_buffer
+                            .set_vertex_buffer(0, sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        let command_buffer = &command_buffers[index as usize];
-        queue.execute(&command_buffer);
-        queue.flush();
-        queue.present(&mut swap_chain, 1);
-        queue.sync();
-        std::thread::sleep(std::time::Duration::from_millis(32));
+                        let vertex_count = 6;
+                        let vertex_offset = 0;
+                        command_buffer.draw(
+                            sj::gfx::PrimitiveTopology::TriangleList,
+                            vertex_count,
+                            vertex_offset,
+                        );
+
+                        command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER);
+                        command_buffer.end();
+
+                        let command_buffer =
+                            command_buffer.set_scan_buffer_view(next_scan_buffer_view);
+                        queue.execute_scan_buffer_command(command_buffer);
+
+                        queue.flush();
+                        queue.present(&mut swap_chain, 1);
+                        queue.sync();
+                        std::thread::sleep(std::time::Duration::from_millis(32));
+                    }
+                    _ => {}
+                }
+            });
     }
 }

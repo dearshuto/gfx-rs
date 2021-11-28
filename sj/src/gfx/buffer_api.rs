@@ -37,7 +37,7 @@ pub trait IBufferImpl<'a> {
     fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self;
@@ -45,6 +45,8 @@ pub trait IBufferImpl<'a> {
     fn get_required_alignment(device: &Device, info: &BufferInfo) -> u64;
 
     fn map(&self);
+
+	fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> ;
 
     fn read<TType: 'static>(&self, action: fn(&mut TType));
 
@@ -84,7 +86,7 @@ where
     pub fn new(
         device: &'a Device,
         info: &BufferInfo,
-        memory_pool: &'a MemoryPool,
+        memory_pool: Option<&'a MemoryPool>,
         offset: i64,
         size: u64,
     ) -> Self {
@@ -101,6 +103,10 @@ where
     pub fn map(&self) {
         self.buffer_impl.map();
     }
+
+	pub fn map_as_slice_mut<U>(&self, count: usize) -> MappedData<U> {
+		self.buffer_impl.map_as_slice_mut(count)
+	}
 
     pub fn read<TType: 'static>(&self, action: fn(&mut TType)) {
         self.buffer_impl.read(action);
@@ -138,7 +144,48 @@ where
         self.buffer_impl.invalidate_mapped_range(offset, size);
     }
 
-    pub fn to_data(&'a self) -> &'a T {
+    pub fn to_data(&self) -> &T {
         &self.buffer_impl
+    }
+}
+
+pub struct MappedData<'a, T> {
+    _raw_ptr: *mut std::ffi::c_void,
+    _aligned_data: &'a mut [T],
+}
+
+impl<'a, T> MappedData<'a, T> {
+    pub fn new(raw_ptr: *mut std::ffi::c_void, count: usize) -> Self {
+        unsafe {
+            Self {
+                _raw_ptr: raw_ptr,
+                _aligned_data: std::slice::from_raw_parts_mut(raw_ptr as *mut T, count),
+            }
+        }
+    }
+}
+
+impl<'a, T> std::ops::Index<usize> for MappedData<'a, T> {
+    type Output = T;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self._aligned_data[index]
+    }
+}
+
+impl<'a, T> std::ops::IndexMut<usize> for MappedData<'a, T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self._aligned_data[index]
+    }
+}
+
+impl<'a, T> Drop for MappedData<'a, T> {
+    fn drop(&mut self) {
+        unsafe {
+            std::ptr::copy(
+                self._aligned_data.as_ptr(),
+                self._raw_ptr as *mut T,
+                self._aligned_data.len(),
+            );
+        }
     }
 }
