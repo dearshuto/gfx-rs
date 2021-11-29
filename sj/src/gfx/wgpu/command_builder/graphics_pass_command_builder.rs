@@ -3,12 +3,9 @@ use std::ops::Range;
 use wgpu::RenderPipeline;
 
 use crate::gfx::{
-    wgpu::{
-        scan_buffer_view_wgpu::ScanBufferViewWgpu,
-        viewport_scissor_state_wgpu::ViewportScissorStateWgpu,
-    },
-    ColorTargetView, DepthStencilView, Device, GpuAddress, IndexFormat, Pipeline,
-    PrimitiveTopology, ScanBufferView, ShaderStage, ViewportScissorState,
+    wgpu::viewport_scissor_state_wgpu::ViewportScissorStateWgpu, ColorTargetView, DepthStencilView,
+    Device, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology, ShaderStage,
+    ViewportScissorState,
 };
 
 pub struct GraphicsPassCommandBuilder<'a> {
@@ -25,7 +22,7 @@ pub struct GraphicsPassCommandBuilder<'a> {
     // _vertrex_count: u32,
 
     // レンダーターゲット
-    _view: Option<ScanBufferViewWgpu>,
+    _render_targert_format: Option<wgpu::TextureFormat>,
 
     // 描画コマンド
     _primitive_topology: PrimitiveTopology,
@@ -48,7 +45,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             // _constant_buffers: std::default::Default::default(),
             // _vertex_offset: 0,
             // _vertrex_count: 0,
-            _view: None,
+            _render_targert_format: None,
             _primitive_topology: PrimitiveTopology::TriangleList,
             _vertex_count: 0,
             _vertex_offset: 0,
@@ -92,7 +89,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
                     module: shader_impl.to_data().get_pixel_shader_module(),
                     entry_point: "main",
                     targets: &[wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        format: self._render_targert_format.as_ref().unwrap().clone(),
                         blend: None,
                         write_mask: wgpu::ColorWrites::ALL,
                     }],
@@ -129,8 +126,11 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         todo!()
     }
 
-    pub fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView) {
-        self._view = Some(view.move_data());
+    pub fn set_scan_buffer_view_as_render_target(
+        &mut self,
+        render_target_format: wgpu::TextureFormat,
+    ) {
+        self._render_targert_format = Some(render_target_format);
     }
 
     pub fn set_render_targets(

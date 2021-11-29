@@ -119,10 +119,11 @@ fn main() {
                         );
 
                         command_buffer.flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER);
+
+                        let mut command_buffer =
+                            command_buffer.set_scan_buffer_view(next_scan_buffer_view);
                         command_buffer.end();
 
-                        let command_buffer =
-                            command_buffer.set_scan_buffer_view(next_scan_buffer_view);
                         queue.execute_scan_buffer_command(command_buffer);
 
                         queue.flush();

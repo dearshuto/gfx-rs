@@ -73,9 +73,11 @@ impl<'a> CommandBuilder<'a> {
         }
     }
 
-    pub fn set_scan_buffer_view_as_render_target(&mut self, view: ScanBufferView) {
+    pub fn set_scan_buffer_view_as_render_target(&mut self, view: &ScanBufferView) {
         match self {
-            Self::Graphics(ref mut builder) => builder.set_scan_buffer_view_as_render_target(view),
+            Self::Graphics(ref mut builder) => {
+                builder.set_scan_buffer_view_as_render_target(view.to_data().get_format())
+            }
             Self::Compute(ref mut _builder) => panic!(),
         }
     }

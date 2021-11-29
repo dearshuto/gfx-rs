@@ -177,10 +177,17 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferWgpu<'a> {
         self._commands
             .last_mut()
             .unwrap()
-            .set_scan_buffer_view_as_render_target(view);
+            .set_scan_buffer_view_as_render_target(&view);
     }
 
-    fn set_scan_buffer_view(self, scan_buffer_view: ScanBufferView) -> ScanBufferCommandBuffer<'a> {
+    fn set_scan_buffer_view(
+        mut self,
+        scan_buffer_view: ScanBufferView,
+    ) -> ScanBufferCommandBuffer<'a> {
+        self._commands
+            .last_mut()
+            .unwrap()
+            .set_scan_buffer_view_as_render_target(&scan_buffer_view);
         let instance = ScanBufferCommandBufferWgpu::new_internal(
             scan_buffer_view.move_data().move_frame(),
             self,
@@ -365,4 +372,8 @@ impl<'a> ScanBufferCommandBufferWgpu<'a> {
     }
 }
 
-impl<'a> IScanBufferViewCommandBuffer<'a> for ScanBufferCommandBufferWgpu<'a> {}
+impl<'a> IScanBufferViewCommandBuffer<'a> for ScanBufferCommandBufferWgpu<'a> {
+    fn end(&mut self) {
+        self._command_buffer.end();
+    }
+}

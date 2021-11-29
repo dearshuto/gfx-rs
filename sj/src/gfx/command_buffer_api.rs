@@ -401,7 +401,9 @@ impl<'a, T: ICommandBufferImpl<'a>> TCommandBufferInterface<'a, T> {
     }
 }
 
-pub trait IScanBufferViewCommandBuffer<'a> {}
+pub trait IScanBufferViewCommandBuffer<'a> {
+    fn end(&mut self);
+}
 
 pub struct TScanBufferCommandBuffer<'a, T: IScanBufferViewCommandBuffer<'a>> {
     _impl: T,
@@ -414,6 +416,10 @@ impl<'a, T: IScanBufferViewCommandBuffer<'a>> TScanBufferCommandBuffer<'a, T> {
             _impl: instance,
             _marker: std::marker::PhantomData,
         }
+    }
+
+    pub fn end(&mut self) {
+        self._impl.end();
     }
 
     pub fn move_data(self) -> T {
