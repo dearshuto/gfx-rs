@@ -17,8 +17,11 @@ impl<'a> ISwapChainImpl<'a> for SwapChainWgpu<'a> {
 
     fn acquire_next_scan_buffer_view(&self) -> ScanBufferView {
         let surface = self._device.to_data().try_get_surface().unwrap();
+        let format = surface
+            .get_preferred_format(self._device.to_data().get_adapter())
+            .unwrap();
         let frame = surface.get_current_frame().unwrap();
-        let scan_buffer_view_wgpu = ScanBufferViewWgpu::new(frame);
+        let scan_buffer_view_wgpu = ScanBufferViewWgpu::new(frame, format);
         ScanBufferView::new(scan_buffer_view_wgpu)
     }
 
