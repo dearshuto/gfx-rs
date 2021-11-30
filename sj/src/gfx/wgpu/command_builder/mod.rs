@@ -140,7 +140,7 @@ impl<'a> CommandBuilder<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         index_format: IndexFormat,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         index_count: i32,
         base_vertex: i32,
     ) {
@@ -160,7 +160,7 @@ impl<'a> CommandBuilder<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         index_format: IndexFormat,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         index_count: i32,
         base_vertex: i32,
         instance_count: i32,
