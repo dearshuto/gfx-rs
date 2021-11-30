@@ -58,9 +58,14 @@ impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
                     .set_vertex_buffer(0, command_buffer_impl.get_vertex_buffer(0).slice(..));
 
                 // 描画コマンド
-                let vertices_range = command_buffer_impl.get_draw_vertices_range(index);
-                let instances_range = command_buffer_impl.get_draw_instance_range(index);
-                render_pass.draw(vertices_range, instances_range);
+                match command_buffer_impl.get_draw_command(index) {
+					super::command_builder::graphics_pass_command_builder::DrawCommand::Draw(_, vertex_count, vertex_offset, instance_count, base_instance) => {
+						let vertices_range =  *vertex_offset..(*vertex_offset + *vertex_count);
+						let instances_range = *base_instance..(*base_instance + *instance_count);
+						render_pass.draw(vertices_range, instances_range);
+					},
+					super::command_builder::graphics_pass_command_builder::DrawCommand::DrawIndexed(_, _, _, _, _, _, _) => todo!(),
+				}
             } else {
                 // 演算パス
                 let mut compute_pass = command_encoder
@@ -113,16 +118,41 @@ impl<'a> super::super::queue_api::IQueueImpl<'a> for QueueImpl<'a> {
             // バインドグループ
             render_pass.set_bind_group(0, command_buffer_wgpu.get_bind_group(), &[]);
 
-            // インデクスバッファ
-            //render_pass.set_index_buffer();
-
             // 頂点バッファ
             render_pass.set_vertex_buffer(0, command_buffer_wgpu.get_vertex_buffer().slice(..));
 
             // 描画コマンド
-            let vertices_range = command_buffer_wgpu.get_draw_vertices_range();
-            let instances_range = command_buffer_wgpu.get_draw_instance_range();
-            render_pass.draw(vertices_range, instances_range);
+            match command_buffer_wgpu.get_draw_command() {
+                super::command_builder::graphics_pass_command_builder::DrawCommand::Draw(
+                    _,
+                    vertex_count,
+                    vertex_offset,
+                    instance_count,
+                    base_instance,
+                ) => {
+                    let vertices_range = *vertex_offset..(*vertex_offset + *vertex_count);
+                    let instances_range = *base_instance..(*base_instance + *instance_count);
+                    render_pass.draw(vertices_range, instances_range);
+                }
+                super::command_builder::graphics_pass_command_builder::DrawCommand::DrawIndexed(
+                    _primitive_topology,
+                    index_format,
+                    gpu_address,
+                    index_count,
+                    base_vertex,
+                    instance_count,
+                    base_instance,
+                ) => {
+                    // インデクスバッファ
+                    render_pass.set_index_buffer(
+                        gpu_address.to_data().get_buffer().get_buffer().slice(..),
+                        *index_format,
+                    );
+
+                    let instances_range = *base_instance..(*base_instance + *instance_count);
+                    render_pass.draw_indexed(0..*index_count, *base_vertex, instances_range);
+                }
+            }
         }
 
         queue_wgpu.submit(Some(command_encoder.finish()));

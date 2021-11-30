@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use crate::gfx::command_buffer_api::IScanBufferViewCommandBuffer;
 use crate::gfx::{ScanBufferCommandBuffer, ScanBufferView};
 
@@ -9,7 +7,9 @@ use super::super::{
     PrimitiveTopology, ShaderStage, ViewportScissorState,
 };
 use super::command_builder::compute_pass_command_builder::ComputePassCommandBuilder;
-use super::command_builder::graphics_pass_command_builder::GraphicsPassCommandBuilder;
+use super::command_builder::graphics_pass_command_builder::{
+    DrawCommand, GraphicsPassCommandBuilder,
+};
 use super::command_builder::CommandBuilder;
 
 pub struct CommandBufferWgpu<'a> {
@@ -64,16 +64,9 @@ impl<'a> CommandBufferWgpu<'a> {
         }
     }
 
-    pub fn get_draw_vertices_range(&self, index: usize) -> Range<u32> {
-        match &self._commands[index as usize] {
-            CommandBuilder::Graphics(builder) => builder.get_vertices_range(),
-            CommandBuilder::Compute(_) => panic!(),
-        }
-    }
-
-    pub fn get_draw_instance_range(&self, index: usize) -> Range<u32> {
-        match &self._commands[index as usize] {
-            CommandBuilder::Graphics(builder) => builder.get_instance_range(),
+    pub fn get_draw_command(&self, index: usize) -> &DrawCommand {
+        match &self._commands[index] {
+            CommandBuilder::Graphics(builder) => builder.get_command(),
             CommandBuilder::Compute(_) => panic!(),
         }
     }
@@ -246,7 +239,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferWgpu<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         index_format: IndexFormat,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         index_count: i32,
         base_vertex: i32,
     ) {
@@ -263,7 +256,7 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferWgpu<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         index_format: IndexFormat,
-        gpu_address: &GpuAddress,
+        gpu_address: GpuAddress<'a>,
         index_count: i32,
         base_vertex: i32,
         instance_count: i32,
@@ -363,12 +356,8 @@ impl<'a> ScanBufferCommandBufferWgpu<'a> {
         self._command_buffer.get_vertex_buffer(0)
     }
 
-    pub fn get_draw_vertices_range(&self) -> Range<u32> {
-        self._command_buffer.get_draw_vertices_range(0)
-    }
-
-    pub fn get_draw_instance_range(&self) -> Range<u32> {
-        self._command_buffer.get_draw_instance_range(0)
+    pub fn get_draw_command(&self) -> &DrawCommand {
+        self._command_buffer.get_draw_command(0)
     }
 }
 

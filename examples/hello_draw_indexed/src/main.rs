@@ -1,3 +1,6 @@
+use winit::platform::run_return::EventLoopExtRunReturn;
+use winit::{event::Event, event_loop::ControlFlow};
+
 fn main() {
     let mut display = sj::vi::create_display();
     let mut layer = sj::vi::create_layer(&mut display);
@@ -5,9 +8,7 @@ fn main() {
     let device_info = sj::gfx::DeviceInfo::new().set_layer(Some(&layer));
     let device = sj::gfx::Device::new(&device_info);
 
-    let mut swap_shain_info = sj::gfx::SwapChainInfo::new(&mut layer);
-    let mut swap_chain = sj::gfx::SwapChain::new(&device, &mut swap_shain_info);
-    let (_scan_buffers, scan_buffer_views) = swap_chain.get_scan_buffers_and_views();
+    let mut swap_chain = sj::gfx::SwapChain::new(&device, &sj::gfx::SwapChainInfo::new());
 
     let vertex_shader_source =
         include_bytes!("../resources/shaders/hello_graphics_pipeline_vs.spv");
@@ -17,21 +18,21 @@ fn main() {
         .set_pixel_shader_binary(pixel_shader_source);
     let shader = sj::gfx::Shader::new(&device, &shader_info);
 
-    let viewport_state_info = [sj::gfx::ViewportStateInfo::new()
-        .set_origin_x(0.0)
-        .set_origin_y(0.0)
-        .set_width(640.0)
-        .set_height(480.0)];
-    let scissor_state_info = [sj::gfx::ScissorStateInfo::new()
-        .set_origin_x(0)
-        .set_origin_y(0)
-        .set_width(640)
-        .set_height(480)];
-    let viewport_scissor_state_info = sj::gfx::ViewportScissorStateInfo::new()
-        .set_viewport_state_info_array(&viewport_state_info)
-        .set_scissor_state_info_array(&scissor_state_info);
-    let viewport_scissor_state =
-        sj::gfx::ViewportScissorState::new(&device, &viewport_scissor_state_info);
+    // let viewport_state_info = [sj::gfx::ViewportStateInfo::new()
+    //     .set_origin_x(0.0)
+    //     .set_origin_y(0.0)
+    //     .set_width(640.0)
+    //     .set_height(480.0)];
+    // let scissor_state_info = [sj::gfx::ScissorStateInfo::new()
+    //     .set_origin_x(0)
+    //     .set_origin_y(0)
+    //     .set_width(640)
+    //     .set_height(480)];
+    // let viewport_scissor_state_info = sj::gfx::ViewportScissorStateInfo::new()
+    //     .set_viewport_state_info_array(&viewport_state_info)
+    //     .set_scissor_state_info_array(&scissor_state_info);
+    // let viewport_scissor_state =
+    //     sj::gfx::ViewportScissorState::new(&device, &viewport_scissor_state_info);
 
     let vertex_attribute_state_info_array = [sj::gfx::VertexAttributeStateInfo::new()
         .set_slot(0)
@@ -58,18 +59,12 @@ fn main() {
         .set_shader(&shader);
     let pipeline = sj::gfx::Pipeline::new_as_graphics(&device, &graphics_pipeline_create_info);
 
-    let memory_pool_info = sj::gfx::MemoryPoolInfo::new()
-        .set_size(8 * 1024 * 1024)
-        .set_memory_pool_property(
-            sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
-        );
-    let memory_pool = sj::gfx::MemoryPool::new(&device, &memory_pool_info);
     let buffer_info = sj::gfx::BufferInfo::new()
         .set_gpu_access_flags(sj::gfx::GpuAccess::VERTEX_BUFFER)
         .set_size(128);
-    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, &memory_pool, 0, 128);
-    vertex_buffer.map();
-    vertex_buffer.write::<[f32; 8]>(|mapped_data| {
+    let vertex_buffer = sj::gfx::Buffer::new(&device, &buffer_info, None, 0, 0);
+    {
+        let mut mapped_data = vertex_buffer.map_as_slice_mut::<f32>(8);
         mapped_data[0] = -0.5;
         mapped_data[1] = 0.5;
         mapped_data[2] = -0.5;
@@ -78,86 +73,83 @@ fn main() {
         mapped_data[5] = -0.5;
         mapped_data[6] = 0.5;
         mapped_data[7] = 0.5;
-    });
+    }
     vertex_buffer.flush_mapped_range(0, 0x40);
     vertex_buffer.unmap();
 
-    let index_buffer_pool = sj::gfx::MemoryPool::new(
-        &device,
-        &sj::gfx::MemoryPoolInfo::new()
-            .set_size(128)
-            .set_memory_pool_property(
-                sj::gfx::MemoryPoolProperty::CPU_CACHED | sj::gfx::MemoryPoolProperty::GPU_CACHED,
-            ),
-    );
     let index_buffer = sj::gfx::Buffer::new(
         &device,
         &sj::gfx::BufferInfo::new()
             .set_size((std::mem::size_of::<u32>() * 6) as u64)
             .set_gpu_access_flags(sj::gfx::GpuAccess::INDEX_BUFFER),
-        &index_buffer_pool,
+        None,
         0,
-        128,
+        0,
     );
-    index_buffer.map();
-    index_buffer.write::<[u32; 6]>(|mapped_data| {
+    {
+        let mut mapped_data = index_buffer.map_as_slice_mut::<u32>(6);
         mapped_data[0] = 0;
         mapped_data[1] = 1;
         mapped_data[2] = 2;
         mapped_data[3] = 0;
         mapped_data[4] = 2;
         mapped_data[5] = 3;
-    });
+    }
     index_buffer.flush_mapped_range(0, 128);
     index_buffer.unmap();
 
     let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
 
-    let command_buffer_info = sj::gfx::CommandBufferInfo::new();
-    let mut command_buffers = [
-        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
-        sj::gfx::CommandBuffer::new(&device, &command_buffer_info),
-    ];
-
     let queue_info = sj::gfx::QueueInfo::new();
     let mut queue = sj::gfx::Queue::new(&device, &queue_info);
 
-    for index in 0..command_buffers.len() {
-        let command_buffer = &mut command_buffers[index];
-        command_buffer.begin();
-        {
-            command_buffer.clear_color(&mut scan_buffer_views[index], 0.25, 0.25, 0.4, 1.0, None);
-            command_buffer.set_pipeline(&pipeline);
-            command_buffer.set_render_targets(&[&scan_buffer_views[index]], None);
-            command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
-            command_buffer.set_vertex_buffer(0, &sj::gfx::GpuAddress::new(&vertex_buffer));
+    loop {
+        layer
+            .get_event_loop_mut()
+            .run_return(|event, _, control_flow| {
+                *control_flow = ControlFlow::Wait;
 
-            let index_count = 6;
-            let base_vertex = 0;
-            let index_buffer_gpu_address = sj::gfx::GpuAddress::new(&index_buffer);
-            command_buffer.draw_indexed(
-                sj::gfx::PrimitiveTopology::TriangleList,
-                sj::gfx::IndexFormat::Uint32,
-                &index_buffer_gpu_address,
-                index_count,
-                base_vertex,
-            );
+                match event {
+                    Event::RedrawRequested(_) => {
+                        queue.sync_semaphore(&mut semaphore);
 
-            command_buffer
-                .flush_memory(sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE);
-        }
-        command_buffer.end();
-    }
+                        let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view();
+                        queue.sync_semaphore(&mut semaphore);
 
-    for _i in 0..500 {
-        let index = swap_chain.acquire_next_scan_buffer_index(Some(&mut semaphore), None);
-        queue.sync_semaphore(&mut semaphore);
+                        let mut command_buffer = sj::gfx::CommandBuffer::new(
+                            &device,
+                            &sj::gfx::CommandBufferInfo::new(),
+                        );
+                        command_buffer.set_pipeline(&pipeline);
+                        command_buffer
+                            .set_vertex_buffer(0, sj::gfx::GpuAddress::new(&vertex_buffer));
 
-        let command_buffer = &command_buffers[index as usize];
-        queue.execute(&command_buffer);
-        queue.flush();
-        queue.present(&mut swap_chain, 1);
-        queue.sync();
-        std::thread::sleep(std::time::Duration::from_millis(32));
+                        let index_count = 6;
+                        let base_vertex = 0;
+                        let index_buffer_gpu_address = sj::gfx::GpuAddress::new(&index_buffer);
+                        command_buffer.draw_indexed(
+                            sj::gfx::PrimitiveTopology::TriangleList,
+                            sj::gfx::IndexFormat::Uint32,
+                            index_buffer_gpu_address,
+                            index_count,
+                            base_vertex,
+                        );
+
+                        command_buffer.flush_memory(
+                            sj::gfx::GpuAccess::COLOR_BUFFER | sj::gfx::GpuAccess::TEXTURE,
+                        );
+                        let mut command_buffer =
+                            command_buffer.set_scan_buffer_view(next_scan_buffer_view);
+                        command_buffer.end();
+
+                        queue.execute_scan_buffer_command(command_buffer);
+                        queue.flush();
+                        queue.present(&mut swap_chain, 1);
+                        queue.sync();
+                        std::thread::sleep(std::time::Duration::from_millis(32));
+                    }
+                    _ => {}
+                }
+            });
     }
 }

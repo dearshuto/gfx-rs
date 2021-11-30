@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use wgpu::RenderPipeline;
 
 use crate::gfx::{
@@ -7,6 +5,32 @@ use crate::gfx::{
     Device, GpuAddress, IndexFormat, Pipeline, PrimitiveTopology, ShaderStage,
     ViewportScissorState,
 };
+
+pub enum DrawCommand<'a> {
+    // PrimitiveTopology
+    // vertex_count
+    // vertex_offset
+    // instance_count
+    // base_instance
+    Draw(PrimitiveTopology, u32, u32, u32, u32),
+
+    // PrimitiveTopology
+    // index_format
+    // gpu_address
+    // index_count
+    // base_vertex
+    // instance_count
+    // base_instance
+    DrawIndexed(
+        PrimitiveTopology,
+        wgpu::IndexFormat,
+        GpuAddress<'a>,
+        u32,
+        i32,
+        u32,
+        u32,
+    ),
+}
 
 pub struct GraphicsPassCommandBuilder<'a> {
     _device: &'a Device,
@@ -25,11 +49,7 @@ pub struct GraphicsPassCommandBuilder<'a> {
     _render_targert_format: Option<wgpu::TextureFormat>,
 
     // 描画コマンド
-    _primitive_topology: PrimitiveTopology,
-    _vertex_count: u32,
-    _vertex_offset: u32,
-    _instance_count: u32,
-    _base_instance: u32,
+    _draw_command: Option<DrawCommand<'a>>,
 }
 
 impl<'a> GraphicsPassCommandBuilder<'a> {
@@ -46,11 +66,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
             // _vertex_offset: 0,
             // _vertrex_count: 0,
             _render_targert_format: None,
-            _primitive_topology: PrimitiveTopology::TriangleList,
-            _vertex_count: 0,
-            _vertex_offset: 0,
-            _instance_count: 0,
-            _base_instance: 0,
+            _draw_command: None,
         }
     }
 
@@ -174,35 +190,53 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         instance_count: i32,
         base_instance: i32,
     ) {
-        self._primitive_topology = primitive_topology;
-        self._vertex_count = vertex_count as u32;
-        self._vertex_offset = vertex_offset as u32;
-        self._instance_count = instance_count as u32;
-        self._base_instance = base_instance as u32;
+        self._draw_command = Some(DrawCommand::Draw(
+            primitive_topology,
+            vertex_count as u32,
+            vertex_offset as u32,
+            instance_count as u32,
+            base_instance as u32,
+        ));
     }
 
     pub fn draw_indexed(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: GpuAddress<'a>,
+        index_count: i32,
+        base_vertex: i32,
     ) {
-        todo!()
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            gpu_address,
+            index_count,
+            base_vertex,
+            1,
+            0,
+        );
     }
 
     pub fn draw_indexed_instanced(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: IndexFormat,
-        _gpu_address: &GpuAddress,
-        _index_count: i32,
-        _base_vertex: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        gpu_address: GpuAddress<'a>,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        todo!()
+        self._draw_command = Some(DrawCommand::DrawIndexed(
+            primitive_topology,
+            index_format.to_wgpu(),
+            gpu_address,
+            index_count as u32,
+            base_vertex,
+            instance_count as u32,
+            base_instance as u32,
+        ));
     }
 
     pub fn draw_indirect(&mut self, _gpu_address: &GpuAddress) {
@@ -226,12 +260,8 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
         self._render_pipeline.as_ref().unwrap()
     }
 
-    pub fn get_vertices_range(&self) -> Range<u32> {
-        self._vertex_offset..(self._vertex_offset + self._vertex_count)
-    }
-
-    pub fn get_instance_range(&self) -> Range<u32> {
-        self._base_instance..(self._base_instance + self._instance_count)
+    pub fn get_command(&self) -> &DrawCommand {
+        self._draw_command.as_ref().unwrap()
     }
 
     // pub fn get_primitive_topology(&self) -> wgpu::PrimitiveTopology {
@@ -294,4 +324,12 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
     //         .slice(..);
     //     render_pass.set_vertex_buffer(0, slice);
     // }
+}
+
+impl IndexFormat {
+    pub fn to_wgpu(&self) -> wgpu::IndexFormat {
+        match self {
+            IndexFormat::Uint32 => wgpu::IndexFormat::Uint32,
+        }
+    }
 }
