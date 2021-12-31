@@ -18,6 +18,7 @@ impl super::super::device_api::TDeviceImpl for DeviceImpl {
         };
         let adapter = executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
+            force_fallback_adapter: false,
             compatible_surface: if surface_opt.is_some() {
                 surface_opt.as_ref()
             } else {

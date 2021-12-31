@@ -6,4 +6,4 @@ publish = false
 
 [dependencies]
 sj = { path = "../../sj" }
-wgpu = "0.10.0"
+wgpu = "0.12.0"

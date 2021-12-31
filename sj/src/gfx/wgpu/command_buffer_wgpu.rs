@@ -325,12 +325,12 @@ impl<'a> ICommandBufferImpl<'a> for CommandBufferWgpu<'a> {
 }
 
 pub struct ScanBufferCommandBufferWgpu<'a> {
-    _frame: wgpu::SurfaceFrame,
+    _frame: wgpu::SurfaceTexture,
     _command_buffer: CommandBufferWgpu<'a>,
 }
 
 impl<'a> ScanBufferCommandBufferWgpu<'a> {
-    pub fn new_internal(frame: wgpu::SurfaceFrame, command_buffer: CommandBufferWgpu<'a>) -> Self {
+    pub fn new_internal(frame: wgpu::SurfaceTexture, command_buffer: CommandBufferWgpu<'a>) -> Self {
         Self {
             _frame: frame,
             _command_buffer: command_buffer,
@@ -339,7 +339,6 @@ impl<'a> ScanBufferCommandBufferWgpu<'a> {
 
     pub fn create_texture_view(&self) -> wgpu::TextureView {
         self._frame
-            .output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default())
     }

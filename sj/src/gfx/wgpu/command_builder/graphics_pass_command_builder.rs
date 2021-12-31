@@ -110,6 +110,7 @@ impl<'a> GraphicsPassCommandBuilder<'a> {
                         write_mask: wgpu::ColorWrites::ALL,
                     }],
                 }),
+                multiview: None,
             },
         );
         self._render_pipeline = Some(render_pipeline);
