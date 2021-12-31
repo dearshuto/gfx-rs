@@ -20,7 +20,7 @@ impl<'a> ISwapChainImpl<'a> for SwapChainWgpu<'a> {
         let format = surface
             .get_preferred_format(self._device.to_data().get_adapter())
             .unwrap();
-        let frame = surface.get_current_frame().unwrap();
+        let frame = surface.get_current_texture().unwrap();
         let scan_buffer_view_wgpu = ScanBufferViewWgpu::new(frame, format);
         ScanBufferView::new(scan_buffer_view_wgpu)
     }
