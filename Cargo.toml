@@ -1,7 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "sj",
+        "sj",
+        "gfx-interface",
+        "gfx-vulkano",
+        "gfx-wgpu",
 	"examples/clear_color",
 	"examples/hello_graphics_pipeline",
 	"examples/hello_3d",
