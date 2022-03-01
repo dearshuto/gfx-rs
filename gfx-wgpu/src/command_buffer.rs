@@ -1,6 +1,25 @@
-use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology};
+use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
 
-use crate::{BufferWgpu, ColorTargetViewWgpu, DeviceWgpu, ShaderWgpu};
+use crate::{BufferWgpu, ColorTargetViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu};
+
+struct DrawInfo {
+    #[allow(dead_code)]
+    pub primitive_topology: PrimitiveTopology,
+    pub vertex_count: u32,
+}
+
+struct DrawIndexedInfo<'a> {
+    #[allow(dead_code)]
+    pub primitive_topology: PrimitiveTopology,
+    pub index_format: wgpu::IndexFormat,
+    pub index_buffer: &'a BufferWgpu<'a>,
+    pub index_count: u32,
+}
+
+enum DrawCommand<'a> {
+    Draw(DrawInfo),
+    DrawIndexed(DrawIndexedInfo<'a>),
+}
 
 pub struct CommandBufferWgpu<'a> {
     device: &'a DeviceWgpu,
@@ -14,9 +33,9 @@ pub struct CommandBufferWgpu<'a> {
     dispatch_count: Option<(u32, u32, u32)>,
 
     // Draw
-    primitive_topology: Option<PrimitiveTopology>,
-    vertex_count: Option<u32>,
-    vertex_offset: Option<i32>,
+    vertex_buffer: [Option<&'a BufferWgpu<'a>>; 64],
+    vertex_state: Option<&'a VertexStateWgpu>,
+    draw_command: Option<DrawCommand<'a>>,
 }
 
 impl<'a> CommandBufferWgpu<'a> {
@@ -28,9 +47,9 @@ impl<'a> CommandBufferWgpu<'a> {
             constant_buffers: [None; 64],
             unordered_access_buffer: [None; 64],
             dispatch_count: None,
-            primitive_topology: None,
-            vertex_count: None,
-            vertex_offset: None,
+            vertex_buffer: [None; 64],
+            vertex_state: None,
+            draw_command: None,
         }
     }
 
@@ -59,6 +78,14 @@ impl<'a> CommandBufferWgpu<'a> {
         self.unordered_access_buffer[index as usize] = Some(buffer);
     }
 
+    pub fn set_vertex_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
+        self.vertex_buffer[index as usize] = Some(buffer);
+    }
+
+    pub fn set_vertex_state(&mut self, vertex_state: &'a VertexStateWgpu) {
+        self.vertex_state = Some(vertex_state);
+    }
+
     pub fn dispatch(
         &mut self,
         dispatch_count_x: i32,
@@ -76,11 +103,34 @@ impl<'a> CommandBufferWgpu<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         vertex_count: i32,
-        vertex_offset: i32,
+        _vertex_offset: i32,
     ) {
-        self.primitive_topology = Some(primitive_topology);
-        self.vertex_count = Some(vertex_count as u32);
-        self.vertex_offset = Some(vertex_offset);
+        let draw_info = DrawInfo {
+            primitive_topology,
+            vertex_count: vertex_count as u32,
+        };
+        self.draw_command = Some(DrawCommand::Draw(draw_info));
+    }
+
+    pub fn draw_indexed(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        index_buffer: &'a BufferWgpu,
+        index_count: i32,
+        _base_vertex: i32,
+    ) {
+        let index_format_wgpu = match index_format {
+            IndexFormat::Uint32 => wgpu::IndexFormat::Uint32,
+        };
+
+        let draw_indexed_info = DrawIndexedInfo {
+            primitive_topology,
+            index_format: index_format_wgpu,
+            index_buffer,
+            index_count: index_count as u32,
+        };
+        self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
     }
 
     pub(crate) fn build_command(&self) -> Option<wgpu::CommandBuffer> {
@@ -124,6 +174,15 @@ impl<'a> CommandBufferWgpu<'a> {
 
         let vertex_shader_module = self.shader.as_ref().unwrap().get_vertex_shader_module();
         let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
+
+        // 頂点ステート
+        let vertex_buffer_layout = if let Some(vertex_state) = self.vertex_state {
+            let attributes = self.shader.as_ref().unwrap().get_vertex_attributes();
+            vertex_state.create_vertex_buffer_layout(attributes)
+        } else {
+            vec![]
+        };
+
         let render_pipeline =
             self.device
                 .get_device()
@@ -133,7 +192,7 @@ impl<'a> CommandBufferWgpu<'a> {
                     vertex: wgpu::VertexState {
                         module: &vertex_shader_module,
                         entry_point: "main",
-                        buffers: &[],
+                        buffers: &vertex_buffer_layout,
                     },
                     fragment: Some(wgpu::FragmentState {
                         module: &pixel_shader_module,
@@ -167,9 +226,23 @@ impl<'a> CommandBufferWgpu<'a> {
             // パイプライン
             render_pass.set_pipeline(&render_pipeline);
 
+            // 頂点バッファ
+            if let Some(vertex_buffer) = self.vertex_buffer[0] {
+                render_pass.set_vertex_buffer(0, vertex_buffer.get_buffer().slice(..));
+            }
+
             // 描画
-            if let Some(vertex_count) = self.vertex_count {
-                render_pass.draw(0..vertex_count, 0..1);
+            if let Some(draw_command) = &self.draw_command {
+                match draw_command {
+                    DrawCommand::Draw(ref draw_info) => {
+                        render_pass.draw(0..draw_info.vertex_count, 0..1);
+                    }
+                    DrawCommand::DrawIndexed(ref draw_indexed_info) => {
+                        let buffer_slice = draw_indexed_info.index_buffer.get_buffer().slice(..);
+                        render_pass.set_index_buffer(buffer_slice, draw_indexed_info.index_format);
+                        render_pass.draw_indexed(0..draw_indexed_info.index_count, 0, 0..1);
+                    }
+                }
             }
         }
         command_encoder.finish()

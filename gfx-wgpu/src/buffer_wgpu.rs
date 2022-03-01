@@ -31,6 +31,39 @@ impl<'a> BufferWgpu<'a> {
         let ptr = self.buffer.slice(..).get_mapped_range().as_ptr();
         let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
         func(casted);
+        self.buffer.unmap();
+    }
+
+    pub fn map_as_slice<T>(&self, size: usize, func: fn(&[T])) {
+        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
+
+        self.device.get_device().poll(wgpu::Maintain::Wait);
+
+        let ptr = self
+            .buffer
+            .slice(..)
+            .get_mapped_range()
+            .as_ptr()
+            .cast::<T>();
+        let slice = unsafe { std::slice::from_raw_parts::<T>(ptr, size) };
+        func(slice);
+        self.buffer.unmap();
+    }
+
+    pub fn map_as_slice_mut<T>(&mut self, size: usize, func: fn(&mut [T])) {
+        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
+
+        self.device.get_device().poll(wgpu::Maintain::Wait);
+
+        let ptr = self
+            .buffer
+            .slice(..)
+            .get_mapped_range_mut()
+            .as_mut_ptr()
+            .cast::<T>();
+        let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
+        func(slice);
+        self.buffer.unmap();
     }
 
     fn convert(gpu_access: &GpuAccess) -> wgpu::BufferUsages {
