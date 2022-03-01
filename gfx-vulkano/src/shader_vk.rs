@@ -1,0 +1,87 @@
+use std::sync::Arc;
+
+use sjgfx_interface::ShaderInfo;
+use vulkano::shader::ShaderModule;
+
+use crate::DeviceVk;
+
+pub struct ShaderVk {
+    compute_shader: Option<Arc<ShaderModule>>,
+    vertex_shader: Option<Arc<ShaderModule>>,
+    pixel_shader: Option<Arc<ShaderModule>>,
+}
+
+impl ShaderVk {
+    pub fn new(device: &DeviceVk, info: &ShaderInfo) -> Self {
+        // 演算シェーダ
+        let compute_shader = if let Some(compute_shader_binary) = info.get_compute_shader_binary() {
+            unsafe {
+                Some(
+                    ShaderModule::from_bytes(device.clone_device(), compute_shader_binary).unwrap(),
+                )
+            }
+        } else {
+            None
+        };
+
+        // 頂点シェーダ
+        let vertex_shader = if let Some(vertex_shader_binary) = info.get_vertex_shader_binary() {
+            unsafe {
+                Some(ShaderModule::from_bytes(device.clone_device(), vertex_shader_binary).unwrap())
+            }
+        } else {
+            None
+        };
+
+        // ピクセルシェーダ
+        let pixel_shader = if let Some(pixel_shader_binary) = info.get_pixel_shader_binary() {
+            unsafe {
+                Some(ShaderModule::from_bytes(device.clone_device(), pixel_shader_binary).unwrap())
+            }
+        } else {
+            None
+        };
+
+        Self {
+            compute_shader,
+            vertex_shader,
+            pixel_shader,
+        }
+    }
+
+    pub fn is_compute(&self) -> bool {
+        self.compute_shader.is_some()
+    }
+
+    pub fn get_shader(&self) -> &ShaderModule {
+        self.get_compute_shader()
+    }
+
+    pub fn clone_shader(&self) -> Arc<ShaderModule> {
+        self.clone_compute_shader()
+    }
+
+    pub fn get_compute_shader(&self) -> &ShaderModule {
+        self.compute_shader.as_ref().unwrap()
+    }
+
+    pub fn clone_compute_shader(&self) -> Arc<ShaderModule> {
+        self.compute_shader.as_ref().unwrap().clone()
+    }
+
+    pub fn get_vertex_shader(&self) -> &ShaderModule {
+        self.vertex_shader.as_ref().unwrap()
+    }
+
+    pub fn clone_vertex_shader(&self) -> Arc<ShaderModule> {
+        self.vertex_shader.as_ref().unwrap().clone()
+    }
+
+    pub fn get_pixel_shader(&self) -> &ShaderModule {
+        self.pixel_shader.as_ref().unwrap()
+    }
+
+    pub fn clone_pixel_shader(&self) -> Arc<ShaderModule> {
+        self.pixel_shader.as_ref().unwrap().clone()
+    }
+}

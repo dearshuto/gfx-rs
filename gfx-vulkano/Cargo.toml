@@ -1,0 +1,13 @@
+[package]
+name = "sjgfx-vulkano"
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+sjgfx-interface = { path = "../gfx-interface" }
+vulkano = "0.28.0"
+vulkano-win = "0.28.0"
+winit = "0.26"
+
+[dev-dependencies]
+shaderc = "0.7"

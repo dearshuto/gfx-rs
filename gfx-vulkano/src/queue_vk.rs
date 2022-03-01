@@ -1,0 +1,151 @@
+use crate::{CommandBufferVk, DeviceVk, SwapChainVk};
+use sjgfx_interface::QueueInfo;
+use std::sync::Arc;
+use vulkano::command_buffer::AutoCommandBufferBuilder;
+use vulkano::device::Queue;
+use vulkano::{
+    command_buffer::PrimaryAutoCommandBuffer,
+    device::Device,
+    swapchain::{Swapchain, SwapchainAcquireFuture},
+    sync,
+    sync::{FlushError, GpuFuture},
+};
+use winit::window::Window;
+
+pub struct QueueVk {
+    device: Arc<Device>,
+    queue: Arc<Queue>,
+    previous_frame_end: Option<Box<dyn GpuFuture>>,
+    command_builder: Option<AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>>,
+    swap_chain: Option<Arc<Swapchain<Window>>>,
+    swap_chain_acquire_future: Option<SwapchainAcquireFuture<Window>>,
+}
+
+impl QueueVk {
+    pub fn new(device: &DeviceVk, _info: &QueueInfo) -> Self {
+        Self {
+            device: device.clone_device(),
+            queue: device.clone_queue(),
+            previous_frame_end: Some(sync::now(device.clone_device()).boxed()),
+            command_builder: None,
+            swap_chain: None,
+            swap_chain_acquire_future: None,
+        }
+    }
+
+    pub fn execute(&mut self, command_buffer: &CommandBufferVk) {
+        let command_builder = command_buffer.build_command_builder();
+        self.command_builder = Some(command_builder);
+    }
+
+    pub fn flush(&mut self) {
+        self.previous_frame_end.as_mut().unwrap().cleanup_finished();
+
+        if self.command_builder.is_none() {
+            return;
+        }
+
+        // CommandBuilder
+        let mut command_builder = None;
+        std::mem::swap(&mut command_builder, &mut self.command_builder);
+
+        // SwapChain
+        let mut swap_chain = None;
+        std::mem::swap(&mut swap_chain, &mut self.swap_chain);
+
+        // SwapChain Acquire Future
+        let mut swap_chain_acquire_future = None;
+        std::mem::swap(
+            &mut swap_chain_acquire_future,
+            &mut self.swap_chain_acquire_future,
+        );
+
+        if swap_chain_acquire_future.is_some() {
+            let future = self
+                .previous_frame_end
+                .take()
+                .unwrap()
+                .join(swap_chain_acquire_future.unwrap())
+                .then_execute(
+                    self.queue.clone(),
+                    command_builder.unwrap().build().unwrap(),
+                )
+                .unwrap()
+                .then_swapchain_present(self.queue.clone(), swap_chain.unwrap(), 0)
+                .then_signal_fence_and_flush();
+
+            let next_frame = match future {
+                Ok(future) => {
+                    // TODO
+                    //future.wait(None).unwrap();
+                    Some(future.boxed())
+                }
+                Err(FlushError::OutOfDate) => {
+                    //recreate_swapchain = true;
+                    Some(sync::now(self.device.clone()).boxed())
+                }
+                Err(e) => {
+                    println!("Failed to flush future: {:?}", e);
+                    Some(sync::now(self.device.clone()).boxed())
+                }
+            };
+            self.previous_frame_end = next_frame;
+        } else {
+            let future = self
+                .previous_frame_end
+                .take()
+                .unwrap()
+                .then_execute(
+                    self.queue.clone(),
+                    command_builder.unwrap().build().unwrap(),
+                )
+                .unwrap()
+                .then_signal_fence_and_flush();
+
+            let next_frame = match future {
+                Ok(future) => {
+                    // TODO
+                    //future.wait(None).unwrap();
+                    Some(future.boxed())
+                }
+                Err(FlushError::OutOfDate) => {
+                    //recreate_swapchain = true;
+                    Some(sync::now(self.device.clone()).boxed())
+                }
+                Err(e) => {
+                    println!("Failed to flush future: {:?}", e);
+                    Some(sync::now(self.device.clone()).boxed())
+                }
+            };
+            self.previous_frame_end = next_frame;
+        }
+    }
+
+    pub fn present(&mut self, swap_chain: &mut SwapChainVk) {
+        self.swap_chain_acquire_future = Some(swap_chain.unwrap_acquire_future());
+        self.swap_chain = Some(swap_chain.clone_swap_chain());
+    }
+
+    pub fn sync(&mut self) {
+        self.queue.wait().unwrap();
+        if let Some(future) = self.previous_frame_end.as_mut() {
+            future.cleanup_finished();
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Default, Debug, Clone)]
+#[allow(non_snake_case)]
+struct Float32 {
+    i_Position: f32,
+}
+vulkano::impl_vertex!(Float32, i_Position);
+
+#[repr(C)]
+#[derive(Default, Debug, Clone)]
+#[allow(non_snake_case)]
+pub struct Float32_32 {
+    i_Position: [f32; 2],
+}
+vulkano::impl_vertex!(Float32_32, i_Position);
