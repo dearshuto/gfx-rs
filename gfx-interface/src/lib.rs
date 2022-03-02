@@ -13,7 +13,7 @@ mod vertex_state_api;
 pub use buffer_api::{BufferInfo, IBuffer};
 pub use color_target_view_api::ColorTargetViewInfo;
 pub use command_buffer_api::CommandBufferInfo;
-pub use enums::{GpuAccess, ImageFormat, PrimitiveTopology};
+pub use enums::{GpuAccess, ImageFormat, PrimitiveTopology, IndexFormat};
 pub use fence_api::FenceInfo;
 pub use queue_api::{QueueInfo, IQueue};
 pub use shader_api::ShaderInfo;

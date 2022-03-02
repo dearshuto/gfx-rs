@@ -8,7 +8,7 @@ pub struct ShaderWgpu {
     vertex_shader: Option<wgpu::ShaderModule>,
     pixel_shader: Option<wgpu::ShaderModule>,
     compute_pipeline: Option<wgpu::ComputePipeline>,
-    // vertex_attributes: Vec<wgpu::VertexAttribute>,
+    vertex_attributes: Vec<wgpu::VertexAttribute>,
     bind_group_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
 }
@@ -54,9 +54,9 @@ impl ShaderWgpu {
         self.compute_pipeline.as_ref().unwrap()
     }
 
-    // pub(crate) fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
-    //     &self.vertex_attributes
-    // }
+    pub(crate) fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
+        &self.vertex_attributes
+    }
 
     fn new_as_compute(device: &DeviceWgpu, shader_binary: &[u8]) -> Self {
         let compute_shader =
@@ -92,7 +92,7 @@ impl ShaderWgpu {
             vertex_shader: None,
             pixel_shader: None,
             compute_pipeline,
-            // vertex_attributes: Vec::new(),
+            vertex_attributes: Vec::new(),
             bind_group_layout,
             pipeline_layout,
         }
@@ -103,7 +103,7 @@ impl ShaderWgpu {
         vertex_shader_binary: &[u8],
         pixel_shader_binary: &[u8],
     ) -> Self {
-        // let vertex_attributes = Self::create_vertex_attributes(&vertex_shader_binary);
+        let vertex_attributes = Self::create_vertex_attributes(&vertex_shader_binary);
 
         let vertex_shader =
             Self::create_shader_module(device.get_device(), &Some(vertex_shader_binary));
@@ -137,7 +137,7 @@ impl ShaderWgpu {
             vertex_shader,
             pixel_shader,
             compute_pipeline: None,
-            //vertex_attributes,
+            vertex_attributes,
             bind_group_layout,
             pipeline_layout,
         }
@@ -201,38 +201,40 @@ impl ShaderWgpu {
             .to_vec()
     }
 
-    // fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
-    //     let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
-    //     module
-    //         .enumerate_input_variables(None)
-    //         .unwrap()
-    //         .into_iter()
-    //         .map(|x| wgpu::VertexAttribute {
-    //             format: Self::convert_attribute_format(x.format),
-    //             offset: 0,
-    //             shader_location: x.location,
-    //         })
-    //         .collect::<Vec<wgpu::VertexAttribute>>()
-    //         .to_vec()
-    // }
+    fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
+        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
+        module
+            .enumerate_input_variables(None)
+            .unwrap()
+            .into_iter()
+            .map(|x| wgpu::VertexAttribute {
+                format: Self::convert_attribute_format(x.format),
+                offset: 0,
+                shader_location: x.location,
+            })
+            .collect::<Vec<wgpu::VertexAttribute>>()
+            .to_vec()
+    }
 
-    // fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
-    //     match format {
-    //         spirv_reflect::types::ReflectFormat::Undefined => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32_UINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32_SINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32_SFLOAT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32_UINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32_SINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
-    //         spirv_reflect::types::ReflectFormat::R32G32B32_UINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32B32_SINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
-    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => todo!(),
-    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => todo!(),
-    //     }
-    // }
+    fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
+        match format {
+            spirv_reflect::types::ReflectFormat::Undefined => todo!(),
+            spirv_reflect::types::ReflectFormat::R32_UINT => wgpu::VertexFormat::Uint32,
+            spirv_reflect::types::ReflectFormat::R32_SINT => wgpu::VertexFormat::Sint32,
+            spirv_reflect::types::ReflectFormat::R32_SFLOAT => wgpu::VertexFormat::Float32,
+            spirv_reflect::types::ReflectFormat::R32G32_UINT => wgpu::VertexFormat::Uint32x2,
+            spirv_reflect::types::ReflectFormat::R32G32_SINT => wgpu::VertexFormat::Sint32x2,
+            spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
+            spirv_reflect::types::ReflectFormat::R32G32B32_UINT => wgpu::VertexFormat::Uint32x3,
+            spirv_reflect::types::ReflectFormat::R32G32B32_SINT => wgpu::VertexFormat::Sint32x3,
+            spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => wgpu::VertexFormat::Uint32x4,
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => wgpu::VertexFormat::Sint32x4,
+            spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => {
+                wgpu::VertexFormat::Float32x4
+            }
+        }
+    }
 
     fn convert_shader_stage(
         stage: spirv_reflect::types::ReflectShaderStageFlags,

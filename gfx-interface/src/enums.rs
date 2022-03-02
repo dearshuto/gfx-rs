@@ -33,3 +33,8 @@ pub enum AttributeFormat {
     Float32_32,
     Float32_32_32,
 }
+
+#[derive(Clone)]
+pub enum IndexFormat {
+    Uint32,
+}
