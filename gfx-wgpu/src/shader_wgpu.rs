@@ -207,6 +207,7 @@ impl ShaderWgpu {
             .enumerate_input_variables(None)
             .unwrap()
             .into_iter()
+            .filter(|x| x.location < 31)
             .map(|x| wgpu::VertexAttribute {
                 format: Self::convert_attribute_format(x.format),
                 offset: 0,

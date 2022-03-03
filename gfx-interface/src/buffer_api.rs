@@ -1,4 +1,4 @@
-use crate::{IDevice, GpuAccess};
+use crate::{GpuAccess, IDevice};
 
 pub struct BufferInfo {
     size: usize,
