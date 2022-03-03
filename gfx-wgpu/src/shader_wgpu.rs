@@ -178,7 +178,7 @@ impl ShaderWgpu {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            min_binding_size: None,
+                            min_binding_size: wgpu::BufferSize::new(x.block.size as u64),
                         },
                         count: None,
                     }
@@ -242,6 +242,10 @@ impl ShaderWgpu {
     ) -> wgpu::ShaderStages {
         if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::COMPUTE) {
             wgpu::ShaderStages::COMPUTE
+        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::VERTEX) {
+            wgpu::ShaderStages::VERTEX
+        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::FRAGMENT) {
+            wgpu::ShaderStages::FRAGMENT
         } else {
             todo!()
         }

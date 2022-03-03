@@ -1,7 +1,7 @@
 use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
 
 use crate::{
-    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu,
+    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu, GpuAddressWgpu,
 };
 
 struct DrawInfo {
@@ -32,6 +32,7 @@ pub struct CommandBufferWgpu<'a> {
 
     shader: Option<&'a ShaderWgpu>,
     constant_buffers: [Option<&'a BufferWgpu<'a>>; 64],
+    constant_buffer_addresses: [Option<GpuAddressWgpu<'a>>; 8],
     unordered_access_buffer: [Option<&'a BufferWgpu<'a>>; 64],
     dispatch_count: Option<(u32, u32, u32)>,
 
@@ -49,6 +50,7 @@ impl<'a> CommandBufferWgpu<'a> {
             depth_stencil_view: None,
             shader: None,
             constant_buffers: [None; 64],
+            constant_buffer_addresses: [None, None, None, None, None, None, None, None],
             unordered_access_buffer: [None; 64],
             dispatch_count: None,
             vertex_buffer: [None; 64],
@@ -81,6 +83,10 @@ impl<'a> CommandBufferWgpu<'a> {
 
     pub fn set_constant_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
         self.constant_buffers[index as usize] = Some(buffer);
+    }
+
+    pub fn set_constant_buffer_address(&mut self, index: i32, gpu_address: GpuAddressWgpu<'a>) {
+        self.constant_buffer_addresses[index as usize] = Some(gpu_address);
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
@@ -213,7 +219,7 @@ impl<'a> CommandBufferWgpu<'a> {
                     multisample: wgpu::MultisampleState::default(),
                     multiview: None,
                 });
-
+        let bind_group = self.create_bind_group();
         let mut command_encoder = self
             .device
             .get_device()
@@ -234,6 +240,9 @@ impl<'a> CommandBufferWgpu<'a> {
 
             // パイプライン
             render_pass.set_pipeline(&render_pipeline);
+
+            // デスクリプタたち
+            render_pass.set_bind_group(0, &bind_group, &[]);
 
             // 頂点バッファ
             if let Some(vertex_buffer) = self.vertex_buffer[0] {
@@ -258,20 +267,39 @@ impl<'a> CommandBufferWgpu<'a> {
     }
 
     fn create_bind_group(&self) -> wgpu::BindGroup {
-        self.device
-            .get_device()
-            .create_bind_group(&wgpu::BindGroupDescriptor {
+        if let Some(unordered_access_buffer) = self.unordered_access_buffer[0] {
+            self.device
+                .get_device()
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: None,
+                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: unordered_access_buffer
+                            .get_buffer()
+                            .as_entire_binding(),
+                    }],
+                })
+        } else if let Some(gpu_address) = &self.constant_buffer_addresses[0] {
+            println!("AABBB");
+            self.device
+                .get_device()
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: None,
+                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: gpu_address.get_binding_resource(),
+                    }],
+                })
+        }
+        else {
+            self.device.get_device().create_bind_group(&wgpu::BindGroupDescriptor{
                 label: None,
                 layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: self.unordered_access_buffer[0]
-                        .as_ref()
-                        .unwrap()
-                        .get_buffer()
-                        .as_entire_binding(),
-                }],
+                entries: &[],
             })
+        }
     }
 
     fn create_depth_stencil_state(&self) -> Option<wgpu::DepthStencilState> {

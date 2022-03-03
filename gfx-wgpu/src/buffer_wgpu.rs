@@ -1,6 +1,6 @@
 use sjgfx_interface::{BufferInfo, GpuAccess};
 
-use crate::DeviceWgpu;
+use crate::{DeviceWgpu, GpuAddressWgpu};
 
 pub struct BufferWgpu<'a> {
     device: &'a DeviceWgpu,
@@ -30,6 +30,17 @@ impl<'a> BufferWgpu<'a> {
 
         let ptr = self.buffer.slice(..).get_mapped_range().as_ptr();
         let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
+        func(casted);
+        self.buffer.unmap();
+    }
+
+    pub fn map_mut<T>(&mut self, func: fn(&mut T)) {
+        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
+
+        self.device.get_device().poll(wgpu::Maintain::Wait);
+
+        let ptr = self.buffer.slice(..).get_mapped_range_mut().as_mut_ptr();
+        let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
         func(casted);
         self.buffer.unmap();
     }
@@ -64,6 +75,10 @@ impl<'a> BufferWgpu<'a> {
         let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
         func(slice);
         self.buffer.unmap();
+    }
+
+    pub fn get_gpu_address(&self) -> GpuAddressWgpu {
+        GpuAddressWgpu::new(self)
     }
 
     fn convert(gpu_access: &GpuAccess) -> wgpu::BufferUsages {
