@@ -109,10 +109,12 @@ impl VertexStateInfo {
         mut self,
         attribute_state_infos: TIterator,
     ) -> Self
-        where TIterator: IntoIterator<Item = VertexAttributeStateInfo>
+    where
+        TIterator: IntoIterator<Item = VertexAttributeStateInfo>,
     {
         self._attribute_state_info_array.clear();
-        self._attribute_state_info_array.extend(attribute_state_infos);
+        self._attribute_state_info_array
+            .extend(attribute_state_infos);
         self
     }
 
@@ -120,11 +122,9 @@ impl VertexStateInfo {
         &self._buffer_state_info_array
     }
 
-    pub fn set_buffer_state_info_array<TIterator>(
-        mut self,
-        buffer_state_infos: TIterator,
-    ) -> Self
-        where TIterator: IntoIterator<Item = VertexBufferStateInfo>
+    pub fn set_buffer_state_info_array<TIterator>(mut self, buffer_state_infos: TIterator) -> Self
+    where
+        TIterator: IntoIterator<Item = VertexBufferStateInfo>,
     {
         self._buffer_state_info_array.clear();
         self._buffer_state_info_array.extend(buffer_state_infos);

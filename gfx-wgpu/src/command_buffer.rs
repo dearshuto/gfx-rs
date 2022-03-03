@@ -1,6 +1,8 @@
 use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
 
-use crate::{BufferWgpu, ColorTargetViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu};
+use crate::{
+    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu,
+};
 
 struct DrawInfo {
     #[allow(dead_code)]
@@ -24,8 +26,9 @@ enum DrawCommand<'a> {
 pub struct CommandBufferWgpu<'a> {
     device: &'a DeviceWgpu,
 
-    // ColorTargetView
+    // レンダーターゲット
     color_target_view: Option<ColorTargetViewWgpu>,
+    depth_stencil_view: Option<&'a DepthStencilViewWgpu<'a>>,
 
     shader: Option<&'a ShaderWgpu>,
     constant_buffers: [Option<&'a BufferWgpu<'a>>; 64],
@@ -43,6 +46,7 @@ impl<'a> CommandBufferWgpu<'a> {
         Self {
             device,
             color_target_view: None,
+            depth_stencil_view: None,
             shader: None,
             constant_buffers: [None; 64],
             unordered_access_buffer: [None; 64],
@@ -57,13 +61,18 @@ impl<'a> CommandBufferWgpu<'a> {
 
     pub fn end(&self) {}
 
-    pub fn set_render_targets<TIterator>(&mut self, mut color_target_views: TIterator)
-    where
+    pub fn set_render_targets<TIterator>(
+        &mut self,
+        mut color_target_views: TIterator,
+        depth_stencil_view: Option<&'a DepthStencilViewWgpu<'a>>,
+    ) where
         TIterator: Iterator<Item = ColorTargetViewWgpu>,
     {
         if let Some(color_target_view) = color_target_views.next() {
             self.color_target_view = Some(color_target_view);
         }
+
+        self.depth_stencil_view = depth_stencil_view;
     }
 
     pub fn set_shader(&mut self, shader: &'a ShaderWgpu) {
@@ -200,7 +209,7 @@ impl<'a> CommandBufferWgpu<'a> {
                         targets: &[color_target_view.get_texture_format().into()],
                     }),
                     primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: None,
+                    depth_stencil: self.create_depth_stencil_state(),
                     multisample: wgpu::MultisampleState::default(),
                     multiview: None,
                 });
@@ -220,7 +229,7 @@ impl<'a> CommandBufferWgpu<'a> {
                         store: true,
                     },
                 }],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: self.create_render_pass_depth_stencil_attachment(),
             });
 
             // パイプライン
@@ -263,6 +272,41 @@ impl<'a> CommandBufferWgpu<'a> {
                         .as_entire_binding(),
                 }],
             })
+    }
+
+    fn create_depth_stencil_state(&self) -> Option<wgpu::DepthStencilState> {
+        if let Some(_depth_stencil_view) = self.depth_stencil_view {
+            Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::LessEqual,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState {
+                    constant: 2,
+                    slope_scale: 2.0,
+                    clamp: 0.0,
+                },
+            })
+        } else {
+            None
+        }
+    }
+
+    fn create_render_pass_depth_stencil_attachment<'f>(
+        &'f self,
+    ) -> Option<wgpu::RenderPassDepthStencilAttachment<'f>> {
+        if let Some(depth_stencil_view) = self.depth_stencil_view {
+            Some(wgpu::RenderPassDepthStencilAttachment {
+                view: depth_stencil_view.get_texture_view(),
+                depth_ops: Some(wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: true,
+                }),
+                stencil_ops: None,
+            })
+        } else {
+            None
+        }
     }
 }
 

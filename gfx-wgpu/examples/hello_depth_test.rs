@@ -1,10 +1,11 @@
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IndexFormat, PrimitiveTopology,
-    QueueInfo, ShaderInfo, SwapChainInfo, VertexBufferStateInfo, VertexStateInfo,
+    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, ImageFormat, IndexFormat,
+    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, TextureInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
 use sjwgpu_wgpu::{
-    BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
-    VertexStateWgpu,
+    BufferWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
+    SwapChainWgpu, TextureWgpu, VertexStateWgpu,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -20,31 +21,34 @@ struct Vertex {
 
     #[allow(dead_code)]
     pub y: f32,
+
+    #[allow(dead_code)]
+    pub z: f32,
 }
 
 fn main() {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
+
     let device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
-    // シェーダ
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
         .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_triangle.vs"),
+            &include_str!("../../resources/examples/shaders/hello_depth_test.vs"),
             shaderc::ShaderKind::Vertex,
-            "test.glsl",
+            "vs.glsl",
             "main",
             None,
         )
         .unwrap();
     let pixel_shader_binary = compiler
         .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_triangle.fs"),
+            &include_str!("../../resources/examples/shaders/hello_depth_test.fs"),
             shaderc::ShaderKind::Fragment,
-            "test.glsl",
+            "fs.glsl",
             "main",
             None,
         )
@@ -67,13 +71,40 @@ fn main() {
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
-            .set_size(std::mem::size_of::<Vertex>() * 4),
+            .set_size(std::mem::size_of::<Vertex>() * 6),
     );
-    vertex_buffer.map_as_slice_mut(4, |buffer| {
-        buffer[0] = Vertex { x: -0.5, y: 0.5 };
-        buffer[1] = Vertex { x: -0.5, y: -0.5 };
-        buffer[2] = Vertex { x: 0.5, y: -0.5 };
-        buffer[3] = Vertex { x: 0.5, y: 0.5 };
+    vertex_buffer.map_as_slice_mut(6, |buffer| {
+        buffer[0] = Vertex {
+            x: -0.5,
+            y: -0.5,
+            z: 0.5,
+        };
+        buffer[1] = Vertex {
+            x: 0.5,
+            y: -0.5,
+            z: 0.5,
+        };
+        buffer[2] = Vertex {
+            x: 0.0,
+            y: 0.5,
+            z: 0.5,
+        };
+
+        buffer[3] = Vertex {
+            x: -0.3,
+            y: 0.2,
+            z: 1.0,
+        };
+        buffer[4] = Vertex {
+            x: 0.2,
+            y: -0.6,
+            z: 0.0,
+        };
+        buffer[5] = Vertex {
+            x: 0.4,
+            y: 0.6,
+            z: 0.8,
+        };
     });
 
     let mut index_buffer = BufferWgpu::new(
@@ -87,10 +118,21 @@ fn main() {
         buffer[1] = 1;
         buffer[2] = 2;
 
-        buffer[3] = 0;
-        buffer[4] = 2;
-        buffer[5] = 3;
+        buffer[3] = 3;
+        buffer[4] = 4;
+        buffer[5] = 5;
     });
+
+    // 深度バッファ
+    let texture = TextureWgpu::new(
+        &device,
+        &TextureInfo::new()
+            .set_width(640)
+            .set_height(480)
+            .set_image_format(ImageFormat::D32)
+            .set_gpu_access_flags(GpuAccess::DEPTH_STENCIL),
+    );
+    let depth_stencil_view = DepthStencilViewWgpu::new(&device, &texture);
 
     let mut swap_chain = SwapChainWgpu::new(&device, &SwapChainInfo::new());
 
@@ -104,7 +146,10 @@ fn main() {
                     let color_target_view = swap_chain.acquire_next_scan_buffer_view();
 
                     command_buffer.begin();
-                    command_buffer.set_render_targets([color_target_view].into_iter(), None);
+                    command_buffer.set_render_targets(
+                        [color_target_view].into_iter(),
+                        Some(&depth_stencil_view),
+                    );
                     command_buffer.set_shader(&shader);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);
@@ -118,6 +163,7 @@ fn main() {
                     command_buffer.end();
 
                     queue.execute(&command_buffer);
+
                     queue.present(&mut swap_chain);
                     queue.flush();
                     queue.sync();
