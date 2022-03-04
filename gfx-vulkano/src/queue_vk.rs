@@ -19,6 +19,7 @@ pub struct QueueVk {
     command_builder: Option<AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>>,
     swap_chain: Option<Arc<Swapchain<Window>>>,
     swap_chain_acquire_future: Option<SwapchainAcquireFuture<Window>>,
+    image_index: Option<usize>,
 }
 
 impl QueueVk {
@@ -30,6 +31,7 @@ impl QueueVk {
             command_builder: None,
             swap_chain: None,
             swap_chain_acquire_future: None,
+            image_index: None,
         }
     }
 
@@ -53,6 +55,10 @@ impl QueueVk {
         let mut swap_chain = None;
         std::mem::swap(&mut swap_chain, &mut self.swap_chain);
 
+        // SwapChain Image Index
+        let mut image_index = None;
+        std::mem::swap(&mut image_index, &mut self.image_index);
+
         // SwapChain Acquire Future
         let mut swap_chain_acquire_future = None;
         std::mem::swap(
@@ -71,7 +77,7 @@ impl QueueVk {
                     command_builder.unwrap().build().unwrap(),
                 )
                 .unwrap()
-                .then_swapchain_present(self.queue.clone(), swap_chain.unwrap(), 0)
+                .then_swapchain_present(self.queue.clone(), swap_chain.unwrap(), image_index.unwrap())
                 .then_signal_fence_and_flush();
 
             let next_frame = match future {
@@ -123,6 +129,7 @@ impl QueueVk {
 
     pub fn present(&mut self, swap_chain: &mut SwapChainVk) {
         self.swap_chain_acquire_future = Some(swap_chain.unwrap_acquire_future());
+        self.image_index = Some(swap_chain.get_current_index() as usize);
         self.swap_chain = Some(swap_chain.clone_swap_chain());
     }
 

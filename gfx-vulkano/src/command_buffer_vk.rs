@@ -12,7 +12,7 @@ use vulkano::{
         graphics::{
             input_assembly::InputAssemblyState,
             rasterization::{CullMode, FrontFace, RasterizationState},
-            vertex_input::BuffersDefinition,
+            //vertex_input::BuffersDefinition,
             viewport::{Viewport, ViewportState},
         },
         ComputePipeline, GraphicsPipeline, PipelineBindPoint,
@@ -20,9 +20,7 @@ use vulkano::{
     render_pass::{Framebuffer, RenderPass, Subpass},
 };
 
-use crate::{
-    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, ShaderVk, VertexStateVk,
-};
+use crate::{BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, ShaderVk, VertexStateVk};
 
 pub struct CommandBufferVk<'a> {
     device: Arc<Device>,
@@ -270,13 +268,13 @@ impl<'a> CommandBufferVk<'a> {
             .unwrap();
 
         let pipeline = GraphicsPipeline::start()
-            .vertex_input_state(BuffersDefinition::new().vertex::<Float32_32>())
+            //.vertex_input_state(BuffersDefinition::new().vertex::<Float32_32>())
             .vertex_shader(vertex_shader, ())
             .fragment_shader(pixel_shader, ())
             .rasterization_state(
                 RasterizationState::new()
-                    .cull_mode(CullMode::Back)
-                    .front_face(FrontFace::CounterClockwise),
+                    .cull_mode(CullMode::None)
+                    .front_face(FrontFace::Clockwise),
             )
             .render_pass(Subpass::from(render_pass.clone(), 0 /*id*/).unwrap())
             .viewport_state(ViewportState::viewport_dynamic_scissor_irrelevant())
@@ -285,10 +283,10 @@ impl<'a> CommandBufferVk<'a> {
             .unwrap();
 
         // TODO
-        let vertex_buffer = self.get_vertex_buffers()[0]
-            .as_ref()
-            .unwrap()
-            .clone_vertex_buffer_as::<Float32_32>();
+        // let vertex_buffer = self.get_vertex_buffers()[0]
+        //     .as_ref()
+        //     .unwrap()
+        //     .clone_vertex_buffer_as::<Float32_32>();
 
         let framebuffer = {
             let mut builder = Framebuffer::start(render_pass.clone());
@@ -302,7 +300,7 @@ impl<'a> CommandBufferVk<'a> {
         let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
         let viewport = Viewport {
             origin: [0.0, 0.0],
-            dimensions: [0.0, 0.0],
+            dimensions: [640.0, 480.0],
             depth_range: 0.0..1.0,
         };
         let mut builder = AutoCommandBufferBuilder::primary(
@@ -316,8 +314,8 @@ impl<'a> CommandBufferVk<'a> {
             .unwrap()
             .set_viewport(0, [viewport])
             .bind_pipeline_graphics(pipeline)
-            .bind_vertex_buffers(0, vertex_buffer)
-            .draw(10 /*vertex buffers*/, 1, 0, 0)
+            //.bind_vertex_buffers(0, vertex_buffer)
+            .draw(3 /*vertex buffers*/, 1, 0, 0)
             .unwrap()
             .end_render_pass()
             .unwrap();

@@ -3,7 +3,6 @@ use std::sync::Arc;
 use sjgfx_interface::SwapChainInfo;
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
-    render_pass::RenderPass,
     swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture},
 };
 use winit::window::Window;
@@ -13,7 +12,6 @@ use crate::{ColorTargetViewVk, DeviceVk, FenceVk};
 pub struct SwapChainVk {
     swap_chain: Arc<Swapchain<Window>>,
     images: Vec<Arc<SwapchainImage<Window>>>,
-    render_pass: Arc<RenderPass>,
     swap_chain_acquire_future: Option<SwapchainAcquireFuture<Window>>,
     index: i32,
 }
@@ -42,27 +40,9 @@ impl SwapChainVk {
             .build()
             .unwrap();
 
-        let render_pass = vulkano::single_pass_renderpass!(
-            device.clone_device(),
-            attachments: {
-                color: {
-                    load: Clear,
-                    store: Store,
-                    format: swap_chain.format(),
-                    samples: 1,
-                }
-            },
-            pass: {
-                color: [color],
-                depth_stencil: {}
-            }
-        )
-        .unwrap();
-
         Self {
             swap_chain,
             images,
-            render_pass,
             swap_chain_acquire_future: None,
             index: -1,
         }
@@ -135,9 +115,5 @@ impl SwapChainVk {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.swap_chain_acquire_future);
         temp.unwrap()
-    }
-
-    pub fn clone_render_pass(&self) -> Arc<RenderPass> {
-        self.render_pass.clone()
     }
 }
