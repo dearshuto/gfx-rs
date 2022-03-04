@@ -73,7 +73,7 @@ pub fn main() {
         &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
-    let mut vertex_buffer = BufferWgpu::new(
+    let vertex_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
@@ -85,24 +85,30 @@ pub fn main() {
         x[2] = Vertex { x: 0.0, y: 0.5 };
     });
 
-    let mut constant_buffer = BufferWgpu::new(
+    let constant_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)
             .set_size(std::mem::size_of::<ConstantBuffer>()),
     );
-    constant_buffer.map_mut::<ConstantBuffer>(|x| {
-        x.red = 1.0;
-        x.green = 0.5;
-        x.blue = 0.1;
-    });
 
     let mut swap_chain = SwapChainWgpu::new(&device, &SwapChainInfo::new());
 
+    let mut frame = 0;
     let mut should_close = false;
     while !should_close {
         event_loop.run_return(|event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
+
+            frame = (frame + 1) % 360;
+
+            constant_buffer.map_mut(|x: &mut ConstantBuffer| {
+                x.red = ((frame as f32).to_radians().sin() + 1.0) * 0.5;
+                x.green = 0.5;
+                x.blue = 0.1;
+            });
+
+            window.request_redraw();
 
             match event {
                 Event::RedrawRequested(_) => {
