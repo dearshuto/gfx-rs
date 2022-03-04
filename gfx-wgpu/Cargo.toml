@@ -13,3 +13,4 @@ spirv-reflect = "0.2.3"
 [dev-dependencies]
 shaderc = "0.7"
 winit = "0.26.0"
+nalgebra-glm = "0.3"

@@ -61,7 +61,7 @@ impl<'a> BufferWgpu<'a> {
         self.buffer.unmap();
     }
 
-    pub fn map_as_slice_mut<T>(&mut self, size: usize, func: fn(&mut [T])) {
+    pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&mut self, size: usize, func: F) {
         let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
 
         self.device.get_device().poll(wgpu::Maintain::Wait);

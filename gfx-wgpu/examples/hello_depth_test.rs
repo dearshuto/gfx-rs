@@ -113,7 +113,7 @@ fn main() {
             .set_gpu_access_flags(GpuAccess::INDEX_BUFFER)
             .set_size(std::mem::size_of::<u32>() * 6),
     );
-    index_buffer.map_as_slice_mut::<u32>(6, |buffer| {
+    index_buffer.map_as_slice_mut(6, |buffer| {
         buffer[0] = 0;
         buffer[1] = 1;
         buffer[2] = 2;
