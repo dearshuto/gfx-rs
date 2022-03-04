@@ -1,3 +1,5 @@
+extern crate nalgebra_glm as glm;
+
 use std::{thread::sleep, time::Duration};
 
 use sjgfx_interface::{
@@ -22,17 +24,17 @@ struct Vertex {
 
     #[allow(dead_code)]
     pub y: f32,
+
+    #[allow(dead_code)]
+    pub z: f32,
 }
 
 #[repr(C)]
 struct ConstantBuffer {
-    pub red: f32,
-    pub green: f32,
-    pub blue: f32,
-    pub _padding: f32,
+    pv: glm::Mat4x4,
 }
 
-pub fn main() {
+fn main() {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
@@ -43,7 +45,7 @@ pub fn main() {
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
         .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_constant_buffer.vs"),
+            &include_str!("../../resources/examples/shaders/hello_3d.vs"),
             shaderc::ShaderKind::Vertex,
             "vs.glsl",
             "main",
@@ -52,7 +54,7 @@ pub fn main() {
         .unwrap();
     let pixel_shader_binary = compiler
         .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_constant_buffer.fs"),
+            &include_str!("../../resources/examples/shaders/hello_3d.fs"),
             shaderc::ShaderKind::Fragment,
             "fs.glsl",
             "main",
@@ -77,12 +79,40 @@ pub fn main() {
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
-            .set_size(std::mem::size_of::<Vertex>() * 3),
+            .set_size(std::mem::size_of::<Vertex>() * 6),
     );
-    vertex_buffer.map_as_slice_mut(3, |x| {
-        x[0] = Vertex { x: -0.5, y: -0.5 };
-        x[1] = Vertex { x: 0.5, y: -0.5 };
-        x[2] = Vertex { x: 0.0, y: 0.5 };
+    vertex_buffer.map_as_slice_mut(6, |x| {
+        x[0] = Vertex {
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+        };
+        x[1] = Vertex {
+            x: 0.5,
+            y: 0.0,
+            z: 0.0,
+        };
+        x[2] = Vertex {
+            x: 0.0,
+            y: 0.0,
+            z: 0.5,
+        };
+
+        x[3] = Vertex {
+            x: 0.0,
+            y: 0.5,
+            z: 0.0,
+        };
+        x[4] = Vertex {
+            x: 0.0,
+            y: 0.0,
+            z: 0.5,
+        };
+        x[5] = Vertex {
+            x: -0.5,
+            y: 0.0,
+            z: 0.0,
+        };
     });
 
     let mut constant_buffer = BufferWgpu::new(
@@ -92,9 +122,14 @@ pub fn main() {
             .set_size(std::mem::size_of::<ConstantBuffer>()),
     );
     constant_buffer.map_mut::<ConstantBuffer>(|x| {
-        x.red = 1.0;
-        x.green = 0.5;
-        x.blue = 0.1;
+        let position = glm::vec3(1.5, 1.0, 3.0);
+        let at = glm::vec3(0.0, 0.0, 0.0);
+        let up = glm::vec3(0.0, 1.0, 0.0);
+        let view_matrix: glm::Mat4x4 = glm::look_at(&position, &at, &up);
+        let fov = std::f32::consts::PI / 4.0;
+        let projection_matrix: glm::Mat4x4 = glm::perspective_fov(fov, 640.0, 480.0, 0.1, 100.0);
+
+        x.pv = projection_matrix * view_matrix;
     });
 
     let mut swap_chain = SwapChainWgpu::new(&device, &SwapChainInfo::new());
@@ -117,7 +152,7 @@ pub fn main() {
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);
                     command_buffer.draw(
                         PrimitiveTopology::TriangleList,
-                        3, /*coount*/
+                        6, /*coount*/
                         0, /*offset*/
                     );
                     command_buffer.end();

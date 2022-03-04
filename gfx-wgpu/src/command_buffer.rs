@@ -1,7 +1,8 @@
 use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
 
 use crate::{
-    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, VertexStateWgpu, GpuAddressWgpu,
+    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu,
+    VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -275,13 +276,10 @@ impl<'a> CommandBufferWgpu<'a> {
                     layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
                     entries: &[wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: unordered_access_buffer
-                            .get_buffer()
-                            .as_entire_binding(),
+                        resource: unordered_access_buffer.get_buffer().as_entire_binding(),
                     }],
                 })
         } else if let Some(gpu_address) = &self.constant_buffer_addresses[0] {
-            println!("AABBB");
             self.device
                 .get_device()
                 .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -292,13 +290,14 @@ impl<'a> CommandBufferWgpu<'a> {
                         resource: gpu_address.get_binding_resource(),
                     }],
                 })
-        }
-        else {
-            self.device.get_device().create_bind_group(&wgpu::BindGroupDescriptor{
-                label: None,
-                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                entries: &[],
-            })
+        } else {
+            self.device
+                .get_device()
+                .create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: None,
+                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                    entries: &[],
+                })
         }
     }
 
