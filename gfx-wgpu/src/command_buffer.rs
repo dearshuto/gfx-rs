@@ -2,7 +2,7 @@ use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
 
 use crate::{
     BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu,
-    VertexStateWgpu,
+    VertexStateWgpu, SamplerWgpu, TextureWgpu,
 };
 
 struct DrawInfo {
@@ -32,10 +32,16 @@ pub struct CommandBufferWgpu<'a> {
     depth_stencil_view: Option<&'a DepthStencilViewWgpu<'a>>,
 
     shader: Option<&'a ShaderWgpu>,
+
+    // バッファ
     constant_buffers: [Option<&'a BufferWgpu<'a>>; 64],
     constant_buffer_addresses: [Option<GpuAddressWgpu<'a>>; 8],
     unordered_access_buffer: [Option<&'a BufferWgpu<'a>>; 64],
     dispatch_count: Option<(u32, u32, u32)>,
+
+    // テクスチャ
+    textures: [Option<&'a TextureWgpu>; 64],
+    samplers: [Option<&'a SamplerWgpu>; 64],
 
     // Draw
     vertex_buffer: [Option<&'a BufferWgpu<'a>>; 64],
@@ -54,6 +60,11 @@ impl<'a> CommandBufferWgpu<'a> {
             constant_buffer_addresses: [None, None, None, None, None, None, None, None],
             unordered_access_buffer: [None; 64],
             dispatch_count: None,
+
+            // テクスチャ
+            textures: [None; 64],
+            samplers: [None; 64],
+
             vertex_buffer: [None; 64],
             vertex_state: None,
             draw_command: None,
@@ -88,6 +99,14 @@ impl<'a> CommandBufferWgpu<'a> {
 
     pub fn set_constant_buffer_address(&mut self, index: i32, gpu_address: GpuAddressWgpu<'a>) {
         self.constant_buffer_addresses[index as usize] = Some(gpu_address);
+    }
+
+    pub fn set_texture(&mut self, index: i32, texture: &'a TextureWgpu) {
+        self.textures[index as usize] = Some(texture);
+    }
+
+    pub fn set_sampler(&mut self, index: i32, sampler: &'a SamplerWgpu) {
+        self.samplers[index as usize] = Some(sampler);
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {

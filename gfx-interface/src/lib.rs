@@ -5,6 +5,7 @@ mod depth_stencil_view_api;
 mod enums;
 mod fence_api;
 mod queue_api;
+mod sampler_api;
 mod shader_api;
 mod swap_chain_api;
 mod texture_api;
@@ -18,6 +19,7 @@ pub use depth_stencil_view_api::DepthStencilStateInfo;
 pub use enums::{GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology};
 pub use fence_api::FenceInfo;
 pub use queue_api::{IQueue, QueueInfo};
+pub use sampler_api::SamplerInfo;
 pub use shader_api::ShaderInfo;
 pub use swap_chain_api::SwapChainInfo;
 pub use texture_api::{
