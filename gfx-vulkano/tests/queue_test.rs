@@ -2,10 +2,10 @@ use sjgfx_interface::{
     BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice,
     ImageFormat, PrimitiveTopology, QueueInfo, ShaderInfo, TextureInfo, VertexStateInfo,
 };
-use sjgfx_vulkano::{CommandBufferVk, Float32_32};
 use sjgfx_vulkano::{
     BufferVk, ColorTargetViewVk, DeviceVk, QueueVk, ShaderVk, TextureVk, VertexStateVk,
 };
+use sjgfx_vulkano::{CommandBufferVk, Float32_32};
 
 #[test]
 pub fn new_test() {
@@ -54,7 +54,7 @@ pub fn execute_test() {
         queue.sync();
     }
 
-    buffer.map::<[u32; 64]>(|x| {
+    buffer.map(|x: &[u32; 64]| {
         assert_eq!(x[0], 0);
         assert_eq!(x[1], 1);
         assert_eq!(x[2], 2);
@@ -104,7 +104,7 @@ pub fn execute_array_test() {
         queue.sync();
     }
 
-    buffer.map_as_array::<u32>(|x| {
+    buffer.map_as_array(|x: &[u32]| {
         assert_eq!(x[0], 0);
         assert_eq!(x[1], 1);
         assert_eq!(x[2], 2);
