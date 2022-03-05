@@ -1,5 +1,5 @@
 [package]
-name = "sjwgpu-wgpu"
+name = "sjgfx-wgpu"
 edition = "2021"
 version = "0.1.0"
 
