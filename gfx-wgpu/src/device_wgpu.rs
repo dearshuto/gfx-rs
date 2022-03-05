@@ -59,6 +59,10 @@ impl DeviceWgpu {
         &self.device_impl
     }
 
+    pub fn get_device_mut(&mut self) -> &mut wgpu::Device {
+        &mut self.device_impl
+    }
+
     pub fn get_queue(&self) -> &wgpu::Queue {
         &self.queue_impl
     }

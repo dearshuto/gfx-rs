@@ -14,3 +14,5 @@ spirv-reflect = "0.2.3"
 shaderc = "0.7"
 winit = "0.26.0"
 nalgebra-glm = "0.3"
+iced_wgpu = { git = "https://github.com/iced-rs/iced", rev = "ee6f4cb" }
+iced_winit = { git = "https://github.com/iced-rs/iced", rev = "ee6f4cb" }
