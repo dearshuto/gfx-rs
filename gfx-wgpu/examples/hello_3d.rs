@@ -75,7 +75,7 @@ fn main() {
         &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
-    let mut vertex_buffer = BufferWgpu::new(
+    let vertex_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
@@ -115,13 +115,13 @@ fn main() {
         };
     });
 
-    let mut constant_buffer = BufferWgpu::new(
+    let constant_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)
             .set_size(std::mem::size_of::<ConstantBuffer>()),
     );
-    constant_buffer.map_mut::<ConstantBuffer>(|x| {
+    constant_buffer.map_mut(|x: &mut ConstantBuffer| {
         let position = glm::vec3(1.5, 1.0, 3.0);
         let at = glm::vec3(0.0, 0.0, 0.0);
         let up = glm::vec3(0.0, 1.0, 0.0);
