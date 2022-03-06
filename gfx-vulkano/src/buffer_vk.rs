@@ -1,6 +1,9 @@
-use sjgfx_interface::BufferInfo;
+use sjgfx_interface::{BufferInfo, GpuAccess};
 use std::sync::Arc;
-use vulkano::buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer};
+use vulkano::{
+    buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
+    DeviceSize,
+};
 
 use std::any::Any;
 
@@ -12,14 +15,14 @@ pub struct BufferVk {
 }
 
 impl BufferVk {
-    pub fn new<T: 'static>(device: &DeviceVk, _info: &BufferInfo) -> Self
+    pub fn new<T: 'static>(device: &DeviceVk, info: &BufferInfo) -> Self
     where
         CpuAccessibleBuffer<T>: BufferAccess,
     {
         let buffer = unsafe {
             CpuAccessibleBuffer::<T>::uninitialized(
                 device.clone_device(),
-                BufferUsage::all(),
+                Self::convert_usage(&info.get_gpu_access_flags()),
                 true, /*host_cached*/
             )
             .unwrap()
@@ -30,12 +33,13 @@ impl BufferVk {
         }
     }
 
-    pub fn new_as_array<T: Send + Sync + 'static>(device: &DeviceVk, _info: &BufferInfo) -> Self {
+    pub fn new_as_array<T: Send + Sync + 'static>(device: &DeviceVk, info: &BufferInfo) -> Self {
+        let length = info.get_size() / std::mem::size_of::<T>();
         let buffer = unsafe {
             CpuAccessibleBuffer::<[T]>::uninitialized_array(
                 device.clone_device(),
-                128, /*len*/
-                BufferUsage::all(),
+                length as DeviceSize,
+                Self::convert_usage(&info.get_gpu_access_flags()),
                 true, /*host_cached*/
             )
             .unwrap()
@@ -70,15 +74,50 @@ impl BufferVk {
         concrete_buffer
     }
 
-    pub fn map<T: 'static>(&self, func: fn(&T)) {
+    pub fn map<T: 'static, F: Fn(&T)>(&self, func: F) {
         let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<T>>().unwrap();
         let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
     }
 
-    pub fn map_as_array<T: 'static>(&self, func: fn(&[T])) {
+    pub fn map_mut<T: 'static, F: Fn(&mut T)>(&self, func: F) {
+        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<T>>().unwrap();
+        let mut mapped_data = buffer.write().unwrap();
+        func(&mut mapped_data);
+    }
+
+    pub fn map_as_array<T: 'static, F: Fn(&[T])>(&self, func: F) {
         let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<[T]>>().unwrap();
         let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
+    }
+
+    pub fn map_as_array_mut<T: 'static, F: Fn(&mut [T])>(&self, func: F) {
+        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<[T]>>().unwrap();
+        let mut mapped_data = buffer.write().unwrap();
+        func(&mut mapped_data);
+    }
+
+    fn convert_usage(gpu_access: &GpuAccess) -> BufferUsage {
+        let is_uniform_buffer = gpu_access.contains(GpuAccess::CONSTANT_BUFFER);
+        let is_storage_buffer = gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER);
+        let is_index_buffer = gpu_access.contains(GpuAccess::INDEX_BUFFER);
+        let is_vertex_buffer = gpu_access.contains(GpuAccess::VERTEX_BUFFER);
+        let is_indirect_buffer = gpu_access.contains(GpuAccess::INDIRECT_BUFFER);
+
+        let result = BufferUsage {
+            transfer_source: false,
+            transfer_destination: false,
+            uniform_texel_buffer: false,
+            storage_texel_buffer: false,
+            uniform_buffer: is_uniform_buffer,
+            storage_buffer: is_storage_buffer,
+            index_buffer: is_index_buffer,
+            vertex_buffer: is_vertex_buffer,
+            indirect_buffer: is_indirect_buffer,
+            device_address: true,
+        };
+
+        result
     }
 }

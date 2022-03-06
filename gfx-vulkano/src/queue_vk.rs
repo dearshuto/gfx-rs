@@ -77,7 +77,11 @@ impl QueueVk {
                     command_builder.unwrap().build().unwrap(),
                 )
                 .unwrap()
-                .then_swapchain_present(self.queue.clone(), swap_chain.unwrap(), image_index.unwrap())
+                .then_swapchain_present(
+                    self.queue.clone(),
+                    swap_chain.unwrap(),
+                    image_index.unwrap(),
+                )
                 .then_signal_fence_and_flush();
 
             let next_frame = match future {
@@ -153,6 +157,6 @@ vulkano::impl_vertex!(Float32, i_Position);
 #[derive(Default, Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct Float32_32 {
-    i_Position: [f32; 2],
+    pub i_Position: [f32; 2],
 }
 vulkano::impl_vertex!(Float32_32, i_Position);

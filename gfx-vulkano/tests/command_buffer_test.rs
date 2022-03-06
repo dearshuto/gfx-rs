@@ -1,18 +1,21 @@
-use sjgfx_interface::{IDevice, DeviceInfo, CommandBufferInfo, BufferInfo};
-use sjgfx_vulkano::{CommandBufferVk, DeviceVk, BufferVk};
+use sjgfx_interface::{BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice};
+use sjgfx_vulkano::{BufferVk, CommandBufferVk, DeviceVk};
 
 #[test]
-fn new()
-{
+fn new() {
     let device = DeviceVk::new(&DeviceInfo::new());
     let _command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
 }
 
 #[test]
-fn set()
-{
+fn set() {
     let device = DeviceVk::new(&DeviceInfo::new());
-    let buffer = BufferVk::new::<i32>(&device, &BufferInfo::new());
+    let buffer = BufferVk::new::<i32>(
+        &device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)
+            .set_size(std::mem::size_of::<i32>()),
+    );
     let mut command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
 
     command_buffer.begin();

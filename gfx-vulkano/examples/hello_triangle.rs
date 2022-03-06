@@ -1,6 +1,6 @@
 use sjgfx_interface::{
     BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, VertexStateInfo,
+    SwapChainInfo, VertexStateInfo, GpuAccess,
 };
 use sjgfx_vulkano::{
     BufferVk, CommandBufferVk, DeviceVk, FenceVk, Float32_32, QueueVk, ShaderVk, SwapChainVk,
@@ -22,7 +22,7 @@ fn main() {
 
     // シェーダ
     let vertex_shader_source =
-        include_str!("../../resources/examples/shaders/hello_bufferless_triangle.vs");
+        include_str!("../../resources/examples/shaders/hello_triangle.vs");
     let pixel_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.fs");
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
@@ -51,7 +51,12 @@ fn main() {
     );
 
     // 頂点バッファ
-    let _vertex_buffer = BufferVk::new_as_array::<Float32_32>(&device, &BufferInfo::new());
+    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(&device, &BufferInfo::new().set_gpu_access_flags(GpuAccess::VERTEX_BUFFER).set_size(std::mem::size_of::<Float32_32>() * 3));
+    vertex_buffer.map_as_array_mut(|x| {
+        x[0] = Float32_32{ i_Position: [0.0, 0.0] };
+        x[1] = Float32_32{ i_Position: [-0.5, -0.5] };
+        x[2] = Float32_32{ i_Position: [0.5, -0.5] };
+    });
 
     // 頂点ステート
     let vertex_state = {
@@ -83,7 +88,7 @@ fn main() {
                             .set_render_targets([next_scan_buffer_view].into_iter(), None);
                         command_buffer.set_shader(&shader);
                         command_buffer.set_vertex_state(&vertex_state);
-                        //command_buffer.set_vertex_buffer(0, &vertex_buffer);
+                        command_buffer.set_vertex_buffer(0, &vertex_buffer);
                         command_buffer.draw(
                             PrimitiveTopology::TriangleList,
                             3, /*count*/
