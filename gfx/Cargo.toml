@@ -1,0 +1,14 @@
+[package]
+name = "sjgfx"
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+sjgfx-interface = { path = "../gfx-interface" }
+sjgfx-wgpu = { path = "../gfx-wgpu" }
+sjgfx-vulkano = { path = "../gfx-vulkano" }
+
+[dev-dependencies]
+# shaderc = "0.7"
+# winit = "0.26.0"
+# nalgebra-glm = "0.3"

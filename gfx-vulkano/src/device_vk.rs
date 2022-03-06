@@ -108,3 +108,15 @@ impl IDevice for DeviceVk {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use sjgfx_interface::{DeviceInfo, IDevice};
+
+    use crate::DeviceVk;
+
+    #[test]
+    fn new() {
+        let _ = DeviceVk::new(&DeviceInfo::new());
+    }
+}
