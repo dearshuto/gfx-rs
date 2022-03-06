@@ -67,7 +67,7 @@ fn main() {
         &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
-    let mut vertex_buffer = BufferWgpu::new(
+    let vertex_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
@@ -107,7 +107,7 @@ fn main() {
         };
     });
 
-    let mut index_buffer = BufferWgpu::new(
+    let index_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::INDEX_BUFFER)
