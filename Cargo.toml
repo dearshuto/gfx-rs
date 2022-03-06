@@ -3,6 +3,7 @@ resolver = "2"
 members = [
         "gfx",
 #        "sj",
+        "gfx-ash",
         "gfx-interface",
         "gfx-vulkano",
         "gfx-wgpu",
