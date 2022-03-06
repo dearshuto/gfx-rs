@@ -19,7 +19,8 @@ impl DeviceWgpu {
     where
         W: HasRawWindowHandle,
     {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let backend = Self::get_primary_backend_type();
+        let instance = wgpu::Instance::new(backend);
         let surface = unsafe { instance.create_surface(window) };
         let adapter = executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
@@ -69,6 +70,14 @@ impl DeviceWgpu {
 
     pub fn get_surface(&self) -> &wgpu::Surface {
         self.surface_opt.as_ref().unwrap()
+    }
+
+    fn get_primary_backend_type() -> wgpu::Backends {
+        if cfg!(target_os = "windows") {
+            wgpu::Backends::DX12
+        } else {
+            wgpu::Backends::all()
+        }
     }
 }
 
