@@ -1,7 +1,7 @@
 use sjgfx_interface::{
     BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice, QueueInfo, ShaderInfo,
 };
-use sjwgpu_wgpu::{BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu};
+use sjgfx_wgpu::{BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu};
 
 fn main() {
     let device = DeviceWgpu::new(&DeviceInfo::new());

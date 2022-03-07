@@ -6,7 +6,7 @@ use sjgfx_interface::{
     BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology, QueueInfo, ShaderInfo,
     SwapChainInfo, VertexBufferStateInfo, VertexStateInfo,
 };
-use sjwgpu_wgpu::{
+use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
     VertexStateWgpu,
 };

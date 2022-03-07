@@ -3,7 +3,7 @@ use sjgfx_interface::{
     PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, TextureInfo, VertexBufferStateInfo,
     VertexStateInfo,
 };
-use sjwgpu_wgpu::{
+use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
     SwapChainWgpu, TextureWgpu, VertexStateWgpu,
 };
