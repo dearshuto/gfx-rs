@@ -15,7 +15,7 @@ pub use buffer_api::{BufferInfo, IBuffer};
 pub use color_target_view_api::ColorTargetViewInfo;
 pub use command_buffer_api::CommandBufferInfo;
 pub use depth_stencil_view_api::DepthStencilStateInfo;
-pub use enums::{GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology};
+pub use enums::{GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage};
 pub use fence_api::FenceInfo;
 pub use queue_api::{IQueue, QueueInfo};
 pub use shader_api::ShaderInfo;

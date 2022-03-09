@@ -38,3 +38,10 @@ pub enum AttributeFormat {
 pub enum IndexFormat {
     Uint32,
 }
+
+#[derive(Clone)]
+pub enum ShaderStage {
+    Vertex,
+    Pixel,
+    Compute,
+}

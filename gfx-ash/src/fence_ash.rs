@@ -1,0 +1,31 @@
+use crate::DeviceAsh;
+
+pub struct FenceAsh {
+    device: ash::Device,
+    fence: ash::vk::Fence,
+}
+
+impl FenceAsh {
+    pub fn new(device: &DeviceAsh) -> Self {
+        let device = device.get_device();
+
+        let fence_create_info = ash::vk::FenceCreateInfo::builder()
+            .flags(ash::vk::FenceCreateFlags::SIGNALED)
+            .build();
+        let fence = unsafe { device.create_fence(&fence_create_info, None) }.unwrap();
+
+        Self { device, fence }
+    }
+
+    pub fn get_fence(&self) -> ash::vk::Fence {
+        self.fence
+    }
+}
+
+impl Drop for FenceAsh {
+    fn drop(&mut self) {
+        unsafe {
+            self.device.destroy_fence(self.fence, None);
+        }
+    }
+}
