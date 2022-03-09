@@ -42,6 +42,10 @@ impl ShaderAsh {
         self.pipeline_layout
     }
 
+    pub fn get_descriptor_set_layout(&self) -> ash::vk::DescriptorSetLayout {
+        self.descriptor_set_layout
+    }
+
     fn new_as_graphics(device: &DeviceAsh, info: &ShaderInfo) -> Self {
         let (descriptor_set_layout, pipeline_layout) =
             Self::create_descriptor_set_layout_and_pipeline_layout(device, info);
@@ -102,8 +106,8 @@ impl ShaderAsh {
     ) -> (ash::vk::DescriptorSetLayout, ash::vk::PipelineLayout) {
         let compute_layout_table = LayoutTable::new(
             Self::to_ash(ShaderStage::Compute),
-            4, /*uniform_block_count*/
-            0, /*shader_storage_block_count*/
+            0, /*uniform_block_count*/
+            1, /*shader_storage_block_count*/
             0, /*texture_count*/
             0, /*image_count*/
         );
