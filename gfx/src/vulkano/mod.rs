@@ -1,15 +1,33 @@
-use sjgfx_interface::{CommandBufferInfo, DeviceInfo, IDevice, QueueInfo};
-use sjgfx_vulkano::{CommandBufferVk, DeviceVk, QueueVk};
+use raw_window_handle::HasRawWindowHandle;
+use sjgfx_interface::{CommandBufferInfo, DeviceInfo, IDevice, QueueInfo, SwapChainInfo};
+use sjgfx_vulkano::{CommandBufferVk, DeviceVk, QueueVk, SemaphoreVk, ShaderVk, SwapChainVk};
+use winit::event_loop::EventLoop;
 
-use crate::{CommandBufferBuilder, DeviceBuilder, QueueBuilder};
+use crate::{
+    CommandBufferBuilder, DeviceBuilder, QueueBuilder, SemaphoreBuilder, ShaderBuilder,
+    SwapChainBuilder,
+};
 
 pub trait IDeviceBuilderVk {
     fn build(&self) -> DeviceVk;
+    fn build_widh_surface<TWindow: HasRawWindowHandle>(
+        &self,
+        window: &TWindow,
+        event_loop: &EventLoop<()>,
+    ) -> DeviceVk;
 }
 
 impl IDeviceBuilderVk for DeviceBuilder {
     fn build(&self) -> DeviceVk {
         DeviceVk::new(&DeviceInfo::new())
+    }
+
+    fn build_widh_surface<TWindow: HasRawWindowHandle>(
+        &self,
+        _window: &TWindow,
+        event_loop: &EventLoop<()>,
+    ) -> DeviceVk {
+        DeviceVk::new_as_graphics(&DeviceInfo::new(), event_loop)
     }
 }
 
@@ -30,6 +48,34 @@ pub trait ICommandBufferBuilderVk {
 impl ICommandBufferBuilderVk for CommandBufferBuilder {
     fn build<'a>(&self, device: &'a DeviceVk) -> CommandBufferVk<'a> {
         CommandBufferVk::new(device, &CommandBufferInfo::new())
+    }
+}
+
+pub trait ISwapChainBuilderVk {
+    fn build<'a>(&self, device: &DeviceVk) -> SwapChainVk;
+}
+impl ISwapChainBuilderVk for SwapChainBuilder {
+    fn build<'a>(&self, device: &DeviceVk) -> SwapChainVk {
+        SwapChainVk::new(device, &SwapChainInfo::new())
+    }
+}
+
+pub trait IShaderBuilderVk {
+    fn build(&self, device: &DeviceVk) -> ShaderVk;
+}
+impl IShaderBuilderVk for ShaderBuilder {
+    fn build(&self, device: &DeviceVk) -> ShaderVk {
+        let info = self.create_info();
+        ShaderVk::new(device, &info)
+    }
+}
+
+pub trait ISemaphoreBuilderVk {
+    fn build(&self, device: &DeviceVk) -> SemaphoreVk;
+}
+impl ISemaphoreBuilderVk for SemaphoreBuilder {
+    fn build(&self, _device: &DeviceVk) -> SemaphoreVk {
+        SemaphoreVk {}
     }
 }
 
