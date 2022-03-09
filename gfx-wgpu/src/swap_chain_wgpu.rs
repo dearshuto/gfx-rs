@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use sjgfx_interface::SwapChainInfo;
 use wgpu::{SurfaceTexture, TextureFormat};
 
-use crate::{ColorTargetViewWgpu, DeviceWgpu};
+use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
 
 pub struct SwapChainWgpu<'a> {
     device: &'a DeviceWgpu,
@@ -22,7 +22,11 @@ impl<'a> SwapChainWgpu<'a> {
         }
     }
 
-    pub fn acquire_next_scan_buffer_view(&mut self) -> ColorTargetViewWgpu {
+    pub fn acquire_next_scan_buffer_view(
+        &mut self,
+        _semaphore: Option<&mut SemaphoreWgpu>,
+        _fence: Option<&mut FenceWgpu>,
+    ) -> ColorTargetViewWgpu {
         let surface_texture = self.device.get_surface().get_current_texture().unwrap();
         self.next_surface_texture = Some(Arc::new(Mutex::new(Some(surface_texture))));
         ColorTargetViewWgpu::new_from_swap_chain(self)

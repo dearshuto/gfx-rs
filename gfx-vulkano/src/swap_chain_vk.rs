@@ -7,7 +7,7 @@ use vulkano::{
 };
 use winit::window::Window;
 
-use crate::{ColorTargetViewVk, DeviceVk, FenceVk};
+use crate::{ColorTargetViewVk, DeviceVk, FenceVk, SemaphoreVk};
 
 pub struct SwapChainVk {
     swap_chain: Arc<Swapchain<Window>>,
@@ -52,7 +52,11 @@ impl SwapChainVk {
         todo!()
     }
 
-    pub fn acquire_next_scan_buffer_index(&mut self) -> i32 {
+    pub fn acquire_next_scan_buffer_index(
+        &mut self,
+        _semaphore: Option<&mut SemaphoreVk>,
+        _fence: Option<&mut FenceVk>,
+    ) -> i32 {
         let (image_num, _suboptimal, acquire_future) =
             match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
                 Ok(r) => r,
@@ -69,9 +73,12 @@ impl SwapChainVk {
 
     pub fn acquire_next_scan_buffer_view<'b>(
         &mut self,
-        fence: &mut FenceVk,
+        _semaphore: Option<&mut SemaphoreVk>,
+        fence: Option<&mut FenceVk>,
     ) -> ColorTargetViewVk<'b> {
-        fence.cleanup_finished();
+        if let Some(fence) = fence {
+            fence.cleanup_finished();
+        }
 
         let (image_num, _suboptimal, acquire_future) =
             match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
