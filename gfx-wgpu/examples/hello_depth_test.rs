@@ -143,7 +143,7 @@ fn main() {
 
             match event {
                 Event::RedrawRequested(_) => {
-                    let color_target_view = swap_chain.acquire_next_scan_buffer_view();
+                    let color_target_view = swap_chain.acquire_next_scan_buffer_view(None, None);
 
                     command_buffer.begin();
                     command_buffer.set_render_targets(

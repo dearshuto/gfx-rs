@@ -52,7 +52,8 @@ fn main() {
             match event {
                 Event::RedrawRequested(_) => {
                     // スキャンバッファの取得
-                    let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view();
+                    let next_scan_buffer_view =
+                        swap_chain.acquire_next_scan_buffer_view(None, None);
                     //let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(&mut semaphore, &mut display_fence);
 
                     // スキャンバッファの取得を同期 (GPU)
