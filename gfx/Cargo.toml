@@ -13,5 +13,5 @@ raw-window-handle = "0.4.0"
 [dev-dependencies]
 shaderc = "0.7"
 winit = "0.26.0"
-raw-window-handle = "*"
+raw-window-handle = "0.4.0"
 # nalgebra-glm = "0.3"

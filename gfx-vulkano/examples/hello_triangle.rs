@@ -1,6 +1,6 @@
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, VertexStateInfo, GpuAccess,
+    BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, GpuAccess, PrimitiveTopology, QueueInfo,
+    ShaderInfo, SwapChainInfo, VertexStateInfo,
 };
 use sjgfx_vulkano::{
     BufferVk, CommandBufferVk, DeviceVk, FenceVk, Float32_32, QueueVk, ShaderVk, SwapChainVk,
@@ -21,8 +21,7 @@ fn main() {
     let mut fence = FenceVk::new(&device, &FenceInfo::new());
 
     // シェーダ
-    let vertex_shader_source =
-        include_str!("../../resources/examples/shaders/hello_triangle.vs");
+    let vertex_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.vs");
     let pixel_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.fs");
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
@@ -51,11 +50,22 @@ fn main() {
     );
 
     // 頂点バッファ
-    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(&device, &BufferInfo::new().set_gpu_access_flags(GpuAccess::VERTEX_BUFFER).set_size(std::mem::size_of::<Float32_32>() * 3));
+    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(
+        &device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
+            .set_size(std::mem::size_of::<Float32_32>() * 3),
+    );
     vertex_buffer.map_as_array_mut(|x| {
-        x[0] = Float32_32{ i_Position: [0.0, 0.0] };
-        x[1] = Float32_32{ i_Position: [-0.5, -0.5] };
-        x[2] = Float32_32{ i_Position: [0.5, -0.5] };
+        x[0] = Float32_32 {
+            i_Position: [0.0, 0.0],
+        };
+        x[1] = Float32_32 {
+            i_Position: [-0.5, -0.5],
+        };
+        x[2] = Float32_32 {
+            i_Position: [0.5, -0.5],
+        };
     });
 
     // 頂点ステート
@@ -80,7 +90,7 @@ fn main() {
                     queue.sync();
 
                     let next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(&mut fence);
+                        swap_chain.acquire_next_scan_buffer_view(None, Some(&mut fence));
 
                     {
                         command_buffer.begin();
