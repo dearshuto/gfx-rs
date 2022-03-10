@@ -1,5 +1,5 @@
-use sjgfx_interface::{IDevice, DeviceInfo, CommandBufferInfo, BufferInfo, GpuAccess, ShaderInfo};
-use sjwgpu_wgpu::{DeviceWgpu, CommandBufferWgpu, BufferWgpu, ShaderWgpu};
+use sjgfx_interface::{BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice, ShaderInfo};
+use sjgfx_wgpu::{BufferWgpu, CommandBufferWgpu, DeviceWgpu, ShaderWgpu};
 
 #[test]
 fn new() {
@@ -16,7 +16,6 @@ fn begin_end() {
     command_buffer.end();
 }
 
-
 #[test]
 fn simple_compute_command() {
     let device = DeviceWgpu::new(&DeviceInfo::new());
@@ -32,9 +31,17 @@ fn simple_compute_command() {
             None,
         )
         .unwrap();
-    let shader = ShaderWgpu::new(&device, &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()));
+    let shader = ShaderWgpu::new(
+        &device,
+        &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
+    );
 
-    let buffer = BufferWgpu::new(&device, &BufferInfo::new().set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER).set_size(1024));
+    let buffer = BufferWgpu::new(
+        &device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER)
+            .set_size(1024),
+    );
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
     command_buffer.begin();
