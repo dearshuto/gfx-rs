@@ -1,5 +1,7 @@
-use sjgfx_interface::{IDevice, DeviceInfo, QueueInfo, CommandBufferInfo, ShaderInfo, BufferInfo, GpuAccess};
-use sjwgpu_wgpu::{DeviceWgpu, QueueWgpu, CommandBufferWgpu, ShaderWgpu, BufferWgpu};
+use sjgfx_interface::{
+    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice, QueueInfo, ShaderInfo,
+};
+use sjgfx_wgpu::{BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu};
 
 #[test]
 fn new() {
@@ -25,7 +27,12 @@ fn flush_sync() {
 fn execute_compute_command() {
     let device = DeviceWgpu::new(&DeviceInfo::new());
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
-    let buffer = BufferWgpu::new(&device, &BufferInfo::new().set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER).set_size(1024));
+    let buffer = BufferWgpu::new(
+        &device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER)
+            .set_size(1024),
+    );
     // シェーダ
     let shader_source = include_str!("../../resources/tests/simple_compute.glsl");
     let mut compiler = shaderc::Compiler::new().unwrap();
@@ -38,7 +45,10 @@ fn execute_compute_command() {
             None,
         )
         .unwrap();
-    let shader = ShaderWgpu::new(&device, &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()));
+    let shader = ShaderWgpu::new(
+        &device,
+        &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
+    );
 
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
     command_buffer.begin();
