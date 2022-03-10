@@ -1,7 +1,7 @@
 use ash::vk::{Extent2D, Framebuffer, Rect2D};
 use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology};
 
-use crate::{ColorTargetViewAsh, DeviceAsh, ShaderAsh};
+use crate::{ColorTargetViewAsh, DeviceAsh, ShaderAsh, BufferAsh};
 
 pub struct CommandBufferAsh {
     #[allow(dead_code)]
@@ -24,8 +24,17 @@ pub struct CommandBufferAsh {
     pipeline: Option<ash::vk::Pipeline>,
     pipeline_layout: Option<ash::vk::PipelineLayout>,
 
+    // デスクリプタたち
+    descriptor_pool: Option<ash::vk::DescriptorPool>,
+    descriptor_set: Option<ash::vk::DescriptorSet>,
+    descriptor_set_layout: Option<ash::vk::DescriptorSetLayout>,
+    unordered_accss_buffer: [Option<ash::vk::Buffer>; 64],
+
     // 描画コマンド
     vertex_count: Option<u32>,
+
+    // ディスパッチコマンド
+    dispatch_count: Option<(u32, u32, u32)>,
 }
 
 impl CommandBufferAsh {
@@ -65,8 +74,17 @@ impl CommandBufferAsh {
             pipeline: None,
             pipeline_layout: None,
 
+            // デスクリプタたち
+            descriptor_pool: None,
+            descriptor_set: None,
+            descriptor_set_layout: None,
+            unordered_accss_buffer: [None; 64],
+
             // 描画コマンド
             vertex_count: None,
+
+            // ディスパッチコマンド
+            dispatch_count: None
         }
     }
 
@@ -116,6 +134,15 @@ impl CommandBufferAsh {
         }
 
         self.pipeline_layout = Some(shader.get_pipeline_layout());
+        self.descriptor_set_layout = Some(shader.get_descriptor_set_layout());
+    }
+
+    pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferAsh) {
+        self.unordered_accss_buffer[index as usize] = Some(buffer.get_buffer());
+    }
+
+    pub fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch_count = Some((count_x as u32, count_y as u32, count_z as u32));
     }
 
     pub fn draw(
@@ -133,11 +160,18 @@ impl CommandBufferAsh {
 
     fn push_compute_pass_command(&mut self) {
         self.update_pipeline();
+        self.update_descriptor_set();
+
+        // 演算パイプラインの開始
+        unsafe{ self.device.cmd_bind_pipeline(self.command_buffer, ash::vk::PipelineBindPoint::COMPUTE, self.pipeline.unwrap()) }
+
+        // デスクリプタたち
+        unsafe{ self.device.cmd_bind_descriptor_sets(self.command_buffer, ash::vk::PipelineBindPoint::COMPUTE, self.pipeline_layout.unwrap(), 0/*first_set*/, &[self.descriptor_set.unwrap()], &[]); }
 
         // ディスパッチコマンド
-        if false {
+        if let Some((count_x, count_y, count_z)) = self.dispatch_count {
             unsafe {
-                self.device.cmd_dispatch(self.command_buffer, 1, 1, 1);
+                self.device.cmd_dispatch(self.command_buffer, count_x, count_y, count_z);
             }
         }
     }
@@ -288,7 +322,18 @@ impl CommandBufferAsh {
     }
 
     fn create_compute_pipeline(&self) -> ash::vk::Pipeline {
-        let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::builder().build();
+        let shader_entry_name = unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0") };
+        let shader_stage_create_info = 
+            ash::vk::PipelineShaderStageCreateInfo {
+                module: self.compute_shader_module.unwrap(),
+                p_name: shader_entry_name.as_ptr(),
+                stage: ash::vk::ShaderStageFlags::COMPUTE,
+                ..Default::default()
+            };
+        let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::builder()
+            .stage(shader_stage_create_info)
+            .layout(self.pipeline_layout.unwrap())
+            .build();
         let compute_pipeline = unsafe {
             self.device.create_compute_pipelines(
                 ash::vk::PipelineCache::null(),
@@ -412,11 +457,57 @@ impl CommandBufferAsh {
         .unwrap();
         graphics_pipeline[0]
     }
+
+    fn update_descriptor_set(&mut self) {
+        // デスクリプタプールを作る
+        // TODO: キャッシュ
+        let descriptor_sizes = [
+            ash::vk::DescriptorPoolSize {
+                ty: ash::vk::DescriptorType::STORAGE_BUFFER,
+                descriptor_count: 1,
+            },
+        ];
+        let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
+            .pool_sizes(&descriptor_sizes)
+            .max_sets(1);
+        let descriptor_pool = unsafe{ self
+                                      .device
+                                      .create_descriptor_pool(&descriptor_pool_info, None) }
+        .unwrap();
+        self.descriptor_pool = Some(descriptor_pool);
+
+        // デスクリプタセットを作る
+        // TODO: キャッシュ
+        let descriptor_set_layouts = [self.descriptor_set_layout.unwrap()];
+        let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::builder().descriptor_pool(descriptor_pool).set_layouts(&descriptor_set_layouts).build();
+        let descriptor_sets = unsafe{ self.device.allocate_descriptor_sets(&descriptor_set_allocate_info) }.unwrap();
+        self.descriptor_set = Some(descriptor_sets[0]);
+
+        let info = ash::vk::DescriptorBufferInfo::builder().buffer(self.unordered_accss_buffer[0].unwrap()).range(128).build();
+        let write_descriptor_sets = [
+            ash::vk::WriteDescriptorSet {
+                dst_set: descriptor_sets[0],
+                descriptor_count: 1,
+                descriptor_type: ash::vk::DescriptorType::STORAGE_BUFFER,
+                p_buffer_info: &info,
+                ..Default::default()
+            }
+        ];
+        unsafe{ self.device.update_descriptor_sets(&write_descriptor_sets, &[]); }
+    }
 }
 
 impl Drop for CommandBufferAsh {
     fn drop(&mut self) {
-        // unsafe{ self.device.destroy_descriptor_pool(pool, None) };
+        // 解放しなくてもいいっぽい
+        // if let Some(descriptor_set) = self.descriptor_set {
+        //     unsafe{ self.device.free_descriptor_sets(self.descriptor_pool.unwrap(), &[descriptor_set]) }.unwrap();
+        // }
+
+        // デスクリプタプール
+        if let Some(descriptor_pool) = self.descriptor_pool {
+            unsafe{ self.device.destroy_descriptor_pool(descriptor_pool, None) };
+        }
 
         // レンダーパス
         if let Some(render_pass) = self.render_pass {
