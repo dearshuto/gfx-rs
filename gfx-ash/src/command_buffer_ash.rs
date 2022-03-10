@@ -1,7 +1,7 @@
-use ash::vk::{Extent2D, Framebuffer, Rect2D};
-use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology};
+use ash::vk::{Extent2D, Framebuffer, Rect2D, CommandBufferAllocateInfo};
+use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology, ICommandBuffer};
 
-use crate::{ColorTargetViewAsh, DeviceAsh, ShaderAsh, BufferAsh};
+use crate::{ColorTargetViewAsh, DeviceAsh, ShaderAsh, BufferAsh, DepthStencilViewAsh, TextureAsh, VertexStateAsh};
 
 pub struct CommandBufferAsh {
     #[allow(dead_code)]
@@ -529,6 +529,60 @@ impl Drop for CommandBufferAsh {
                 .free_command_buffers(self.command_pool, &[self.command_buffer])
         };
         unsafe { self.device.destroy_command_pool(self.command_pool, None) };
+    }
+}
+
+impl<'a> ICommandBuffer<'a> for CommandBufferAsh {
+    type BufferType = BufferAsh;
+    type ColorTargetViewType = ColorTargetViewAsh;
+    type DepthStencilViewType = DepthStencilViewAsh;
+    type ShaderType = ShaderAsh;
+    type TextureType = TextureAsh;
+    type VertexStateType = VertexStateAsh;
+
+    fn begin(&mut self) {
+        self.begin();
+    }
+
+    fn enf(&mut self) {
+        self.end();
+    }
+
+    fn set_render_targets<TIterator>(&mut self, color_target_views: TIterator, _depth_stencil_view: Option<&'a Self::DepthStencilViewType>)
+        where TIterator: Iterator<Item = Self::ColorTargetViewType> {
+        self.set_render_targets(color_target_views, None);
+    }
+
+    fn set_shader(&mut self, shader: &'a Self::ShaderType) {
+        self.set_shader(shader);
+    }
+
+    fn set_constant_buffer(&mut self, _index: i32, _buffer: &'a Self::BufferType) {
+        todo!()
+    }
+
+    fn set_unordered_access_buffer(&mut self, index: i32, buffer: &'a Self::BufferType) {
+        self.set_unordered_access_buffer(index, buffer);
+    }
+
+    fn set_vertex_buffer(&mut self, _index: i32, _buffer: &'a Self::BufferType) {
+        todo!()
+    }
+
+    fn set_vertex_state(&mut self, _vertex_state: &'a Self::VertexStateType) {
+        todo!()
+    }
+
+    fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch(count_x, count_y, count_z);
+    }
+
+    fn draw(&mut self, primitive_topology:  PrimitiveTopology, vertex_count: i32, vertex_offset: i32) {
+        self.draw(primitive_topology, vertex_count, vertex_offset);
+    }
+
+    fn draw_indexed(&mut self, _primitive_topology: PrimitiveTopology, _index_format: sjgfx_interface::IndexFormat, _index_buffer: &'a Self::BufferType, _index_count: i32, _base_vertex: i32) {
+        todo!()
     }
 }
 

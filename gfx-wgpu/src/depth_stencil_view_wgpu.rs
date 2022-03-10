@@ -1,3 +1,5 @@
+use sjgfx_interface::IDepthStencilView;
+
 use crate::{DeviceWgpu, TextureWgpu};
 
 pub struct DepthStencilViewWgpu<'a> {
@@ -23,5 +25,13 @@ impl<'a> DepthStencilViewWgpu<'a> {
 
     pub fn get_texture_view(&self) -> &wgpu::TextureView {
         &self.texture_view
+    }
+}
+
+impl<'a> IDepthStencilView<'a> for DepthStencilViewWgpu<'a> {
+    type DeviceType = DeviceWgpu;
+
+    fn new(_device: &'a Self::DeviceType, _info: &sjgfx_interface::DepthStencilStateInfo) -> Self {
+        todo!()
     }
 }

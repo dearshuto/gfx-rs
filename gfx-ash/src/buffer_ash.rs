@@ -1,5 +1,5 @@
 use ash::vk::DeviceSize;
-use sjgfx_interface::{BufferInfo, GpuAccess};
+use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 
 use crate::DeviceAsh;
 
@@ -95,7 +95,7 @@ impl BufferAsh {
         unsafe { self.device.unmap_memory(self.device_memory) }
     }
 
-    pub fn map_as_slice<T>(&self, size: usize, func: fn(&[T])) {
+    pub fn map_as_slice<T, F: Fn(&[T])>(&self, size: usize, func: F) {
         let mapped_data_raw = unsafe {
             self.device.map_memory(
                 self.device_memory,
@@ -185,6 +185,38 @@ impl BufferAsh {
         }
 
         result
+    }
+}
+
+impl<'a> IBuffer<'a> for BufferAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(device: &'a Self::DeviceType, info: &BufferInfo) -> Self {
+        BufferAsh::new(device, info)
+    }
+
+    fn map<T, F: Fn(&T)>(&self, func: F) {
+        self.map(func);
+    }
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
+        self.map_mut(func);
+    }
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
+        self.map_as_slice(64, func);
+    }
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn flush_mapped_range(&self, offset: isize, size: usize) {
+        self.flush_mapped_range(offset, size);
+    }
+
+    fn invalidate_mapped_range(&self, offset: isize, size: usize) {
+        self.invalidate_mapped_range(offset, size);
     }
 }
 

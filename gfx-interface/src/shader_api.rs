@@ -1,3 +1,5 @@
+use crate::IDevice;
+
 pub struct ShaderInfo<'a> {
     _compute_shader_binary: Option<&'a [u8]>,
     _vertex_shader_binary: Option<&'a [u8]>,
@@ -48,4 +50,10 @@ impl<'a> ShaderInfo<'a> {
         self._compute_shader_binary = Some(shader_binary);
         self
     }
+}
+
+pub trait IShader<'a> {
+    type DeviceType: IDevice;
+
+    fn new(device: &'a Self::DeviceType, info: &ShaderInfo) -> Self;
 }

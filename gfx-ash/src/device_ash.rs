@@ -1,7 +1,7 @@
 use std::ffi::CStr;
 
 use ash::{extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT, Entry};
-use sjgfx_interface::DeviceInfo;
+use sjgfx_interface::{DeviceInfo, IDevice};
 
 pub struct DeviceAsh {
     #[allow(dead_code)]
@@ -331,6 +331,12 @@ impl DeviceAsh {
             message,
         );
         ash::vk::FALSE
+    }
+}
+
+impl IDevice for DeviceAsh {
+    fn new(info: &DeviceInfo) -> Self {
+        DeviceAsh::new(info)
     }
 }
 

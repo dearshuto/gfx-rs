@@ -1,19 +1,51 @@
-use sjgfx_interface::ShaderInfo;
+use sjgfx_interface::{ShaderInfo, GpuAccess, BufferInfo, IDevice};
 
 pub mod vulkano;
 pub mod wgpu;
 
 pub struct DeviceBuilder;
 impl DeviceBuilder {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new() -> DeviceBuilder {
+        Self{}
     }
+}
+pub trait IDeviceBuilder<TDevice: IDevice> {
+    fn build(&self) -> TDevice;
 }
 
 pub struct QueueBuilder;
 impl QueueBuilder {
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+pub struct BufferBuilder
+{
+    info: BufferInfo,
+}
+
+impl BufferBuilder{
+    pub fn new() -> Self {
+        Self{
+            info: BufferInfo::new(),
+        }
+    }
+
+    pub fn set_size(self, size: usize) -> Self {
+        Self {
+            info: self.info.set_size(size)
+        }
+    }
+
+    pub fn set_gpu_access(self, gpu_access: GpuAccess) -> Self {
+        Self {
+            info: self.info.set_gpu_access_flags(gpu_access)
+        }
+    }
+
+    pub fn get_buffer_info(&self) -> &BufferInfo {
+        &self.info
     }
 }
 

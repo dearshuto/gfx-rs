@@ -1,4 +1,4 @@
-use sjgfx_interface::SwapChainInfo;
+use sjgfx_interface::{SwapChainInfo, ISwapChain};
 
 use crate::{ColorTargetViewAsh, DeviceAsh, FenceAsh, SemaphoreAsh};
 
@@ -155,6 +155,25 @@ impl SwapChainAsh {
 
     pub fn get_image_view(&self, index: usize) -> ash::vk::ImageView {
         self.image_views[index]
+    }
+}
+
+impl<'a> ISwapChain<'a> for SwapChainAsh {
+    type ColorTargetViewType = ColorTargetViewAsh;
+    type DeviceType = DeviceAsh;
+    type SemaphoreType = SemaphoreAsh;
+    type FenceType = FenceAsh;
+
+    fn new(device: &'a Self::DeviceType, info: &SwapChainInfo) -> Self {
+        SwapChainAsh::new(device, info)
+    }
+
+    fn acquire_next_scan_buffer_view(
+        &mut self,
+        semaphore: Option<&mut Self::SemaphoreType>,
+        fence: Option<&mut Self::FenceType>,
+    ) -> Self::ColorTargetViewType {
+        self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }
 

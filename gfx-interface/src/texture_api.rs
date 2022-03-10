@@ -1,4 +1,4 @@
-use crate::{GpuAccess, ImageFormat};
+use crate::{GpuAccess, ImageFormat, IDevice};
 
 pub struct TextureInfo {
     _width: i32,
@@ -352,4 +352,10 @@ impl TextureSubresource {
         self._array_index = array_index;
         self
     }
+}
+
+pub trait ITexture<'a> {
+    type DeviceType: IDevice;
+
+    fn new(device: &'a Self::DeviceType, info: &TextureInfo) -> Self;
 }

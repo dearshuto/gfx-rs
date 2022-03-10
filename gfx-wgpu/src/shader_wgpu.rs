@@ -1,4 +1,4 @@
-use sjgfx_interface::ShaderInfo;
+use sjgfx_interface::{ShaderInfo, IShader};
 use wgpu::ComputePipelineDescriptor;
 
 use crate::DeviceWgpu;
@@ -249,6 +249,14 @@ impl ShaderWgpu {
         } else {
             todo!()
         }
+    }
+}
+
+impl<'a> IShader<'a> for ShaderWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &'a Self::DeviceType, info: &ShaderInfo) -> Self {
+        Self::new(device, info)
     }
 }
 

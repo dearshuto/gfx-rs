@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use sjgfx_interface::SwapChainInfo;
+use sjgfx_interface::{SwapChainInfo, ISwapChain};
 use wgpu::{SurfaceTexture, TextureFormat};
 
 use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
@@ -47,5 +47,24 @@ impl<'a> SwapChainWgpu<'a> {
 
     pub fn clone_next_scan_buffer_surface_texture(&self) -> Arc<Mutex<Option<SurfaceTexture>>> {
         self.next_surface_texture.as_ref().unwrap().clone()
+    }
+}
+
+impl<'a> ISwapChain<'a> for SwapChainWgpu<'a> {
+    type ColorTargetViewType = ColorTargetViewWgpu;
+    type DeviceType = DeviceWgpu;
+    type SemaphoreType = SemaphoreWgpu;
+    type FenceType = FenceWgpu;
+
+    fn new(device: &'a Self::DeviceType, info: &SwapChainInfo) -> Self {
+        SwapChainWgpu::new(device, info)
+    }
+
+    fn acquire_next_scan_buffer_view(
+        &mut self,
+        semaphore: Option<&mut Self::SemaphoreType>,
+        fence: Option<&mut Self::FenceType>,
+    ) -> Self::ColorTargetViewType {
+        SwapChainWgpu::acquire_next_scan_buffer_view(self, semaphore, fence)
     }
 }

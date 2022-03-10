@@ -1,4 +1,4 @@
-use sjgfx_interface::{BufferInfo, GpuAccess};
+use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
@@ -119,5 +119,37 @@ impl BufferVk {
         };
 
         result
+    }
+}
+
+impl<'a> IBuffer<'a> for BufferVk {
+    type DeviceType = DeviceVk;
+
+    fn new(_device: &'a Self::DeviceType, _info: &BufferInfo) -> Self {
+        todo!()
+    }
+
+    fn map<T, F: Fn(&T)>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn flush_mapped_range(&self, _offset: isize, _size: usize) {
+        
+    }
+
+    fn invalidate_mapped_range(&self, _offset: isize, _size: usize) {
+
     }
 }

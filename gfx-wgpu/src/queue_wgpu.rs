@@ -1,4 +1,4 @@
-use sjgfx_interface::{IDevice, IQueue, QueueInfo};
+use sjgfx_interface::{IQueue, QueueInfo};
 
 use crate::{CommandBufferWgpu, DeviceWgpu, FenceWgpu, SwapChainWgpu};
 
@@ -38,8 +38,37 @@ impl<'a> QueueWgpu<'a> {
     pub fn sync(&self) {}
 }
 
-impl<'a> IQueue for QueueWgpu<'a> {
-    fn new<TDevice: IDevice>(_device: &TDevice, _info: &sjgfx_interface::QueueInfo) -> Self {
-        todo!()
+impl<'a> IQueue<'a> for QueueWgpu<'a> {
+    type DeviceType = DeviceWgpu;
+    type CommandBufferType = CommandBufferWgpu<'a>;
+    type FenceType = FenceWgpu;
+    type SwapChainType = SwapChainWgpu<'a>;
+
+    fn new(device: &'a Self::DeviceType, info: &sjgfx_interface::QueueInfo) -> Self {
+        QueueWgpu::new(device, info)
+    }
+
+    fn execute(&mut self, command_buffer: &Self::CommandBufferType) {
+        self.execute(command_buffer);
+    }
+
+    fn execute_with_fence(
+        &mut self,
+        command_buffer: &Self::CommandBufferType,
+        fence: &mut Self::FenceType,
+    ) {
+        self.execute_with_fence(command_buffer, fence);
+    }
+
+    fn present(&self, swap_chain: &mut Self::SwapChainType) {
+        self.present(swap_chain);
+    }
+
+    fn flush(&self) {
+        self.flush();
+    }
+
+    fn sync(&mut self) {
+        QueueWgpu::sync(&self);
     }
 }

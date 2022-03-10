@@ -1,12 +1,20 @@
 [package]
-name = "sjgfx"
+name = "sjgfx-examples"
 edition = "2021"
 version = "0.1.0"
+
+[lib]
+name = "sjgfxex"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hello_triangle"
+path = "hello_triangle/main.rs"
 
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
-sjgfx-vulkano = { path = "../gfx-vulkano" }
+sjgfx = { path = "../gfx" }
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 

@@ -1,19 +1,16 @@
 use raw_window_handle::HasRawWindowHandle;
 use sjgfx_interface::{CommandBufferInfo, DeviceInfo, IDevice, QueueInfo, SwapChainInfo};
 use sjgfx_wgpu::{
-    CommandBufferWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu,
+    CommandBufferWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, BufferWgpu,
 };
 use winit::event_loop::EventLoop;
 
 use crate::{
     CommandBufferBuilder, DeviceBuilder, FenceBuilder, QueueBuilder, SemaphoreBuilder,
-    ShaderBuilder, SwapChainBuilder,
+    ShaderBuilder, SwapChainBuilder, BufferBuilder, IDeviceBuilder,
 };
 
-pub trait IDeviceBuilderWgpu {
-    fn build(&self) -> DeviceWgpu {
-        DeviceWgpu::new(&DeviceInfo::new())
-    }
+pub trait IDeviceBuilderWgpu : IDeviceBuilder<DeviceWgpu> {
     fn build_widh_surface<TWindow: HasRawWindowHandle>(
         &self,
         window: &TWindow,
@@ -21,11 +18,14 @@ pub trait IDeviceBuilderWgpu {
     ) -> DeviceWgpu;
 }
 
-impl IDeviceBuilderWgpu for DeviceBuilder {
+impl IDeviceBuilder<DeviceWgpu> for DeviceBuilder {
     fn build(&self) -> DeviceWgpu {
         DeviceWgpu::new(&DeviceInfo::new())
     }
+}
 
+
+impl IDeviceBuilderWgpu for DeviceBuilder {
     fn build_widh_surface<TWindow: HasRawWindowHandle>(
         &self,
         window: &TWindow,
@@ -52,6 +52,15 @@ pub trait ICommandBufferBuilderWgpu {
 impl ICommandBufferBuilderWgpu for CommandBufferBuilder {
     fn build<'a>(&self, device: &'a DeviceWgpu) -> CommandBufferWgpu<'a> {
         CommandBufferWgpu::new(&device, &CommandBufferInfo::new())
+    }
+}
+
+pub trait IBufferBuilderWgpu {
+    fn build<'a>(&self, device: &'a DeviceWgpu) -> BufferWgpu<'a>;
+}
+impl IBufferBuilderWgpu for BufferBuilder {
+    fn build<'a>(&self, device: &'a DeviceWgpu) -> BufferWgpu<'a> {
+        BufferWgpu::new(device, self.get_buffer_info())
     }
 }
 

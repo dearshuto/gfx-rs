@@ -1,4 +1,4 @@
-use sjgfx_interface::{GpuAccess, ImageFormat, TextureInfo};
+use sjgfx_interface::{GpuAccess, ImageFormat, TextureInfo, ITexture};
 
 use crate::DeviceWgpu;
 
@@ -62,5 +62,13 @@ impl TextureWgpu {
             ImageFormat::R8G8B8A8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::D32 => wgpu::TextureFormat::Depth32Float,
         }
+    }
+}
+
+impl<'a> ITexture<'a> for TextureWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &'a Self::DeviceType, info: &TextureInfo) -> Self {
+        Self::new(device, info)
     }
 }

@@ -1,4 +1,4 @@
-use crate::{GpuAccess, IDevice};
+use crate::GpuAccess;
 
 pub struct BufferInfo {
     size: usize,
@@ -32,6 +32,20 @@ impl BufferInfo {
     }
 }
 
-pub trait IBuffer {
-    fn new<TDevice: IDevice>(device: &TDevice) -> Self;
+pub trait IBuffer<'a> {
+    type DeviceType;
+
+    fn new(device: &'a Self::DeviceType, info: &BufferInfo) -> Self;
+
+    fn map<T, F: Fn(&T)>(&self, func: F);
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, func: F);
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, func: F);
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F);
+
+    fn flush_mapped_range(&self, offset: isize, size: usize);
+
+    fn invalidate_mapped_range(&self, offset: isize, size: usize);
 }

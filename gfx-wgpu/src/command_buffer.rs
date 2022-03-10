@@ -1,8 +1,8 @@
-use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
+use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology, ICommandBuffer};
 
 use crate::{
     BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu,
-    VertexStateWgpu,
+    VertexStateWgpu, TextureWgpu,
 };
 
 struct DrawInfo {
@@ -334,6 +334,65 @@ impl<'a> CommandBufferWgpu<'a> {
         } else {
             None
         }
+    }
+}
+
+impl<'a> ICommandBuffer<'a> for CommandBufferWgpu<'a> {
+    type DeviceType = DeviceWgpu;
+    type BufferType = BufferWgpu<'a>;
+    type ColorTargetViewType = ColorTargetViewWgpu;
+    type DepthStencilViewType = DepthStencilViewWgpu<'a>;
+    type ShaderType = ShaderWgpu;
+    type TextureType = TextureWgpu;
+    type VertexStateType = VertexStateWgpu;
+
+    fn new(device: &'a Self::DeviceType, info: &CommandBufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn begin(&mut self) {
+        CommandBufferWgpu::begin(&self);
+    }
+
+    fn enf(&mut self) {
+        CommandBufferWgpu::end(&self);
+    }
+
+    fn set_render_targets<TIterator>(&mut self, color_target_views: TIterator, depth_stencil_view: Option<&'a Self::DepthStencilViewType>)
+        where TIterator: Iterator<Item = Self::ColorTargetViewType> {
+        self.set_render_targets(color_target_views, depth_stencil_view);
+    }
+
+    fn set_shader(&mut self, shader: &'a Self::ShaderType) {
+        self.set_shader(shader);
+    }
+
+    fn set_constant_buffer(&mut self, index: i32, buffer: &'a Self::BufferType) {
+        self.set_constant_buffer(index, buffer);
+    }
+
+    fn set_unordered_access_buffer(&mut self, index: i32, buffer: &'a Self::BufferType) {
+        self.set_unordered_access_buffer(index, buffer);
+    }
+
+    fn set_vertex_buffer(&mut self, index: i32, buffer: &'a Self::BufferType) {
+        self.set_vertex_buffer(index, buffer);
+    }
+
+    fn set_vertex_state(&mut self, vertex_state: &'a Self::VertexStateType) {
+        self.set_vertex_state(vertex_state);
+    }
+
+    fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch(count_x, count_y, count_z);
+    }
+
+    fn draw(&mut self, primitive_topology:  PrimitiveTopology, vertex_count: i32, vertex_offset: i32) {
+        self.draw(primitive_topology, vertex_count, vertex_offset);
+    }
+
+    fn draw_indexed(&mut self, primitive_topology: PrimitiveTopology, index_format: IndexFormat, index_buffer: &'a Self::BufferType, index_count: i32, base_vertex: i32) {
+        self.draw_indexed(primitive_topology, index_format, index_buffer, index_count, base_vertex);
     }
 }
 

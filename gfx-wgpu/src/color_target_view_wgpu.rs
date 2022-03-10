@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
 
+use sjgfx_interface::IColorTargetView;
 use wgpu::{TextureFormat, TextureViewDescriptor};
 
-use crate::SwapChainWgpu;
+use crate::{SwapChainWgpu, DeviceWgpu};
 
 pub struct ColorTargetViewWgpu {
     _surface_texture: Option<Arc<Mutex<Option<wgpu::SurfaceTexture>>>>,
@@ -34,5 +35,17 @@ impl ColorTargetViewWgpu {
 
     pub fn get_texture_format(&self) -> wgpu::TextureFormat {
         self.texture_format
+    }
+}
+
+impl<'a> IColorTargetView<'a> for ColorTargetViewWgpu{
+    type DeviceType = DeviceWgpu;
+
+    fn new(_device: &'a Self::DeviceType, _info: &sjgfx_interface::ColorTargetViewInfo) -> Self {
+        ColorTargetViewWgpu{
+            _surface_texture: None,
+            scan_buffer_view: None,
+            texture_format: TextureFormat::Astc10x10RgbaUnorm, // 適当
+        }
     }
 }
