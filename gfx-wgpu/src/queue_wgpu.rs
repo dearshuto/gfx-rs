@@ -1,4 +1,4 @@
-use sjgfx_interface::{IDevice, IQueue, QueueInfo};
+use sjgfx_interface::QueueInfo;
 
 use crate::{CommandBufferWgpu, DeviceWgpu, FenceWgpu, SwapChainWgpu};
 
@@ -36,10 +36,4 @@ impl<'a> QueueWgpu<'a> {
     pub fn flush(&self) {}
 
     pub fn sync(&self) {}
-}
-
-impl<'a> IQueue for QueueWgpu<'a> {
-    fn new<TDevice: IDevice>(_device: &TDevice, _info: &sjgfx_interface::QueueInfo) -> Self {
-        todo!()
-    }
 }

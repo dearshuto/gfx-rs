@@ -1,4 +1,4 @@
-use crate::ImageFormat;
+use crate::{IDevice, ImageFormat};
 
 pub struct ColorTargetViewInfo {
     image_format: ImageFormat,
@@ -19,4 +19,10 @@ impl ColorTargetViewInfo {
         self.image_format = image_format;
         self
     }
+}
+
+pub trait IColorTargetView {
+    type DeviceType: IDevice;
+
+    fn new(device: &Self::DeviceType, info: &ColorTargetViewInfo) -> Self;
 }

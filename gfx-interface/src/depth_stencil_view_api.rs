@@ -1,3 +1,5 @@
+use crate::IDevice;
+
 #[derive(Clone, Debug)]
 pub struct DepthStencilStateInfo {
     is_depth_test_enabled: bool,
@@ -29,4 +31,10 @@ impl DepthStencilStateInfo {
         self.is_depth_write_enabled = is_enabled;
         self
     }
+}
+
+pub trait IDepthStencilView {
+    type DeviceType: IDevice;
+
+    fn new(device: &Self::DeviceType, info: &DepthStencilStateInfo) -> Self;
 }
