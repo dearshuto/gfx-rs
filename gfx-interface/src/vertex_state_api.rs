@@ -1,4 +1,4 @@
-use crate::enums::AttributeFormat;
+use crate::{enums::AttributeFormat, IDevice};
 
 #[derive(Clone)]
 pub struct VertexAttributeStateInfo {
@@ -130,4 +130,10 @@ impl VertexStateInfo {
         self._buffer_state_info_array.extend(buffer_state_infos);
         self
     }
+}
+
+pub trait IVertexState {
+    type DeviceType: IDevice;
+
+    fn new(device: &Self::DeviceType, info: &VertexStateInfo) -> Self;
 }
