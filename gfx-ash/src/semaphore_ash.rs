@@ -1,3 +1,5 @@
+use sjgfx_interface::ISemaphore;
+
 use crate::DeviceAsh;
 
 pub struct SemaphoreAsh {
@@ -17,6 +19,14 @@ impl SemaphoreAsh {
 
     pub fn get_semaphore(&self) -> ash::vk::Semaphore {
         self.semaphore
+    }
+}
+
+impl ISemaphore for SemaphoreAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(device: &Self::DeviceType, _info: &sjgfx_interface::SemaphoreInfo) -> Self {
+        Self::new(device)
     }
 }
 

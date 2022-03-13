@@ -1,6 +1,6 @@
-use sjgfx_interface::QueueInfo;
+use sjgfx_interface::{IQueue, QueueInfo};
 
-use crate::{CommandBufferAsh, DeviceAsh, SwapChainAsh};
+use crate::{CommandBufferAsh, DeviceAsh, FenceAsh, SwapChainAsh};
 
 pub struct QueueAsh {
     device: ash::Device,
@@ -52,6 +52,41 @@ impl QueueAsh {
 
     pub fn sync(&self) {
         unsafe { self.device.device_wait_idle() }.unwrap();
+    }
+}
+
+impl IQueue for QueueAsh {
+    type DeviceType = DeviceAsh;
+    type CommandBufferType = CommandBufferAsh;
+    type FenceType = FenceAsh;
+    type SwapChainType = SwapChainAsh;
+
+    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn execute(&mut self, command_buffer: &Self::CommandBufferType) {
+        self.execute(command_buffer);
+    }
+
+    fn execute_with_fence(
+        &mut self,
+        _command_buffer: &Self::CommandBufferType,
+        _fence: &mut Self::FenceType,
+    ) {
+        todo!()
+    }
+
+    fn present(&mut self, swap_chain: &mut Self::SwapChainType) {
+        self.present(swap_chain);
+    }
+
+    fn flush(&mut self) {
+        self.flush();
+    }
+
+    fn sync(&mut self) {
+        QueueAsh::sync(&self);
     }
 }
 

@@ -1,4 +1,6 @@
-use crate::SwapChainAsh;
+use sjgfx_interface::IColorTargetView;
+
+use crate::{DeviceAsh, SwapChainAsh};
 
 pub struct ColorTargetViewAsh {
     format: Option<ash::vk::Format>,
@@ -22,5 +24,13 @@ impl ColorTargetViewAsh {
 
     pub fn get_image_view(&self) -> ash::vk::ImageView {
         self.image_view.unwrap()
+    }
+}
+
+impl IColorTargetView for ColorTargetViewAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(_device: &Self::DeviceType, _info: &sjgfx_interface::ColorTargetViewInfo) -> Self {
+        todo!()
     }
 }
