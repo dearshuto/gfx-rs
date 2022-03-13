@@ -1,3 +1,5 @@
+use sjgfx_interface::IFence;
+
 use crate::DeviceAsh;
 
 pub struct FenceAsh {
@@ -19,6 +21,14 @@ impl FenceAsh {
 
     pub fn get_fence(&self) -> ash::vk::Fence {
         self.fence
+    }
+}
+
+impl IFence for FenceAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(device: &Self::DeviceType, _info: &sjgfx_interface::FenceInfo) -> Self {
+        Self::new(device)
     }
 }
 

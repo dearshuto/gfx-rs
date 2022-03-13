@@ -24,7 +24,7 @@ pub trait ICommandBuffer {
 
     fn begin(&mut self);
 
-    fn enf(&mut self);
+    fn end(&mut self);
 
     fn set_render_targets<TIterator>(
         &mut self,

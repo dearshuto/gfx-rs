@@ -1,5 +1,5 @@
 use ash::vk::DeviceSize;
-use sjgfx_interface::{BufferInfo, GpuAccess};
+use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 
 use crate::DeviceAsh;
 
@@ -95,7 +95,7 @@ impl BufferAsh {
         unsafe { self.device.unmap_memory(self.device_memory) }
     }
 
-    pub fn map_as_slice<T>(&self, size: usize, func: fn(&[T])) {
+    pub fn map_as_slice<T, F: Fn(&[T])>(&self, size: usize, func: F) {
         let mapped_data_raw = unsafe {
             self.device.map_memory(
                 self.device_memory,
@@ -106,7 +106,7 @@ impl BufferAsh {
         }
         .unwrap();
         let mapped_data = mapped_data_raw as *mut T;
-        let mapped_slice_data = unsafe{ std::slice::from_raw_parts::<T>(mapped_data, size) };
+        let mapped_slice_data = unsafe { std::slice::from_raw_parts::<T>(mapped_data, size) };
 
         func(mapped_slice_data);
         unsafe { self.device.unmap_memory(self.device_memory) }
@@ -142,7 +142,15 @@ impl BufferAsh {
     }
 
     pub fn invalidate_mapped_range(&self, offset: isize, size: usize) {
-        unsafe{ self.device.map_memory(self.device_memory, offset as ash::vk::DeviceSize, size as ash::vk::DeviceSize, ash::vk::MemoryMapFlags::empty()) }.unwrap();
+        unsafe {
+            self.device.map_memory(
+                self.device_memory,
+                offset as ash::vk::DeviceSize,
+                size as ash::vk::DeviceSize,
+                ash::vk::MemoryMapFlags::empty(),
+            )
+        }
+        .unwrap();
 
         let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
             .memory(self.device_memory)
@@ -155,7 +163,7 @@ impl BufferAsh {
         }
         .unwrap();
 
-        unsafe{ self.device.unmap_memory(self.device_memory) }
+        unsafe { self.device.unmap_memory(self.device_memory) }
     }
 
     pub fn get_buffer(&self) -> ash::vk::Buffer {
@@ -192,6 +200,38 @@ impl Drop for BufferAsh {
     fn drop(&mut self) {
         unsafe { self.device.free_memory(self.device_memory, None) }
         unsafe { self.device.destroy_buffer(self.buffer, None) }
+    }
+}
+
+impl IBuffer for BufferAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn map<T, F: Fn(&T)>(&self, func: F) {
+        self.map(func);
+    }
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
+        self.map_mut(func);
+    }
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
+        self.map_as_slice(64, func);
+    }
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn flush_mapped_range(&self, offset: isize, size: usize) {
+        self.flush_mapped_range(offset, size);
+    }
+
+    fn invalidate_mapped_range(&self, offset: isize, size: usize) {
+        self.invalidate_mapped_range(offset, size);
     }
 }
 

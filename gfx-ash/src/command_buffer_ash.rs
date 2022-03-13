@@ -1,7 +1,10 @@
 use ash::vk::{Extent2D, Framebuffer, Rect2D};
-use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology};
+use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology};
 
-use crate::{ColorTargetViewAsh, DeviceAsh, ShaderAsh, BufferAsh};
+use crate::{
+    BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, ShaderAsh, TextureAsh,
+    VertexStateAsh,
+};
 
 pub struct CommandBufferAsh {
     #[allow(dead_code)]
@@ -84,7 +87,7 @@ impl CommandBufferAsh {
             vertex_count: None,
 
             // ディスパッチコマンド
-            dispatch_count: None
+            dispatch_count: None,
         }
     }
 
@@ -163,15 +166,31 @@ impl CommandBufferAsh {
         self.update_descriptor_set();
 
         // 演算パイプラインの開始
-        unsafe{ self.device.cmd_bind_pipeline(self.command_buffer, ash::vk::PipelineBindPoint::COMPUTE, self.pipeline.unwrap()) }
+        unsafe {
+            self.device.cmd_bind_pipeline(
+                self.command_buffer,
+                ash::vk::PipelineBindPoint::COMPUTE,
+                self.pipeline.unwrap(),
+            )
+        }
 
         // デスクリプタたち
-        unsafe{ self.device.cmd_bind_descriptor_sets(self.command_buffer, ash::vk::PipelineBindPoint::COMPUTE, self.pipeline_layout.unwrap(), 0/*first_set*/, &[self.descriptor_set.unwrap()], &[]); }
+        unsafe {
+            self.device.cmd_bind_descriptor_sets(
+                self.command_buffer,
+                ash::vk::PipelineBindPoint::COMPUTE,
+                self.pipeline_layout.unwrap(),
+                0, /*first_set*/
+                &[self.descriptor_set.unwrap()],
+                &[],
+            );
+        }
 
         // ディスパッチコマンド
         if let Some((count_x, count_y, count_z)) = self.dispatch_count {
             unsafe {
-                self.device.cmd_dispatch(self.command_buffer, count_x, count_y, count_z);
+                self.device
+                    .cmd_dispatch(self.command_buffer, count_x, count_y, count_z);
             }
         }
     }
@@ -323,13 +342,12 @@ impl CommandBufferAsh {
 
     fn create_compute_pipeline(&self) -> ash::vk::Pipeline {
         let shader_entry_name = unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0") };
-        let shader_stage_create_info = 
-            ash::vk::PipelineShaderStageCreateInfo {
-                module: self.compute_shader_module.unwrap(),
-                p_name: shader_entry_name.as_ptr(),
-                stage: ash::vk::ShaderStageFlags::COMPUTE,
-                ..Default::default()
-            };
+        let shader_stage_create_info = ash::vk::PipelineShaderStageCreateInfo {
+            module: self.compute_shader_module.unwrap(),
+            p_name: shader_entry_name.as_ptr(),
+            stage: ash::vk::ShaderStageFlags::COMPUTE,
+            ..Default::default()
+        };
         let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::builder()
             .stage(shader_stage_create_info)
             .layout(self.pipeline_layout.unwrap())
@@ -461,39 +479,49 @@ impl CommandBufferAsh {
     fn update_descriptor_set(&mut self) {
         // デスクリプタプールを作る
         // TODO: キャッシュ
-        let descriptor_sizes = [
-            ash::vk::DescriptorPoolSize {
-                ty: ash::vk::DescriptorType::STORAGE_BUFFER,
-                descriptor_count: 1,
-            },
-        ];
+        let descriptor_sizes = [ash::vk::DescriptorPoolSize {
+            ty: ash::vk::DescriptorType::STORAGE_BUFFER,
+            descriptor_count: 1,
+        }];
         let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
             .pool_sizes(&descriptor_sizes)
             .max_sets(1);
-        let descriptor_pool = unsafe{ self
-                                      .device
-                                      .create_descriptor_pool(&descriptor_pool_info, None) }
+        let descriptor_pool = unsafe {
+            self.device
+                .create_descriptor_pool(&descriptor_pool_info, None)
+        }
         .unwrap();
         self.descriptor_pool = Some(descriptor_pool);
 
         // デスクリプタセットを作る
         // TODO: キャッシュ
         let descriptor_set_layouts = [self.descriptor_set_layout.unwrap()];
-        let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::builder().descriptor_pool(descriptor_pool).set_layouts(&descriptor_set_layouts).build();
-        let descriptor_sets = unsafe{ self.device.allocate_descriptor_sets(&descriptor_set_allocate_info) }.unwrap();
+        let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::builder()
+            .descriptor_pool(descriptor_pool)
+            .set_layouts(&descriptor_set_layouts)
+            .build();
+        let descriptor_sets = unsafe {
+            self.device
+                .allocate_descriptor_sets(&descriptor_set_allocate_info)
+        }
+        .unwrap();
         self.descriptor_set = Some(descriptor_sets[0]);
 
-        let info = ash::vk::DescriptorBufferInfo::builder().buffer(self.unordered_accss_buffer[0].unwrap()).range(128).build();
-        let write_descriptor_sets = [
-            ash::vk::WriteDescriptorSet {
-                dst_set: descriptor_sets[0],
-                descriptor_count: 1,
-                descriptor_type: ash::vk::DescriptorType::STORAGE_BUFFER,
-                p_buffer_info: &info,
-                ..Default::default()
-            }
-        ];
-        unsafe{ self.device.update_descriptor_sets(&write_descriptor_sets, &[]); }
+        let info = ash::vk::DescriptorBufferInfo::builder()
+            .buffer(self.unordered_accss_buffer[0].unwrap())
+            .range(128)
+            .build();
+        let write_descriptor_sets = [ash::vk::WriteDescriptorSet {
+            dst_set: descriptor_sets[0],
+            descriptor_count: 1,
+            descriptor_type: ash::vk::DescriptorType::STORAGE_BUFFER,
+            p_buffer_info: &info,
+            ..Default::default()
+        }];
+        unsafe {
+            self.device
+                .update_descriptor_sets(&write_descriptor_sets, &[]);
+        }
     }
 }
 
@@ -506,7 +534,7 @@ impl Drop for CommandBufferAsh {
 
         // デスクリプタプール
         if let Some(descriptor_pool) = self.descriptor_pool {
-            unsafe{ self.device.destroy_descriptor_pool(descriptor_pool, None) };
+            unsafe { self.device.destroy_descriptor_pool(descriptor_pool, None) };
         }
 
         // レンダーパス
@@ -529,6 +557,82 @@ impl Drop for CommandBufferAsh {
                 .free_command_buffers(self.command_pool, &[self.command_buffer])
         };
         unsafe { self.device.destroy_command_pool(self.command_pool, None) };
+    }
+}
+
+impl ICommandBuffer for CommandBufferAsh {
+    type DeviceType = DeviceAsh;
+    type BufferType = BufferAsh;
+    type ColorTargetViewType = ColorTargetViewAsh;
+    type DepthStencilViewType = DepthStencilViewAsh;
+    type ShaderType = ShaderAsh;
+    type TextureType = TextureAsh;
+    type VertexStateType = VertexStateAsh;
+
+    fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn begin(&mut self) {
+        self.begin();
+    }
+
+    fn end(&mut self) {
+        self.end();
+    }
+
+    fn set_render_targets<TIterator>(
+        &mut self,
+        color_target_views: TIterator,
+        _depth_stencil_view: Option<&Self::DepthStencilViewType>,
+    ) where
+        TIterator: Iterator<Item = Self::ColorTargetViewType>,
+    {
+        self.set_render_targets(color_target_views, None);
+    }
+
+    fn set_shader(&mut self, shader: &Self::ShaderType) {
+        self.set_shader(shader);
+    }
+
+    fn set_constant_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
+        todo!()
+    }
+
+    fn set_unordered_access_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_unordered_access_buffer(index, buffer);
+    }
+
+    fn set_vertex_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
+        todo!()
+    }
+
+    fn set_vertex_state(&mut self, _vertex_state: &Self::VertexStateType) {
+        todo!()
+    }
+
+    fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch(count_x, count_y, count_z);
+    }
+
+    fn draw(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+    ) {
+        self.draw(primitive_topology, vertex_count, vertex_offset);
+    }
+
+    fn draw_indexed(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: sjgfx_interface::IndexFormat,
+        _index_buffer: &Self::BufferType,
+        _index_count: i32,
+        _base_vertex: i32,
+    ) {
+        todo!()
     }
 }
 

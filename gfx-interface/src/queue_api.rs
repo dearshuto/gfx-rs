@@ -24,9 +24,9 @@ pub trait IQueue {
         fence: &mut Self::FenceType,
     );
 
-    fn present(&self, swap_chain: &mut Self::SwapChainType);
+    fn present(&mut self, swap_chain: &mut Self::SwapChainType);
 
-    fn flush(&self);
+    fn flush(&mut self);
 
     fn sync(&mut self);
 }

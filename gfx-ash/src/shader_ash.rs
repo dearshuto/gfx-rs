@@ -1,6 +1,6 @@
 use std::ops::Index;
 
-use sjgfx_interface::{GpuAccess, ShaderInfo, ShaderStage};
+use sjgfx_interface::{GpuAccess, IShader, ShaderInfo, ShaderStage};
 
 use crate::DeviceAsh;
 
@@ -141,6 +141,14 @@ impl ShaderAsh {
             ShaderStage::Pixel => ash::vk::ShaderStageFlags::FRAGMENT,
             ShaderStage::Compute => ash::vk::ShaderStageFlags::COMPUTE,
         }
+    }
+}
+
+impl IShader for ShaderAsh {
+    type DeviceType = DeviceAsh;
+
+    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
+        Self::new(device, info)
     }
 }
 

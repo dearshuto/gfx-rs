@@ -1,7 +1,7 @@
 use std::ffi::CStr;
 
 use ash::{extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT, Entry};
-use sjgfx_interface::DeviceInfo;
+use sjgfx_interface::{DeviceInfo, IDevice};
 
 pub struct DeviceAsh {
     #[allow(dead_code)]
@@ -349,6 +349,19 @@ impl Drop for DeviceAsh {
                 .destroy_debug_utils_messenger(self.debug_utils_messanger, None);
             self.instance.destroy_instance(None);
         }
+    }
+}
+
+impl IDevice for DeviceAsh {
+    fn new(info: &DeviceInfo) -> Self {
+        Self::new(info)
+    }
+
+    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow) -> Self
+    where
+        TWindow: raw_window_handle::HasRawWindowHandle,
+    {
+        Self::new_with_surface(info, window)
     }
 }
 
