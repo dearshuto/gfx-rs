@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::ShaderInfo;
+use sjgfx_interface::{IShader, ShaderInfo};
 use vulkano::shader::ShaderModule;
 
 use crate::DeviceVk;
@@ -65,8 +65,16 @@ impl ShaderVk {
         self.compute_shader.as_ref().unwrap()
     }
 
+    pub fn acquire_compute_shader_module(&self) -> Option<Arc<ShaderModule>> {
+        self.compute_shader.clone()
+    }
+
     pub fn clone_compute_shader(&self) -> Arc<ShaderModule> {
         self.compute_shader.as_ref().unwrap().clone()
+    }
+
+    pub fn acquire_vertex_shader_module(&self) -> Option<Arc<ShaderModule>> {
+        self.vertex_shader.clone()
     }
 
     pub fn get_vertex_shader(&self) -> &ShaderModule {
@@ -77,11 +85,23 @@ impl ShaderVk {
         self.vertex_shader.as_ref().unwrap().clone()
     }
 
+    pub fn acquire_pixel_shader_module(&self) -> Option<Arc<ShaderModule>> {
+        self.pixel_shader.clone()
+    }
+
     pub fn get_pixel_shader(&self) -> &ShaderModule {
         self.pixel_shader.as_ref().unwrap()
     }
 
     pub fn clone_pixel_shader(&self) -> Arc<ShaderModule> {
         self.pixel_shader.as_ref().unwrap().clone()
+    }
+}
+
+impl IShader for ShaderVk {
+    type DeviceType = DeviceVk;
+
+    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
+        Self::new(device, info)
     }
 }

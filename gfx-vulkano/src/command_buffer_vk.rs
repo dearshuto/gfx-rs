@@ -1,8 +1,13 @@
+use core::panic;
 use std::sync::Arc;
 
-use sjgfx_interface::{CommandBufferInfo, PrimitiveTopology};
+use sjgfx_interface::{
+    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, VertexAttributeStateInfo,
+    VertexBufferStateInfo,
+};
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::Pipeline;
+use vulkano::shader::ShaderModule;
 use vulkano::{
     command_buffer::{AutoCommandBufferBuilder, PrimaryAutoCommandBuffer, SubpassContents},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
@@ -21,26 +26,33 @@ use vulkano::{
     render_pass::{Framebuffer, RenderPass, Subpass},
 };
 
+use crate::buffer_vk::BufferView;
 use crate::{
-    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, ShaderVk, VertexStateVk,
+    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, ShaderVk, TextureVk,
+    VertexStateVk,
 };
 
-pub struct CommandBufferVk<'a> {
+pub struct CommandBufferVk {
     device: Arc<Device>,
     queue: Arc<Queue>,
-    shader: Option<&'a ShaderVk>,
-    depth_stencil_view: Option<&'a DepthStencilViewVk>,
+
+    // シェーダ
+    compute_shader_module: Option<Arc<ShaderModule>>,
+    vertex_shader_module: Option<Arc<ShaderModule>>,
+    pixel_shader_module: Option<Arc<ShaderModule>>,
 
     // RenderTargets
     render_targets: Option<Vec<Arc<dyn ImageViewAbstract>>>,
     render_target_format: Option<Format>,
+    depth_stencil_view: Option<()>,
 
     // Buffers
-    constant_buffers: [Option<&'a BufferVk>; 64],
-    vertex_buffers: [Option<&'a BufferVk>; 64],
+    constant_buffers: [Option<BufferView>; 8],
+    vertex_buffers: [Option<BufferView>; 8],
 
     // RenderState
-    vertex_state: Option<&'a VertexStateVk>,
+    attribute_state_infos: Option<Vec<VertexAttributeStateInfo>>,
+    buffer_state_infos: Option<Vec<VertexBufferStateInfo>>,
 
     dispatch_count: Option<(u32, u32, u32)>,
     primitive_topology: Option<PrimitiveTopology>,
@@ -49,18 +61,27 @@ pub struct CommandBufferVk<'a> {
     render_pass: Option<Arc<RenderPass>>,
 }
 
-impl<'a> CommandBufferVk<'a> {
-    pub fn new(device: &'a DeviceVk, _info: &CommandBufferInfo) -> Self {
+impl CommandBufferVk {
+    pub fn new(device: &DeviceVk, _info: &CommandBufferInfo) -> Self {
         Self {
             device: device.clone_device(),
             queue: device.clone_queue(),
-            shader: None,
+
+            // シェーダ
+            compute_shader_module: None,
+            vertex_shader_module: None,
+            pixel_shader_module: None,
+
             depth_stencil_view: None,
             render_targets: None,
             render_target_format: None,
-            constant_buffers: [None; 64],
-            vertex_buffers: [None; 64],
-            vertex_state: None,
+            constant_buffers: [None, None, None, None, None, None, None, None],
+            vertex_buffers: [None, None, None, None, None, None, None, None],
+
+            // RenderState
+            attribute_state_infos: None,
+            buffer_state_infos: None,
+
             dispatch_count: None,
             render_pass: None,
             primitive_topology: None,
@@ -73,12 +94,12 @@ impl<'a> CommandBufferVk<'a> {
 
     pub fn end(&mut self) {}
 
-    pub fn set_render_targets_ref<TIterator>(
+    pub fn set_render_targets_ref<'a, TIterator>(
         &mut self,
         color_target_views: TIterator,
-        depth_stencil_view: Option<&'a DepthStencilViewVk>,
+        _depth_stencil_view: Option<&DepthStencilViewVk>,
     ) where
-        TIterator: Iterator<Item = &'a ColorTargetViewVk<'a>>,
+        TIterator: Iterator<Item = &'a ColorTargetViewVk>,
     {
         // カラーターゲットをセット
         let mut render_targets = Vec::new();
@@ -89,15 +110,15 @@ impl<'a> CommandBufferVk<'a> {
         self.render_targets = Some(render_targets);
 
         // TODO: 深度ステンシル
-        self.depth_stencil_view = depth_stencil_view;
+        self.depth_stencil_view = None;
     }
 
     pub fn set_render_targets<TIterator>(
         &mut self,
         color_target_views: TIterator,
-        depth_stencil_view: Option<&'a DepthStencilViewVk>,
+        _depth_stencil_view: Option<&DepthStencilViewVk>,
     ) where
-        TIterator: Iterator<Item = ColorTargetViewVk<'a>>,
+        TIterator: Iterator<Item = ColorTargetViewVk>,
     {
         // カラーターゲットをセット
         let mut render_targets = Vec::new();
@@ -108,23 +129,22 @@ impl<'a> CommandBufferVk<'a> {
         self.render_targets = Some(render_targets);
 
         // TODO: 深度ステンシル
-        self.depth_stencil_view = depth_stencil_view;
+        self.depth_stencil_view = None;
     }
 
-    pub fn set_shader(&mut self, shader: &'a ShaderVk) {
-        self.shader = Some(shader);
+    pub fn set_shader(&mut self, shader: &ShaderVk) {
+        self.compute_shader_module = shader.acquire_compute_shader_module();
+        self.vertex_shader_module = shader.acquire_vertex_shader_module();
+        self.pixel_shader_module = shader.acquire_pixel_shader_module();
     }
 
-    pub fn set_constant_buffer(&mut self, slot: i32, buffer: &'a BufferVk) {
-        self.constant_buffers[slot as usize] = Some(buffer);
+    pub fn set_constant_buffer(&mut self, slot: i32, buffer: &BufferVk) {
+        self.constant_buffers[slot as usize] = Some(buffer.view());
     }
 
-    pub fn set_vertex_state(&mut self, vertex_state: &'a VertexStateVk) {
-        self.vertex_state = Some(vertex_state);
-    }
-
-    pub fn get_vertex_state(&self) -> &'a VertexStateVk {
-        self.vertex_state.as_ref().unwrap()
+    pub fn set_vertex_state(&mut self, vertex_state: &VertexStateVk) {
+        self.attribute_state_infos = Some(vertex_state.clone_attribute_state_infos().to_vec());
+        self.buffer_state_infos = Some(vertex_state.clone_buffer_state_infos().to_vec());
     }
 
     pub fn draw(
@@ -150,24 +170,8 @@ impl<'a> CommandBufferVk<'a> {
         self.dispatch_count = Some((x, y, z));
     }
 
-    pub fn get_depth_stencil_state(&self) -> &Option<&DepthStencilViewVk> {
-        &self.depth_stencil_view
-    }
-
-    pub fn get_shader(&self) -> &'a ShaderVk {
-        self.shader.as_ref().unwrap()
-    }
-
-    pub fn get_constant_buffers(&self) -> &[Option<&BufferVk>] {
-        &self.constant_buffers
-    }
-
-    pub fn set_vertex_buffer(&mut self, index: i32, vertex_buffer: &'a BufferVk) {
-        self.vertex_buffers[index as usize] = Some(vertex_buffer);
-    }
-
-    pub fn get_vertex_buffers(&self) -> &[Option<&BufferVk>] {
-        &self.vertex_buffers
+    pub fn set_vertex_buffer(&mut self, index: i32, vertex_buffer: &BufferVk) {
+        self.vertex_buffers[index as usize] = Some(vertex_buffer.view());
     }
 
     pub fn get_dispatch_count(&self) -> (u32, u32, u32) {
@@ -181,19 +185,17 @@ impl<'a> CommandBufferVk<'a> {
     pub(crate) fn build_command_builder(
         &self,
     ) -> AutoCommandBufferBuilder<PrimaryAutoCommandBuffer> {
-        if let Some(shader) = self.shader {
-            if shader.is_compute() {
-                self.build_compute_command()
-            } else {
-                self.build_graphics_command()
-            }
+        if self.compute_shader_module.is_some() {
+            self.build_compute_command()
+        } else if self.vertex_shader_module.is_some() {
+            self.build_graphics_command()
         } else {
-            panic!();
+            panic!()
         }
     }
 
     fn build_compute_command(&self) -> AutoCommandBufferBuilder<PrimaryAutoCommandBuffer> {
-        let shader = self.get_shader().clone_shader();
+        let shader = self.compute_shader_module.as_ref().unwrap().clone();
         let pipeline = ComputePipeline::new(
             self.device.clone(),
             shader.entry_point("main").unwrap(),
@@ -206,15 +208,12 @@ impl<'a> CommandBufferVk<'a> {
         let layout = pipeline.layout().clone();
         let descriptor_set_layout = layout.descriptor_set_layouts().get(0).unwrap();
 
-        let constant_buffer = self.get_constant_buffers()[0]
-            .as_ref()
-            .unwrap()
-            .clone_buffer();
+        let constant_buffer = self.constant_buffers[0].as_ref().unwrap().clone();
         let set = PersistentDescriptorSet::new(
             descriptor_set_layout.clone(),
             [WriteDescriptorSet::buffer(
                 0, /*binding*/
-                constant_buffer,
+                constant_buffer.clone_buffer(),
             )],
         )
         .unwrap();
@@ -260,13 +259,15 @@ impl<'a> CommandBufferVk<'a> {
         .unwrap();
 
         let vertex_shader = self
-            .get_shader()
-            .get_vertex_shader()
+            .vertex_shader_module
+            .as_ref()
+            .unwrap()
             .entry_point("main")
             .unwrap();
         let pixel_shader = self
-            .get_shader()
-            .get_pixel_shader()
+            .pixel_shader_module
+            .as_ref()
+            .unwrap()
             .entry_point("main")
             .unwrap();
 
@@ -285,7 +286,7 @@ impl<'a> CommandBufferVk<'a> {
             .build(self.device.clone())
             .unwrap();
 
-        let vertex_buffer = self.get_vertex_buffers()[0]
+        let vertex_buffer = self.vertex_buffers[0]
             .as_ref()
             .unwrap()
             .clone_vertex_buffer_as::<Float32_32>();
@@ -322,6 +323,82 @@ impl<'a> CommandBufferVk<'a> {
             .end_render_pass()
             .unwrap();
         builder
+    }
+}
+
+impl ICommandBuffer for CommandBufferVk {
+    type DeviceType = DeviceVk;
+    type BufferType = BufferVk;
+    type ColorTargetViewType = ColorTargetViewVk;
+    type DepthStencilViewType = DepthStencilViewVk;
+    type ShaderType = ShaderVk;
+    type TextureType = TextureVk;
+    type VertexStateType = VertexStateVk;
+
+    fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn begin(&mut self) {
+        self.begin();
+    }
+
+    fn end(&mut self) {
+        self.end();
+    }
+
+    fn set_render_targets<TIterator>(
+        &mut self,
+        color_target_views: TIterator,
+        depth_stencil_view: Option<&Self::DepthStencilViewType>,
+    ) where
+        TIterator: Iterator<Item = Self::ColorTargetViewType>,
+    {
+        self.set_render_targets(color_target_views, depth_stencil_view)
+    }
+
+    fn set_shader(&mut self, shader: &Self::ShaderType) {
+        self.set_shader(shader);
+    }
+
+    fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_constant_buffer(index, buffer);
+    }
+
+    fn set_unordered_access_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
+        todo!()
+    }
+
+    fn set_vertex_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_vertex_buffer(index, buffer);
+    }
+
+    fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType) {
+        self.set_vertex_state(vertex_state);
+    }
+
+    fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch(count_x as u32, count_y as u32, count_z as u32);
+    }
+
+    fn draw(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+    ) {
+        self.draw(primitive_topology, vertex_count, vertex_offset);
+    }
+
+    fn draw_indexed(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: sjgfx_interface::IndexFormat,
+        _index_buffer: &Self::BufferType,
+        _index_count: i32,
+        _base_vertex: i32,
+    ) {
+        todo!()
     }
 }
 

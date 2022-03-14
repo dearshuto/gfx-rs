@@ -8,6 +8,7 @@ sjgfx-interface = { path = "../gfx-interface" }
 vulkano = "0.28.0"
 vulkano-win = "0.28.0"
 winit = "0.26"
+raw-window-handle = "0.4.0"
 
 [dev-dependencies]
 shaderc = "0.7"

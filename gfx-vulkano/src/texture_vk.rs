@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::TextureInfo;
+use sjgfx_interface::{ITexture, TextureInfo};
 use vulkano::{
     format::Format,
     image::{view::ImageView, AttachmentImage, ImageUsage, ImmutableImage},
@@ -40,5 +40,13 @@ impl TextureVk {
 
     pub fn clone_attachment_image(&self) -> Arc<ImageView<AttachmentImage>> {
         self.image_view.as_ref().unwrap().clone()
+    }
+}
+
+impl ITexture for TextureVk {
+    type DeviceType = DeviceVk;
+
+    fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self {
+        Self::new(device, info)
     }
 }

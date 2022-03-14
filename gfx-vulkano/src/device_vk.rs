@@ -107,6 +107,17 @@ impl IDevice for DeviceVk {
             surface: None,
         }
     }
+
+    fn new_with_surface<TWindow>(
+        info: &DeviceInfo,
+        _window: &TWindow,
+        event_loop: &EventLoop<()>,
+    ) -> Self
+    where
+        TWindow: raw_window_handle::HasRawWindowHandle,
+    {
+        Self::new_as_graphics(info, event_loop)
+    }
 }
 
 #[cfg(test)]

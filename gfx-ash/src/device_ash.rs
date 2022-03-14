@@ -2,6 +2,7 @@ use std::ffi::CStr;
 
 use ash::{extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT, Entry};
 use sjgfx_interface::{DeviceInfo, IDevice};
+use winit::event_loop::EventLoop;
 
 pub struct DeviceAsh {
     #[allow(dead_code)]
@@ -357,7 +358,7 @@ impl IDevice for DeviceAsh {
         Self::new(info)
     }
 
-    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow) -> Self
+    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow, _event_loop: &EventLoop<()>) -> Self
     where
         TWindow: raw_window_handle::HasRawWindowHandle,
     {

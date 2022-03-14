@@ -4,6 +4,7 @@ use futures::executor;
 use raw_window_handle::HasRawWindowHandle;
 use sjgfx_interface::{DeviceInfo, IDevice};
 use wgpu::{Adapter, Surface};
+use winit::event_loop::EventLoop;
 
 pub struct DeviceWgpu {
     device: Arc<wgpu::Device>,
@@ -123,7 +124,7 @@ impl IDevice for DeviceWgpu {
         }
     }
 
-    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow) -> Self
+    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow, _event_loop: &EventLoop<()>) -> Self
     where
         TWindow: raw_window_handle::HasRawWindowHandle,
     {

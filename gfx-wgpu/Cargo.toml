@@ -9,6 +9,7 @@ wgpu = {version = "0.12.0", features = ["spirv"]}
 futures = "0.3.1"
 raw-window-handle = "0.4.0"
 spirv-reflect = "0.2.3"
+winit = "0.26.0"
 
 [dev-dependencies]
 shaderc = "0.7"

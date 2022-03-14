@@ -1,5 +1,5 @@
-use crate::{CommandBufferVk, DeviceVk, SwapChainVk};
-use sjgfx_interface::QueueInfo;
+use crate::{CommandBufferVk, DeviceVk, FenceVk, SwapChainVk};
+use sjgfx_interface::{IQueue, QueueInfo};
 use std::sync::Arc;
 use vulkano::command_buffer::AutoCommandBufferBuilder;
 use vulkano::device::Queue;
@@ -142,6 +142,41 @@ impl QueueVk {
         if let Some(future) = self.previous_frame_end.as_mut() {
             future.cleanup_finished();
         }
+    }
+}
+
+impl IQueue for QueueVk {
+    type DeviceType = DeviceVk;
+    type CommandBufferType = CommandBufferVk;
+    type FenceType = FenceVk;
+    type SwapChainType = SwapChainVk;
+
+    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn execute(&mut self, command_buffer: &Self::CommandBufferType) {
+        self.execute(command_buffer);
+    }
+
+    fn execute_with_fence(
+        &mut self,
+        _command_buffer: &Self::CommandBufferType,
+        _fence: &mut Self::FenceType,
+    ) {
+        todo!()
+    }
+
+    fn present(&mut self, swap_chain: &mut Self::SwapChainType) {
+        self.present(swap_chain);
+    }
+
+    fn flush(&mut self) {
+        self.flush();
+    }
+
+    fn sync(&mut self) {
+        self.sync();
     }
 }
 
