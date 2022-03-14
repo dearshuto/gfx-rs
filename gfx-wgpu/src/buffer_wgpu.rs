@@ -1,32 +1,42 @@
-use sjgfx_interface::{BufferInfo, GpuAccess};
+use std::sync::Arc;
+
+use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 
 use crate::{DeviceWgpu, GpuAddressWgpu};
 
-pub struct BufferWgpu<'a> {
-    device: &'a DeviceWgpu,
-    buffer: wgpu::Buffer,
+pub struct BufferWgpu {
+    device: Arc<wgpu::Device>,
+    buffer: Arc<wgpu::Buffer>,
 }
 
-impl<'a> BufferWgpu<'a> {
+impl BufferWgpu {
     pub fn get_buffer(&self) -> &wgpu::Buffer {
         &self.buffer
     }
 
-    pub fn new(device: &'a DeviceWgpu, info: &BufferInfo) -> Self {
-        let buffer = device.get_device().create_buffer(&wgpu::BufferDescriptor {
+    pub fn close_buffer(&self) -> Arc<wgpu::Buffer> {
+        self.buffer.clone()
+    }
+
+    pub fn new(device: &DeviceWgpu, info: &BufferInfo) -> Self {
+        let device = device.close_device();
+        let buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: info.get_size() as u64,
             usage: Self::convert(&info.get_gpu_access_flags()),
             mapped_at_creation: false,
         });
 
-        Self { device, buffer }
+        Self {
+            device,
+            buffer: Arc::new(buffer),
+        }
     }
 
-    pub fn map<T>(&self, func: fn(&T)) {
+    pub fn map<T, F: Fn(&T)>(&self, func: F) {
         let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
 
-        self.device.get_device().poll(wgpu::Maintain::Wait);
+        self.device.poll(wgpu::Maintain::Wait);
 
         let ptr = self.buffer.slice(..).get_mapped_range().as_ptr();
         let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
@@ -37,7 +47,7 @@ impl<'a> BufferWgpu<'a> {
     pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
         let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
 
-        self.device.get_device().poll(wgpu::Maintain::Wait);
+        self.device.poll(wgpu::Maintain::Wait);
 
         let ptr = self.buffer.slice(..).get_mapped_range_mut().as_mut_ptr();
         let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
@@ -45,10 +55,10 @@ impl<'a> BufferWgpu<'a> {
         self.buffer.unmap();
     }
 
-    pub fn map_as_slice<T>(&self, size: usize, func: fn(&[T])) {
+    pub fn map_as_slice<T, F: Fn(&[T])>(&self, size: usize, func: F) {
         let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
 
-        self.device.get_device().poll(wgpu::Maintain::Wait);
+        self.device.poll(wgpu::Maintain::Wait);
 
         let ptr = self
             .buffer
@@ -64,7 +74,7 @@ impl<'a> BufferWgpu<'a> {
     pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, size: usize, func: F) {
         let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
 
-        self.device.get_device().poll(wgpu::Maintain::Wait);
+        self.device.poll(wgpu::Maintain::Wait);
 
         let ptr = self
             .buffer
@@ -105,4 +115,32 @@ impl<'a> BufferWgpu<'a> {
 
         result
     }
+}
+
+impl IBuffer for BufferWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn map<T, F: Fn(&T)>(&self, func: F) {
+        self.map(func);
+    }
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
+        self.map_mut(func);
+    }
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
+        self.map_as_slice(64, func);
+    }
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
+        self.map_as_slice_mut(64, func);
+    }
+
+    fn flush_mapped_range(&self, _offset: isize, _size: usize) {}
+
+    fn invalidate_mapped_range(&self, _offset: isize, _size: usize) {}
 }

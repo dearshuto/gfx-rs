@@ -1,4 +1,4 @@
-use crate::IDevice;
+use crate::{IDevice, ITexture};
 
 #[derive(Clone, Debug)]
 pub struct DepthStencilStateInfo {
@@ -35,6 +35,11 @@ impl DepthStencilStateInfo {
 
 pub trait IDepthStencilView {
     type DeviceType: IDevice;
+    type TextureType: ITexture;
 
-    fn new(device: &Self::DeviceType, info: &DepthStencilStateInfo) -> Self;
+    fn new(
+        device: &Self::DeviceType,
+        info: &DepthStencilStateInfo,
+        texture: &Self::TextureType,
+    ) -> Self;
 }

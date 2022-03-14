@@ -28,5 +28,7 @@ pub use texture_api::{
     BufferTextureCopyRegion, ITexture, TextureArrayRange, TextureCopyRegion, TextureInfo,
     TextureSubresource, TextureSubresourceRange,
 };
-pub use vertex_state_api::{VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo};
+pub use vertex_state_api::{
+    IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+};
 pub use viewport_scissor_state_api::ViewportScissorStateInfo;

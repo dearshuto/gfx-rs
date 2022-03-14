@@ -61,7 +61,7 @@ fn execute_compute_command() {
     queue.flush();
     queue.sync();
 
-    buffer.map::<[u32; 64]>(|x| {
+    buffer.map(|x: &[u32; 64]| {
         assert_eq!(x[0], 0);
         assert_eq!(x[1], 1);
         assert_eq!(x[2], 2);

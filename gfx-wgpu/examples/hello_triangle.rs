@@ -1,7 +1,10 @@
 use sjgfx_interface::{
-    CommandBufferInfo, DeviceInfo, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
+    CommandBufferInfo, DeviceInfo, IColorTargetView, ICommandBuffer, IDevice, IQueue, IShader,
+    ISwapChain, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
 };
-use sjgfx_wgpu::{CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu};
+use sjgfx_wgpu::{
+    ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
+};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -10,13 +13,34 @@ use winit::{
 };
 
 fn main() {
+    run::<DeviceWgpu, QueueWgpu, ShaderWgpu, CommandBufferWgpu, SwapChainWgpu, ColorTargetViewWgpu>(
+    );
+}
+
+fn run<TDevice, TQueue, TShader, TCommandBuffer, TSwapChain, TColorTargetView>()
+where
+    TDevice: IDevice,
+    TQueue: IQueue<
+        DeviceType = TDevice,
+        CommandBufferType = TCommandBuffer,
+        SwapChainType = TSwapChain,
+    >,
+    TShader: IShader<DeviceType = TDevice>,
+    TCommandBuffer: ICommandBuffer<
+        DeviceType = TDevice,
+        ShaderType = TShader,
+        ColorTargetViewType = TColorTargetView,
+    >,
+    TSwapChain: ISwapChain<DeviceType = TDevice, ColorTargetViewType = TColorTargetView>,
+    TColorTargetView: IColorTargetView,
+{
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
-    let mut swap_chain = SwapChainWgpu::new(&device, &SwapChainInfo::new());
-    let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
-    let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
+    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window);
+    let mut swap_chain = TSwapChain::new(&device, &SwapChainInfo::new());
+    let mut queue = TQueue::new(&device, &QueueInfo::new());
+    let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
@@ -37,7 +61,7 @@ fn main() {
             None,
         )
         .unwrap();
-    let shader = ShaderWgpu::new(
+    let shader = TShader::new(
         &device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(&vertex_shader_binary.as_binary_u8())
