@@ -1,4 +1,4 @@
-use sjgfx_interface::FenceInfo;
+use sjgfx_interface::{FenceInfo, IFence};
 use vulkano::sync::{self, GpuFuture};
 
 use crate::DeviceVk;
@@ -16,5 +16,13 @@ impl FenceVk {
 
     pub(crate) fn cleanup_finished(&mut self) {
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
+    }
+}
+
+impl IFence for FenceVk {
+    type DeviceType = DeviceVk;
+
+    fn new(device: &Self::DeviceType, info: &FenceInfo) -> Self {
+        Self::new(device, info)
     }
 }

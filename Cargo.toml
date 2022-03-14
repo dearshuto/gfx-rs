@@ -7,6 +7,7 @@ members = [
         "gfx-interface",
         "gfx-vulkano",
         "gfx-wgpu",
+        "examples",
 #	"examples/clear_color",
 #	"examples/hello_graphics_pipeline",
 #	"examples/hello_3d",
