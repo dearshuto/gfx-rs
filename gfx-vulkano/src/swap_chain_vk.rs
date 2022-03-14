@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::SwapChainInfo;
+use sjgfx_interface::{ISwapChain, SwapChainInfo};
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture},
@@ -71,11 +71,11 @@ impl SwapChainVk {
         image_num as i32
     }
 
-    pub fn acquire_next_scan_buffer_view<'b>(
+    pub fn acquire_next_scan_buffer_view(
         &mut self,
         _semaphore: Option<&mut SemaphoreVk>,
         fence: Option<&mut FenceVk>,
-    ) -> ColorTargetViewVk<'b> {
+    ) -> ColorTargetViewVk {
         if let Some(fence) = fence {
             fence.cleanup_finished();
         }
@@ -122,5 +122,24 @@ impl SwapChainVk {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.swap_chain_acquire_future);
         temp.unwrap()
+    }
+}
+
+impl ISwapChain for SwapChainVk {
+    type ColorTargetViewType = ColorTargetViewVk;
+    type DeviceType = DeviceVk;
+    type SemaphoreType = SemaphoreVk;
+    type FenceType = FenceVk;
+
+    fn new(device: &Self::DeviceType, info: &SwapChainInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn acquire_next_scan_buffer_view(
+        &mut self,
+        semaphore: Option<&mut Self::SemaphoreType>,
+        fence: Option<&mut Self::FenceType>,
+    ) -> Self::ColorTargetViewType {
+        self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }

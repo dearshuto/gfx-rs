@@ -37,7 +37,7 @@ where
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window);
+    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut swap_chain = TSwapChain::new(&device, &SwapChainInfo::new());
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());

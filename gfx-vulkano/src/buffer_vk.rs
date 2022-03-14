@@ -1,4 +1,4 @@
-use sjgfx_interface::{BufferInfo, GpuAccess};
+use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
@@ -10,8 +10,7 @@ use std::any::Any;
 use crate::DeviceVk;
 
 pub struct BufferVk {
-    buffer: Arc<dyn BufferAccess>,
-    any: Arc<dyn Any + Send + Sync>,
+    buffer_data: BufferData,
 }
 
 impl BufferVk {
@@ -28,8 +27,10 @@ impl BufferVk {
             .unwrap()
         };
         Self {
-            buffer: buffer.clone(),
-            any: buffer.clone(),
+            buffer_data: BufferData {
+                buffer: buffer.clone(),
+                any: buffer.clone(),
+            },
         }
     }
 
@@ -45,57 +46,55 @@ impl BufferVk {
             .unwrap()
         };
         Self {
-            buffer: buffer.clone(),
-            any: buffer.clone(),
+            buffer_data: BufferData {
+                buffer: buffer.clone(),
+                any: buffer.clone(),
+            },
         }
     }
 
-    pub fn clone_buffer(&self) -> Arc<dyn BufferAccess> {
-        self.buffer.clone()
-    }
-
-    pub fn clone_buffer_as<T: Send + Sync + 'static>(&self) -> Arc<CpuAccessibleBuffer<T>> {
-        let concrete_buffer = self
-            .any
-            .clone()
-            .downcast::<CpuAccessibleBuffer<T>>()
-            .unwrap();
-        concrete_buffer
-    }
-
-    pub fn clone_vertex_buffer_as<T: Send + Sync + 'static>(
-        &self,
-    ) -> Arc<CpuAccessibleBuffer<[T]>> {
-        let concrete_buffer = self
-            .any
-            .clone()
-            .downcast::<CpuAccessibleBuffer<[T]>>()
-            .unwrap();
-        concrete_buffer
-    }
-
     pub fn map<T: 'static, F: Fn(&T)>(&self, func: F) {
-        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<T>>().unwrap();
+        let buffer = self
+            .buffer_data
+            .any
+            .downcast_ref::<CpuAccessibleBuffer<T>>()
+            .unwrap();
         let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
     }
 
     pub fn map_mut<T: 'static, F: Fn(&mut T)>(&self, func: F) {
-        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<T>>().unwrap();
+        let buffer = self
+            .buffer_data
+            .any
+            .downcast_ref::<CpuAccessibleBuffer<T>>()
+            .unwrap();
         let mut mapped_data = buffer.write().unwrap();
         func(&mut mapped_data);
     }
 
     pub fn map_as_array<T: 'static, F: Fn(&[T])>(&self, func: F) {
-        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<[T]>>().unwrap();
+        let buffer = self
+            .buffer_data
+            .any
+            .downcast_ref::<CpuAccessibleBuffer<[T]>>()
+            .unwrap();
         let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
     }
 
     pub fn map_as_array_mut<T: 'static, F: Fn(&mut [T])>(&self, func: F) {
-        let buffer = self.any.downcast_ref::<CpuAccessibleBuffer<[T]>>().unwrap();
+        let buffer = self
+            .buffer_data
+            .any
+            .downcast_ref::<CpuAccessibleBuffer<[T]>>()
+            .unwrap();
         let mut mapped_data = buffer.write().unwrap();
         func(&mut mapped_data);
+    }
+
+    pub fn view(&self) -> BufferView {
+        BufferView::new(self)
     }
 
     fn convert_usage(gpu_access: &GpuAccess) -> BufferUsage {
@@ -120,4 +119,80 @@ impl BufferVk {
 
         result
     }
+
+    fn clone_buffer_data(&self) -> BufferData {
+        self.buffer_data.clone()
+    }
+}
+
+impl IBuffer for BufferVk {
+    type DeviceType = DeviceVk;
+
+    fn new(_device: &Self::DeviceType, _info: &BufferInfo) -> Self {
+        todo!()
+    }
+
+    fn map<T, F: Fn(&T)>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_mut<T, F: Fn(&mut T)>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_as_slice<T, F: Fn(&[T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
+        todo!()
+    }
+
+    fn flush_mapped_range(&self, _offset: isize, _size: usize) {}
+
+    fn invalidate_mapped_range(&self, _offset: isize, _size: usize) {}
+}
+
+pub struct BufferView {
+    buffer_data: BufferData,
+}
+
+impl BufferView {
+    fn new(buffer: &BufferVk) -> Self {
+        Self {
+            buffer_data: buffer.clone_buffer_data(),
+        }
+    }
+
+    pub fn clone_buffer(&self) -> Arc<dyn BufferAccess> {
+        self.buffer_data.buffer.clone()
+    }
+
+    pub fn clone_buffer_as<T: Send + Sync + 'static>(&self) -> Arc<CpuAccessibleBuffer<T>> {
+        let concrete_buffer = self
+            .buffer_data
+            .any
+            .clone()
+            .downcast::<CpuAccessibleBuffer<T>>()
+            .unwrap();
+        concrete_buffer
+    }
+
+    pub fn clone_vertex_buffer_as<T: Send + Sync + 'static>(
+        &self,
+    ) -> Arc<CpuAccessibleBuffer<[T]>> {
+        let concrete_buffer = self
+            .buffer_data
+            .any
+            .clone()
+            .downcast::<CpuAccessibleBuffer<[T]>>()
+            .unwrap();
+        concrete_buffer
+    }
+}
+
+#[derive(Clone)]
+struct BufferData {
+    pub buffer: Arc<dyn BufferAccess>,
+    pub any: Arc<dyn Any + Send + Sync>,
 }
