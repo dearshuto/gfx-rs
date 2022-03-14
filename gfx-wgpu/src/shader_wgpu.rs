@@ -1,16 +1,12 @@
-use sjgfx_interface::ShaderInfo;
+use std::sync::Arc;
+
+use sjgfx_interface::{IShader, ShaderInfo};
 use wgpu::ComputePipelineDescriptor;
 
 use crate::DeviceWgpu;
 
 pub struct ShaderWgpu {
-    compute_shader: Option<wgpu::ShaderModule>,
-    vertex_shader: Option<wgpu::ShaderModule>,
-    pixel_shader: Option<wgpu::ShaderModule>,
-    compute_pipeline: Option<wgpu::ComputePipeline>,
-    vertex_attributes: Vec<wgpu::VertexAttribute>,
-    bind_group_layout: wgpu::BindGroupLayout,
-    pipeline_layout: wgpu::PipelineLayout,
+    shader_data: ShaderData,
 }
 
 impl ShaderWgpu {
@@ -26,36 +22,12 @@ impl ShaderWgpu {
         }
     }
 
-    pub fn is_compute(&self) -> bool {
-        self.compute_shader.is_some()
+    pub fn view(&self) -> ShaderView {
+        ShaderView::new(self)
     }
 
-    pub fn get_compute_shader_module(&self) -> &wgpu::ShaderModule {
-        self.compute_shader.as_ref().unwrap()
-    }
-
-    pub fn get_vertex_shader_module(&self) -> &wgpu::ShaderModule {
-        self.vertex_shader.as_ref().unwrap()
-    }
-
-    pub fn get_pixel_shader_module(&self) -> &wgpu::ShaderModule {
-        self.pixel_shader.as_ref().unwrap()
-    }
-
-    pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.bind_group_layout
-    }
-
-    pub fn get_pipeline_layout(&self) -> &wgpu::PipelineLayout {
-        &self.pipeline_layout
-    }
-
-    pub fn get_compute_pipeline(&self) -> &wgpu::ComputePipeline {
-        self.compute_pipeline.as_ref().unwrap()
-    }
-
-    pub(crate) fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
-        &self.vertex_attributes
+    fn clone_shader_data(&self) -> ShaderData {
+        self.shader_data.clone()
     }
 
     fn new_as_compute(device: &DeviceWgpu, shader_binary: &[u8]) -> Self {
@@ -78,23 +50,26 @@ impl ShaderWgpu {
                     push_constant_ranges: &[],
                 });
 
-        let compute_pipeline = Some(device.get_device().create_compute_pipeline(
-            &ComputePipelineDescriptor {
-                label: None,
-                layout: Some(&pipeline_layout),
-                module: &compute_shader,
-                entry_point: "main",
-            },
-        ));
+        let compute_pipeline =
+            device
+                .get_device()
+                .create_compute_pipeline(&ComputePipelineDescriptor {
+                    label: None,
+                    layout: Some(&pipeline_layout),
+                    module: &compute_shader,
+                    entry_point: "main",
+                });
 
         Self {
-            compute_shader: Some(compute_shader),
-            vertex_shader: None,
-            pixel_shader: None,
-            compute_pipeline,
-            vertex_attributes: Vec::new(),
-            bind_group_layout,
-            pipeline_layout,
+            shader_data: ShaderData {
+                compute_shader: Some(Arc::new(compute_shader)),
+                vertex_shader: None,
+                pixel_shader: None,
+                compute_pipeline: Some(Arc::new(compute_pipeline)),
+                vertex_attributes: None,
+                bind_group_layout: Arc::new(bind_group_layout),
+                pipeline_layout: Arc::new(pipeline_layout),
+            },
         }
     }
 
@@ -133,13 +108,15 @@ impl ShaderWgpu {
                 });
 
         Self {
-            compute_shader: None,
-            vertex_shader,
-            pixel_shader,
-            compute_pipeline: None,
-            vertex_attributes,
-            bind_group_layout,
-            pipeline_layout,
+            shader_data: ShaderData {
+                compute_shader: None,
+                vertex_shader: Some(Arc::new(vertex_shader.unwrap())),
+                pixel_shader: Some(Arc::new(pixel_shader.unwrap())),
+                compute_pipeline: None,
+                vertex_attributes: Some(Arc::new(vertex_attributes)),
+                bind_group_layout: Arc::new(bind_group_layout),
+                pipeline_layout: Arc::new(pipeline_layout),
+            },
         }
     }
 
@@ -250,6 +227,71 @@ impl ShaderWgpu {
             todo!()
         }
     }
+}
+
+impl IShader for ShaderWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
+        Self::new(device, info)
+    }
+}
+
+pub struct ShaderView {
+    shader_data: ShaderData,
+}
+
+impl ShaderView {
+    pub fn new(shader: &ShaderWgpu) -> Self {
+        Self {
+            shader_data: shader.clone_shader_data(),
+        }
+    }
+}
+
+impl ShaderView {
+    pub fn is_compute(&self) -> bool {
+        self.shader_data.compute_shader.is_some()
+    }
+
+    pub fn get_compute_shader_module(&self) -> &wgpu::ShaderModule {
+        self.shader_data.compute_shader.as_ref().unwrap()
+    }
+
+    pub fn get_vertex_shader_module(&self) -> &wgpu::ShaderModule {
+        self.shader_data.vertex_shader.as_ref().unwrap()
+    }
+
+    pub fn get_pixel_shader_module(&self) -> &wgpu::ShaderModule {
+        self.shader_data.pixel_shader.as_ref().unwrap()
+    }
+
+    pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.shader_data.bind_group_layout
+    }
+
+    pub fn get_pipeline_layout(&self) -> &wgpu::PipelineLayout {
+        &self.shader_data.pipeline_layout
+    }
+
+    pub fn get_compute_pipeline(&self) -> &wgpu::ComputePipeline {
+        self.shader_data.compute_pipeline.as_ref().unwrap()
+    }
+
+    pub(crate) fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
+        self.shader_data.vertex_attributes.as_ref().unwrap()
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ShaderData {
+    pub compute_shader: Option<Arc<wgpu::ShaderModule>>,
+    pub vertex_shader: Option<Arc<wgpu::ShaderModule>>,
+    pub pixel_shader: Option<Arc<wgpu::ShaderModule>>,
+    pub compute_pipeline: Option<Arc<wgpu::ComputePipeline>>,
+    pub vertex_attributes: Option<Arc<Vec<wgpu::VertexAttribute>>>,
+    pub bind_group_layout: Arc<wgpu::BindGroupLayout>,
+    pub pipeline_layout: Arc<wgpu::PipelineLayout>,
 }
 
 #[cfg(test)]

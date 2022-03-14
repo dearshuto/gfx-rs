@@ -1,8 +1,10 @@
-use sjgfx_interface::{CommandBufferInfo, IndexFormat, PrimitiveTopology};
+use std::sync::Arc;
+
+use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology};
 
 use crate::{
-    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu,
-    VertexStateWgpu,
+    shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
+    DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -11,50 +13,50 @@ struct DrawInfo {
     pub vertex_count: u32,
 }
 
-struct DrawIndexedInfo<'a> {
+struct DrawIndexedInfo {
     #[allow(dead_code)]
     pub primitive_topology: PrimitiveTopology,
     pub index_format: wgpu::IndexFormat,
-    pub index_buffer: &'a BufferWgpu<'a>,
+    pub index_buffer: Arc<wgpu::Buffer>,
     pub index_count: u32,
 }
 
-enum DrawCommand<'a> {
+enum DrawCommand {
     Draw(DrawInfo),
-    DrawIndexed(DrawIndexedInfo<'a>),
+    DrawIndexed(DrawIndexedInfo),
 }
 
-pub struct CommandBufferWgpu<'a> {
-    device: &'a DeviceWgpu,
+pub struct CommandBufferWgpu {
+    device: Arc<wgpu::Device>,
 
     // レンダーターゲット
     color_target_view: Option<ColorTargetViewWgpu>,
-    depth_stencil_view: Option<&'a DepthStencilViewWgpu<'a>>,
+    depth_stencil_view: Option<Arc<wgpu::TextureView>>,
 
-    shader: Option<&'a ShaderWgpu>,
-    constant_buffers: [Option<&'a BufferWgpu<'a>>; 64],
-    constant_buffer_addresses: [Option<GpuAddressWgpu<'a>>; 8],
-    unordered_access_buffer: [Option<&'a BufferWgpu<'a>>; 64],
+    shader: Option<ShaderView>,
+    constant_buffers: [Option<Arc<wgpu::Buffer>>; 8],
+    constant_buffer_addresses: [Option<GpuAddressWgpu>; 8],
+    unordered_access_buffer: [Option<Arc<wgpu::Buffer>>; 8],
     dispatch_count: Option<(u32, u32, u32)>,
 
     // Draw
-    vertex_buffer: [Option<&'a BufferWgpu<'a>>; 64],
-    vertex_state: Option<&'a VertexStateWgpu>,
-    draw_command: Option<DrawCommand<'a>>,
+    vertex_buffer: [Option<Arc<wgpu::Buffer>>; 8],
+    vertex_state: Option<VertexStateView>,
+    draw_command: Option<DrawCommand>,
 }
 
-impl<'a> CommandBufferWgpu<'a> {
-    pub fn new(device: &'a DeviceWgpu, _info: &CommandBufferInfo) -> Self {
+impl CommandBufferWgpu {
+    pub fn new(device: &DeviceWgpu, _info: &CommandBufferInfo) -> Self {
         Self {
-            device,
+            device: device.close_device(),
             color_target_view: None,
             depth_stencil_view: None,
             shader: None,
-            constant_buffers: [None; 64],
+            constant_buffers: [None, None, None, None, None, None, None, None],
             constant_buffer_addresses: [None, None, None, None, None, None, None, None],
-            unordered_access_buffer: [None; 64],
+            unordered_access_buffer: [None, None, None, None, None, None, None, None],
             dispatch_count: None,
-            vertex_buffer: [None; 64],
+            vertex_buffer: [None, None, None, None, None, None, None, None],
             vertex_state: None,
             draw_command: None,
         }
@@ -67,7 +69,7 @@ impl<'a> CommandBufferWgpu<'a> {
     pub fn set_render_targets<TIterator>(
         &mut self,
         mut color_target_views: TIterator,
-        depth_stencil_view: Option<&'a DepthStencilViewWgpu<'a>>,
+        depth_stencil_view: Option<&DepthStencilViewWgpu>,
     ) where
         TIterator: Iterator<Item = ColorTargetViewWgpu>,
     {
@@ -75,31 +77,35 @@ impl<'a> CommandBufferWgpu<'a> {
             self.color_target_view = Some(color_target_view);
         }
 
-        self.depth_stencil_view = depth_stencil_view;
+        if let Some(depth_stencil_view) = depth_stencil_view {
+            self.depth_stencil_view = Some(depth_stencil_view.close_texture_view());
+        } else {
+            self.depth_stencil_view = None;
+        }
     }
 
-    pub fn set_shader(&mut self, shader: &'a ShaderWgpu) {
-        self.shader = Some(shader);
+    pub fn set_shader(&mut self, shader: &ShaderWgpu) {
+        self.shader = Some(shader.view());
     }
 
-    pub fn set_constant_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
-        self.constant_buffers[index as usize] = Some(buffer);
+    pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
+        self.constant_buffers[index as usize] = Some(buffer.close_buffer());
     }
 
-    pub fn set_constant_buffer_address(&mut self, index: i32, gpu_address: GpuAddressWgpu<'a>) {
+    pub fn set_constant_buffer_address(&mut self, index: i32, gpu_address: GpuAddressWgpu) {
         self.constant_buffer_addresses[index as usize] = Some(gpu_address);
     }
 
-    pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
-        self.unordered_access_buffer[index as usize] = Some(buffer);
+    pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
+        self.unordered_access_buffer[index as usize] = Some(buffer.close_buffer());
     }
 
-    pub fn set_vertex_buffer(&mut self, index: i32, buffer: &'a BufferWgpu) {
-        self.vertex_buffer[index as usize] = Some(buffer);
+    pub fn set_vertex_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
+        self.vertex_buffer[index as usize] = Some(buffer.close_buffer());
     }
 
-    pub fn set_vertex_state(&mut self, vertex_state: &'a VertexStateWgpu) {
-        self.vertex_state = Some(vertex_state);
+    pub fn set_vertex_state(&mut self, vertex_state: &VertexStateWgpu) {
+        self.vertex_state = Some(vertex_state.view());
     }
 
     pub fn dispatch(
@@ -132,7 +138,7 @@ impl<'a> CommandBufferWgpu<'a> {
         &mut self,
         primitive_topology: PrimitiveTopology,
         index_format: IndexFormat,
-        index_buffer: &'a BufferWgpu,
+        index_buffer: &BufferWgpu,
         index_count: i32,
         _base_vertex: i32,
     ) {
@@ -143,14 +149,14 @@ impl<'a> CommandBufferWgpu<'a> {
         let draw_indexed_info = DrawIndexedInfo {
             primitive_topology,
             index_format: index_format_wgpu,
-            index_buffer,
+            index_buffer: index_buffer.close_buffer(),
             index_count: index_count as u32,
         };
         self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
     }
 
     pub(crate) fn build_command(&self) -> Option<wgpu::CommandBuffer> {
-        if let Some(shader) = self.shader {
+        if let Some(shader) = &self.shader {
             if shader.is_compute() {
                 return Some(self.build_compute_command());
             } else {
@@ -165,7 +171,6 @@ impl<'a> CommandBufferWgpu<'a> {
         let bind_group = self.create_bind_group();
         let mut command_encoder = self
             .device
-            .get_device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
             let mut compute_pass =
@@ -192,38 +197,36 @@ impl<'a> CommandBufferWgpu<'a> {
         let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
 
         // 頂点ステート
-        let vertex_buffer_layout = if let Some(vertex_state) = self.vertex_state {
+        let vertex_buffer_layout = if let Some(vertex_state) = &self.vertex_state {
             let attributes = self.shader.as_ref().unwrap().get_vertex_attributes();
             vertex_state.create_vertex_buffer_layout(attributes)
         } else {
             vec![]
         };
 
-        let render_pipeline =
-            self.device
-                .get_device()
-                .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: None,
-                    layout: None,
-                    vertex: wgpu::VertexState {
-                        module: &vertex_shader_module,
-                        entry_point: "main",
-                        buffers: &vertex_buffer_layout,
-                    },
-                    fragment: Some(wgpu::FragmentState {
-                        module: &pixel_shader_module,
-                        entry_point: "main",
-                        targets: &[color_target_view.get_texture_format().into()],
-                    }),
-                    primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: self.create_depth_stencil_state(),
-                    multisample: wgpu::MultisampleState::default(),
-                    multiview: None,
-                });
+        let render_pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: None,
+                layout: None,
+                vertex: wgpu::VertexState {
+                    module: &vertex_shader_module,
+                    entry_point: "main",
+                    buffers: &vertex_buffer_layout,
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &pixel_shader_module,
+                    entry_point: "main",
+                    targets: &[color_target_view.get_texture_format().into()],
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: self.create_depth_stencil_state(),
+                multisample: wgpu::MultisampleState::default(),
+                multiview: None,
+            });
         let bind_group = self.create_bind_group();
         let mut command_encoder = self
             .device
-            .get_device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
             let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -246,8 +249,8 @@ impl<'a> CommandBufferWgpu<'a> {
             render_pass.set_bind_group(0, &bind_group, &[]);
 
             // 頂点バッファ
-            if let Some(vertex_buffer) = self.vertex_buffer[0] {
-                render_pass.set_vertex_buffer(0, vertex_buffer.get_buffer().slice(..));
+            if let Some(vertex_buffer) = &self.vertex_buffer[0] {
+                render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             }
 
             // 描画
@@ -257,7 +260,7 @@ impl<'a> CommandBufferWgpu<'a> {
                         render_pass.draw(0..draw_info.vertex_count, 0..1);
                     }
                     DrawCommand::DrawIndexed(ref draw_indexed_info) => {
-                        let buffer_slice = draw_indexed_info.index_buffer.get_buffer().slice(..);
+                        let buffer_slice = draw_indexed_info.index_buffer.slice(..);
                         render_pass.set_index_buffer(buffer_slice, draw_indexed_info.index_format);
                         render_pass.draw_indexed(0..draw_indexed_info.index_count, 0, 0..1);
                     }
@@ -268,41 +271,35 @@ impl<'a> CommandBufferWgpu<'a> {
     }
 
     fn create_bind_group(&self) -> wgpu::BindGroup {
-        if let Some(unordered_access_buffer) = self.unordered_access_buffer[0] {
-            self.device
-                .get_device()
-                .create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: None,
-                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                    entries: &[wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: unordered_access_buffer.get_buffer().as_entire_binding(),
-                    }],
-                })
+        if let Some(unordered_access_buffer) = &self.unordered_access_buffer[0] {
+            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: unordered_access_buffer.as_entire_binding(),
+                }],
+            })
         } else if let Some(gpu_address) = &self.constant_buffer_addresses[0] {
-            self.device
-                .get_device()
-                .create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: None,
-                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                    entries: &[wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: gpu_address.get_binding_resource(),
-                    }],
-                })
+            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: gpu_address.get_binding_resource(),
+                }],
+            })
         } else {
-            self.device
-                .get_device()
-                .create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: None,
-                    layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                    entries: &[],
-                })
+            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: None,
+                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+                entries: &[],
+            })
         }
     }
 
     fn create_depth_stencil_state(&self) -> Option<wgpu::DepthStencilState> {
-        if let Some(_depth_stencil_view) = self.depth_stencil_view {
+        if let Some(_depth_stencil_view) = &self.depth_stencil_view {
             Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth32Float,
                 depth_write_enabled: true,
@@ -322,9 +319,9 @@ impl<'a> CommandBufferWgpu<'a> {
     fn create_render_pass_depth_stencil_attachment<'f>(
         &'f self,
     ) -> Option<wgpu::RenderPassDepthStencilAttachment<'f>> {
-        if let Some(depth_stencil_view) = self.depth_stencil_view {
+        if let Some(depth_stencil_view) = &self.depth_stencil_view {
             Some(wgpu::RenderPassDepthStencilAttachment {
-                view: depth_stencil_view.get_texture_view(),
+                view: &depth_stencil_view,
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Clear(1.0),
                     store: true,
@@ -334,6 +331,88 @@ impl<'a> CommandBufferWgpu<'a> {
         } else {
             None
         }
+    }
+}
+
+impl ICommandBuffer for CommandBufferWgpu {
+    type DeviceType = DeviceWgpu;
+    type BufferType = BufferWgpu;
+    type ColorTargetViewType = ColorTargetViewWgpu;
+    type DepthStencilViewType = DepthStencilViewWgpu;
+    type ShaderType = ShaderWgpu;
+    type TextureType = TextureWgpu;
+    type VertexStateType = VertexStateWgpu;
+
+    fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn begin(&mut self) {
+        CommandBufferWgpu::begin(&self);
+    }
+
+    fn end(&mut self) {
+        CommandBufferWgpu::end(&self);
+    }
+
+    fn set_render_targets<TIterator>(
+        &mut self,
+        color_target_views: TIterator,
+        depth_stencil_view: Option<&Self::DepthStencilViewType>,
+    ) where
+        TIterator: Iterator<Item = Self::ColorTargetViewType>,
+    {
+        self.set_render_targets(color_target_views, depth_stencil_view)
+    }
+
+    fn set_shader(&mut self, shader: &Self::ShaderType) {
+        self.set_shader(shader);
+    }
+
+    fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_constant_buffer(index, buffer);
+    }
+
+    fn set_unordered_access_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_unordered_access_buffer(index, buffer);
+    }
+
+    fn set_vertex_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_vertex_buffer(index, buffer);
+    }
+
+    fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType) {
+        self.set_vertex_state(vertex_state);
+    }
+
+    fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        self.dispatch(count_x, count_y, count_z);
+    }
+
+    fn draw(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+    ) {
+        self.draw(primitive_topology, vertex_count, vertex_offset);
+    }
+
+    fn draw_indexed(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
+    ) {
+        self.draw_indexed(
+            primitive_topology,
+            index_format,
+            index_buffer,
+            index_count,
+            base_vertex,
+        );
     }
 }
 

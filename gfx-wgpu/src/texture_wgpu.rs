@@ -1,9 +1,11 @@
-use sjgfx_interface::{GpuAccess, ImageFormat, TextureInfo};
+use std::sync::Arc;
+
+use sjgfx_interface::{GpuAccess, ITexture, ImageFormat, TextureInfo};
 
 use crate::DeviceWgpu;
 
 pub struct TextureWgpu {
-    texture: wgpu::Texture,
+    texture: Arc<wgpu::Texture>,
 }
 
 impl TextureWgpu {
@@ -26,11 +28,17 @@ impl TextureWgpu {
                 usage: Self::convert_usage(info.get_gpu_access_flags()),
             });
 
-        Self { texture }
+        Self {
+            texture: Arc::new(texture),
+        }
     }
 
     pub fn get_texture(&self) -> &wgpu::Texture {
         &self.texture
+    }
+
+    pub fn close_texture(&self) -> Arc<wgpu::Texture> {
+        self.texture.clone()
     }
 
     fn convert_usage(gpu_access: &GpuAccess) -> wgpu::TextureUsages {
@@ -62,5 +70,13 @@ impl TextureWgpu {
             ImageFormat::R8G8B8A8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::D32 => wgpu::TextureFormat::Depth32Float,
         }
+    }
+}
+
+impl ITexture for TextureWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self {
+        Self::new(device, info)
     }
 }

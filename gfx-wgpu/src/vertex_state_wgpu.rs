@@ -1,16 +1,38 @@
-use sjgfx_interface::{VertexBufferStateInfo, VertexStateInfo};
+use std::sync::Arc;
+
+use sjgfx_interface::{IVertexState, VertexBufferStateInfo, VertexStateInfo};
 use wgpu::{VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 use crate::DeviceWgpu;
 
 pub struct VertexStateWgpu {
-    vertex_buffer_state_info: Vec<VertexBufferStateInfo>,
+    vertex_buffer_state_info: Arc<Vec<VertexBufferStateInfo>>,
 }
 
 impl VertexStateWgpu {
     pub fn new(_device: &DeviceWgpu, info: &VertexStateInfo) -> Self {
         Self {
-            vertex_buffer_state_info: info.get_buffer_state_info_array().to_vec(),
+            vertex_buffer_state_info: Arc::new(info.get_buffer_state_info_array().to_vec()),
+        }
+    }
+
+    pub fn view(&self) -> VertexStateView {
+        VertexStateView::new(self)
+    }
+
+    pub fn clone_vertex_buffer_state_infos(&self) -> Arc<Vec<VertexBufferStateInfo>> {
+        self.vertex_buffer_state_info.clone()
+    }
+}
+
+pub struct VertexStateView {
+    vertex_buffer_state_info: Arc<Vec<VertexBufferStateInfo>>,
+}
+
+impl VertexStateView {
+    pub fn new(vertex_state: &VertexStateWgpu) -> Self {
+        Self {
+            vertex_buffer_state_info: vertex_state.clone_vertex_buffer_state_infos(),
         }
     }
 
@@ -29,5 +51,13 @@ impl VertexStateWgpu {
 
             vec![vertex_buffer_layout]
         }
+    }
+}
+
+impl IVertexState for VertexStateWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &VertexStateInfo) -> Self {
+        Self::new(device, info)
     }
 }

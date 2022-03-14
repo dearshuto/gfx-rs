@@ -1,22 +1,22 @@
 use std::sync::{Arc, Mutex};
 
-use sjgfx_interface::SwapChainInfo;
+use sjgfx_interface::{ISwapChain, SwapChainInfo};
 use wgpu::{SurfaceTexture, TextureFormat};
 
 use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
 
-pub struct SwapChainWgpu<'a> {
-    device: &'a DeviceWgpu,
+pub struct SwapChainWgpu {
+    surface: Arc<wgpu::Surface>,
     texture_format: TextureFormat,
     next_surface_texture: Option<Arc<Mutex<Option<SurfaceTexture>>>>,
 }
 
-impl<'a> SwapChainWgpu<'a> {
-    pub fn new(device: &'a DeviceWgpu, _info: &SwapChainInfo) -> Self {
+impl SwapChainWgpu {
+    pub fn new(device: &DeviceWgpu, _info: &SwapChainInfo) -> Self {
         let adapter = device.get_adapter();
         let texture_format = device.get_surface().get_preferred_format(adapter).unwrap();
         Self {
-            device,
+            surface: device.clone_surface(),
             texture_format,
             next_surface_texture: None,
         }
@@ -27,7 +27,7 @@ impl<'a> SwapChainWgpu<'a> {
         _semaphore: Option<&mut SemaphoreWgpu>,
         _fence: Option<&mut FenceWgpu>,
     ) -> ColorTargetViewWgpu {
-        let surface_texture = self.device.get_surface().get_current_texture().unwrap();
+        let surface_texture = self.surface.get_current_texture().unwrap();
         self.next_surface_texture = Some(Arc::new(Mutex::new(Some(surface_texture))));
         ColorTargetViewWgpu::new_from_swap_chain(self)
     }
@@ -47,5 +47,24 @@ impl<'a> SwapChainWgpu<'a> {
 
     pub fn clone_next_scan_buffer_surface_texture(&self) -> Arc<Mutex<Option<SurfaceTexture>>> {
         self.next_surface_texture.as_ref().unwrap().clone()
+    }
+}
+
+impl ISwapChain for SwapChainWgpu {
+    type ColorTargetViewType = ColorTargetViewWgpu;
+    type DeviceType = DeviceWgpu;
+    type SemaphoreType = SemaphoreWgpu;
+    type FenceType = FenceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &SwapChainInfo) -> Self {
+        Self::new(device, info)
+    }
+
+    fn acquire_next_scan_buffer_view(
+        &mut self,
+        semaphore: Option<&mut Self::SemaphoreType>,
+        fence: Option<&mut Self::FenceType>,
+    ) -> Self::ColorTargetViewType {
+        self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }

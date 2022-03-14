@@ -1,17 +1,19 @@
+use std::sync::Arc;
+
 use futures::executor;
 use raw_window_handle::HasRawWindowHandle;
 use sjgfx_interface::{DeviceInfo, IDevice};
 use wgpu::{Adapter, Surface};
 
 pub struct DeviceWgpu {
-    device_impl: wgpu::Device,
-    queue_impl: wgpu::Queue,
+    device: Arc<wgpu::Device>,
+    queue_impl: Arc<wgpu::Queue>,
 
     #[allow(dead_code)]
     adapter: Adapter,
 
     #[allow(dead_code)]
-    surface_opt: Option<Surface>,
+    surface_opt: Option<Arc<Surface>>,
 }
 
 impl DeviceWgpu {
@@ -49,19 +51,27 @@ impl DeviceWgpu {
         surface.configure(&device, &config);
 
         DeviceWgpu {
-            device_impl: device,
-            queue_impl: queue,
-            adapter: adapter,
-            surface_opt: Some(surface),
+            device: Arc::new(device),
+            queue_impl: Arc::new(queue),
+            adapter,
+            surface_opt: Some(Arc::new(surface)),
         }
     }
 
     pub fn get_device(&self) -> &wgpu::Device {
-        &self.device_impl
+        &self.device
+    }
+
+    pub fn close_device(&self) -> Arc<wgpu::Device> {
+        self.device.clone()
     }
 
     pub fn get_queue(&self) -> &wgpu::Queue {
         &self.queue_impl
+    }
+
+    pub fn clone_queue(&self) -> Arc<wgpu::Queue> {
+        self.queue_impl.clone()
     }
 
     pub fn get_adapter(&self) -> &wgpu::Adapter {
@@ -70,6 +80,10 @@ impl DeviceWgpu {
 
     pub fn get_surface(&self) -> &wgpu::Surface {
         self.surface_opt.as_ref().unwrap()
+    }
+
+    pub fn clone_surface(&self) -> Arc<wgpu::Surface> {
+        self.surface_opt.as_ref().unwrap().clone()
     }
 
     fn get_primary_backend_type() -> wgpu::Backends {
@@ -102,10 +116,17 @@ impl IDevice for DeviceWgpu {
         .unwrap();
 
         DeviceWgpu {
-            device_impl: device,
-            queue_impl: queue,
-            adapter: adapter,
+            device: Arc::new(device),
+            queue_impl: Arc::new(queue),
+            adapter,
             surface_opt: None, //surface_opt,
         }
+    }
+
+    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow) -> Self
+    where
+        TWindow: raw_window_handle::HasRawWindowHandle,
+    {
+        Self::new_as_graphics(info, window)
     }
 }
