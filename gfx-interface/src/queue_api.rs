@@ -1,4 +1,4 @@
-use crate::{ICommandBuffer, IDevice, ISwapChain};
+use crate::{ICommandBuffer, IDevice, ISwapChain, IFence};
 
 pub struct QueueInfo {}
 
@@ -11,7 +11,7 @@ impl QueueInfo {
 pub trait IQueue {
     type DeviceType: IDevice;
     type CommandBufferType: ICommandBuffer;
-    type FenceType;
+    type FenceType: IFence<DeviceType = Self::DeviceType>;
     type SwapChainType: ISwapChain;
 
     fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self;

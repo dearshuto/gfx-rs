@@ -1,7 +1,40 @@
-use sjgfx_interface::ShaderInfo;
+use sjgfx_interface::{ShaderInfo, IQueue, DeviceInfo, QueueInfo, IDevice, ICommandBuffer, IFence, ISemaphore, ISwapChain, IDepthStencilView};
+use sjgfx_wgpu::{DeviceWgpu, QueueWgpu, CommandBufferWgpu, FenceWgpu, SemaphoreWgpu, SwapChainWgpu, BufferWgpu};
 
 pub mod vulkano;
 pub mod wgpu;
+
+pub trait IApi {
+    type DeviceType: IDevice;
+    type QueueType: IQueue;
+    type CommandBufferType: ICommandBuffer<DeviceType = Self::DeviceType>;
+    type FenceType: IFence<DeviceType = Self::DeviceType>;
+    type SemaphoreType: ISemaphore<DeviceType = Self::DeviceType>;
+    type SwapChainType: ISwapChain<DeviceType = Self::DeviceType>;
+}
+
+pub struct ApiWgpu;
+impl IApi for ApiWgpu {
+    type DeviceType = DeviceWgpu;
+    type QueueType = QueueWgpu;
+    type CommandBufferType = CommandBufferWgpu;
+    type FenceType = FenceWgpu;
+    type SemaphoreType = SemaphoreWgpu;
+    type SwapChainType = SwapChainWgpu;
+}
+
+pub fn test<TApi>()
+    where TApi: IApi
+{
+    let device = DeviceBuilder::new().build();
+}
+
+pub trait IDeviceBuilder<TDevice: IDevice> {
+    fn build(&self) -> TDevice;
+}
+impl IDeviceBuilder<DeviceWgpu> for DeviceBuilder {
+    fn build(&self) -> DeviceWgpu { todo!() }
+}
 
 pub struct DeviceBuilder;
 impl DeviceBuilder {

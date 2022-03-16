@@ -1,9 +1,9 @@
 use sjgfx_interface::{
     CommandBufferInfo, DeviceInfo, IColorTargetView, ICommandBuffer, IDevice, IQueue, IShader,
-    ISwapChain, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
+    ISwapChain, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, IVertexState, VertexBufferStateInfo, VertexStateInfo, IBuffer,
 };
 use sjgfx_wgpu::{
-    ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
+    ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu, VertexStateWgpu,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -12,12 +12,21 @@ use winit::{
     window::WindowBuilder,
 };
 
+#[repr(C)]
+struct Vertex {
+    #[allow(dead_code)]
+    pub x: f32,
+
+    #[allow(dead_code)]
+    pub y: f32,
+}
+
 fn main() {
-    run::<DeviceWgpu, QueueWgpu, ShaderWgpu, CommandBufferWgpu, SwapChainWgpu, ColorTargetViewWgpu>(
+    run::<DeviceWgpu, QueueWgpu, ShaderWgpu, CommandBufferWgpu, SwapChainWgpu, ColorTargetViewWgpu, VertexStateWgpu>(
     );
 }
 
-fn run<TDevice, TQueue, TShader, TCommandBuffer, TSwapChain, TColorTargetView>()
+fn run<TDevice, TQueue, TShader, TCommandBuffer, TSwapChain, TColorTargetView, TVertexState, TBuffer>()
 where
     TDevice: IDevice,
     TQueue: IQueue<
@@ -29,10 +38,13 @@ where
     TCommandBuffer: ICommandBuffer<
         DeviceType = TDevice,
         ShaderType = TShader,
-        ColorTargetViewType = TColorTargetView,
+    ColorTargetViewType = TColorTargetView,
+    TVertexStateType = IVertexState<>,
+    TBuffer = IBuffer<DeviceType = TDevice>,
     >,
     TSwapChain: ISwapChain<DeviceType = TDevice, ColorTargetViewType = TColorTargetView>,
     TColorTargetView: IColorTargetView,
+    TVertexState: IVertexState<DeviceType = TDevice>,
 {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -68,6 +80,13 @@ where
             .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
     );
 
+    let vertex_buffer_state_info_array =
+        [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex>() as i64)];
+    let vertex_state = TVertexState::new(
+        &device,
+        &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
+    );
+
     let mut should_close = false;
     while !should_close {
         event_loop.run_return(|event, _, control_flow| {
@@ -87,6 +106,7 @@ where
                     command_buffer.begin();
                     command_buffer.set_shader(&shader);
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
+                    command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
                     command_buffer.end();
 
