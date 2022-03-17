@@ -7,6 +7,7 @@ use crate::{DeviceWgpu, GpuAddressWgpu};
 pub struct BufferWgpu {
     device: Arc<wgpu::Device>,
     buffer: Arc<wgpu::Buffer>,
+    size: usize,
 }
 
 impl BufferWgpu {
@@ -30,6 +31,7 @@ impl BufferWgpu {
         Self {
             device,
             buffer: Arc::new(buffer),
+            size: info.get_size(),
         }
     }
 
@@ -133,11 +135,13 @@ impl IBuffer for BufferWgpu {
     }
 
     fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
-        self.map_as_slice(64, func);
+        let size = self.size / std::mem::size_of::<T>();
+        self.map_as_slice(size + 1, func);
     }
 
     fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
-        self.map_as_slice_mut(64, func);
+        let size = self.size / std::mem::size_of::<T>();
+        self.map_as_slice_mut(size, func);
     }
 
     fn flush_mapped_range(&self, _offset: isize, _size: usize) {}

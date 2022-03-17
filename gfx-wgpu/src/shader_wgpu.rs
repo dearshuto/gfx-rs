@@ -277,10 +277,6 @@ impl ShaderView {
     pub fn get_compute_pipeline(&self) -> &wgpu::ComputePipeline {
         self.shader_data.compute_pipeline.as_ref().unwrap()
     }
-
-    pub(crate) fn get_vertex_attributes(&self) -> &[wgpu::VertexAttribute] {
-        self.shader_data.vertex_attributes.as_ref().unwrap()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -289,6 +285,7 @@ struct ShaderData {
     pub vertex_shader: Option<Arc<wgpu::ShaderModule>>,
     pub pixel_shader: Option<Arc<wgpu::ShaderModule>>,
     pub compute_pipeline: Option<Arc<wgpu::ComputePipeline>>,
+    #[allow(dead_code)]
     pub vertex_attributes: Option<Arc<Vec<wgpu::VertexAttribute>>>,
     pub bind_group_layout: Arc<wgpu::BindGroupLayout>,
     pub pipeline_layout: Arc<wgpu::PipelineLayout>,

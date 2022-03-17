@@ -1,9 +1,11 @@
 use sjgfx_interface::{
     CommandBufferInfo, DeviceInfo, IColorTargetView, ICommandBuffer, IDevice, IQueue, IShader,
-    ISwapChain, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, IVertexState, VertexBufferStateInfo, VertexStateInfo, IBuffer,
+    ISwapChain, IVertexState, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
+    VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_wgpu::{
-    ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu, VertexStateWgpu,
+    BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
+    SwapChainWgpu, VertexStateWgpu,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -22,11 +24,28 @@ struct Vertex {
 }
 
 fn main() {
-    run::<DeviceWgpu, QueueWgpu, ShaderWgpu, CommandBufferWgpu, SwapChainWgpu, ColorTargetViewWgpu, VertexStateWgpu>(
-    );
+    run::<
+        DeviceWgpu,
+        QueueWgpu,
+        ShaderWgpu,
+        CommandBufferWgpu,
+        SwapChainWgpu,
+        ColorTargetViewWgpu,
+        VertexStateWgpu,
+        BufferWgpu,
+    >();
 }
 
-fn run<TDevice, TQueue, TShader, TCommandBuffer, TSwapChain, TColorTargetView, TVertexState, TBuffer>()
+fn run<
+    TDevice,
+    TQueue,
+    TShader,
+    TCommandBuffer,
+    TSwapChain,
+    TColorTargetView,
+    TVertexState,
+    TBuffer,
+>()
 where
     TDevice: IDevice,
     TQueue: IQueue<
@@ -38,9 +57,9 @@ where
     TCommandBuffer: ICommandBuffer<
         DeviceType = TDevice,
         ShaderType = TShader,
-    ColorTargetViewType = TColorTargetView,
-    TVertexStateType = IVertexState<>,
-    TBuffer = IBuffer<DeviceType = TDevice>,
+        ColorTargetViewType = TColorTargetView,
+        VertexStateType = TVertexState,
+        BufferType = TBuffer,
     >,
     TSwapChain: ISwapChain<DeviceType = TDevice, ColorTargetViewType = TColorTargetView>,
     TColorTargetView: IColorTargetView,
