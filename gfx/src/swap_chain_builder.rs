@@ -17,7 +17,7 @@ impl<T: ISwapChain> TSwapChainBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::DeviceType) -> T {
+    pub fn build(&self, device: &mut T::DeviceType) -> T {
         T::new(device, &SwapChainInfo::new())
     }
 }
