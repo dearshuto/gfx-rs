@@ -1,8 +1,9 @@
 use std::{thread::sleep, time::Duration};
 
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, VertexBufferStateInfo, VertexStateInfo,
+    AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology,
+    QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
@@ -36,7 +37,7 @@ pub fn main() {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
+    let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
@@ -66,11 +67,18 @@ pub fn main() {
             .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
     );
 
+    let attribute_state_info_array = [VertexAttributeStateInfo::new()
+        .set_buffer_index(0)
+        .set_format(AttributeFormat::Float32_32)
+        .set_offset(0)
+        .set_slot(0)];
     let vertex_buffer_state_info_array =
         [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex>() as i64)];
     let vertex_state = VertexStateWgpu::new(
         &device,
-        &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
+        &VertexStateInfo::new()
+            .set_attribute_state_info_array(attribute_state_info_array.into_iter())
+            .set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
     let vertex_buffer = BufferWgpu::new(
@@ -92,7 +100,10 @@ pub fn main() {
             .set_size(std::mem::size_of::<ConstantBuffer>()),
     );
 
-    let mut swap_chain = SwapChainWgpu::new(&device, &SwapChainInfo::new());
+    let mut swap_chain = SwapChainWgpu::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
 
     let mut frame = 0;
     let mut should_close = false;

@@ -61,10 +61,13 @@ where
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
+    let mut device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
-    let mut swap_chain = TSwapChain::new(&device, &SwapChainInfo::new());
+    let mut swap_chain = TSwapChain::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
 
     let vertex_shader_binary = include_bytes!("../outputs/resources/shaders/mandelbrot.vs.spv");
     let pixel_shader_binary = include_bytes!("../outputs/resources/shaders/mandelbrot.fs.spv");

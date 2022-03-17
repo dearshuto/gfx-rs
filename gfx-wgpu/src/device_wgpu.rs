@@ -45,8 +45,8 @@ impl DeviceWgpu {
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_preferred_format(&adapter).unwrap(),
-            width: 640,
-            height: 480,
+            width: 1600,
+            height: 1200,
             present_mode: wgpu::PresentMode::Mailbox,
         };
         surface.configure(&device, &config);
@@ -87,6 +87,19 @@ impl DeviceWgpu {
         self.surface_opt.as_ref().unwrap().clone()
     }
 
+    pub fn update_surface_size(&mut self, width: u32, height: u32) {
+        if let Some(surface) = &self.surface_opt {
+            let config = wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: surface.get_preferred_format(&self.adapter).unwrap(),
+                width: width,
+                height: height,
+                present_mode: wgpu::PresentMode::Mailbox,
+            };
+            surface.configure(&self.device, &config);
+        }
+    }
+
     fn get_primary_backend_type() -> wgpu::Backends {
         if cfg!(target_os = "windows") {
             wgpu::Backends::DX12
@@ -124,7 +137,11 @@ impl IDevice for DeviceWgpu {
         }
     }
 
-    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow, _event_loop: &EventLoop<()>) -> Self
+    fn new_with_surface<TWindow>(
+        info: &DeviceInfo,
+        window: &TWindow,
+        _event_loop: &EventLoop<()>,
+    ) -> Self
     where
         TWindow: raw_window_handle::HasRawWindowHandle,
     {

@@ -12,9 +12,11 @@ pub struct SwapChainWgpu {
 }
 
 impl SwapChainWgpu {
-    pub fn new(device: &DeviceWgpu, _info: &SwapChainInfo) -> Self {
+    pub fn new(device: &mut DeviceWgpu, info: &SwapChainInfo) -> Self {
         let adapter = device.get_adapter();
         let texture_format = device.get_surface().get_preferred_format(adapter).unwrap();
+
+        device.update_surface_size(info.get_width(), info.get_height());
         Self {
             surface: device.clone_surface(),
             texture_format,
@@ -56,7 +58,7 @@ impl ISwapChain for SwapChainWgpu {
     type SemaphoreType = SemaphoreWgpu;
     type FenceType = FenceWgpu;
 
-    fn new(device: &Self::DeviceType, info: &SwapChainInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &SwapChainInfo) -> Self {
         Self::new(device, info)
     }
 
