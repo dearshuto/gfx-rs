@@ -4,6 +4,10 @@ edition = "2021"
 version = "0.1.0"
 
 [[bin]]
+name = "armadillo"
+path = "armadillo/main.rs"
+
+[[bin]]
 name = "mandelbrot"
 path = "mandelbrot/main.rs"
 
@@ -12,11 +16,12 @@ sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
+nalgebra-glm = "0.3"
+tobj = "3.2.1"
 
 [dev-dependencies]
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
-nalgebra-glm = "0.3"
 
 [build-dependencies]
 shaderc = "0.7"

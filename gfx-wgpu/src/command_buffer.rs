@@ -4,7 +4,7 @@ use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveT
 
 use crate::{
     shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
-    DepthStencilViewWgpu, DeviceWgpu, GpuAddressWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
+    DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -35,7 +35,6 @@ pub struct CommandBufferWgpu {
 
     shader: Option<ShaderView>,
     constant_buffers: [Option<Arc<wgpu::Buffer>>; 8],
-    constant_buffer_addresses: [Option<GpuAddressWgpu>; 8],
     unordered_access_buffer: [Option<Arc<wgpu::Buffer>>; 8],
     dispatch_count: Option<(u32, u32, u32)>,
 
@@ -53,7 +52,6 @@ impl CommandBufferWgpu {
             depth_stencil_view: None,
             shader: None,
             constant_buffers: [None, None, None, None, None, None, None, None],
-            constant_buffer_addresses: [None, None, None, None, None, None, None, None],
             unordered_access_buffer: [None, None, None, None, None, None, None, None],
             dispatch_count: None,
             vertex_buffer: [None, None, None, None, None, None, None, None],
@@ -90,10 +88,6 @@ impl CommandBufferWgpu {
 
     pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
         self.constant_buffers[index as usize] = Some(buffer.close_buffer());
-    }
-
-    pub fn set_constant_buffer_address(&mut self, index: i32, gpu_address: GpuAddressWgpu) {
-        self.constant_buffer_addresses[index as usize] = Some(gpu_address);
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
@@ -198,8 +192,7 @@ impl CommandBufferWgpu {
 
         // 頂点ステート
         let vertex_buffer_layout = if let Some(vertex_state) = &self.vertex_state {
-            let attributes = self.shader.as_ref().unwrap().get_vertex_attributes();
-            vertex_state.create_vertex_buffer_layout(attributes)
+            vertex_state.get_vertex_buffer_layout()
         } else {
             vec![]
         };
@@ -280,13 +273,13 @@ impl CommandBufferWgpu {
                     resource: unordered_access_buffer.as_entire_binding(),
                 }],
             })
-        } else if let Some(gpu_address) = &self.constant_buffer_addresses[0] {
+        } else if let Some(constant_buffer) = &self.constant_buffers[0] {
             self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: None,
                 layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: gpu_address.get_binding_resource(),
+                    resource: constant_buffer.as_entire_binding(),
                 }],
             })
         } else {

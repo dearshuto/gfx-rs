@@ -146,8 +146,7 @@ fn main() {
                     command_buffer.begin();
                     command_buffer.set_render_targets([color_target_view].into_iter(), None);
                     command_buffer.set_shader(&shader);
-                    command_buffer
-                        .set_constant_buffer_address(0, constant_buffer.get_gpu_address());
+                    command_buffer.set_constant_buffer(0, &constant_buffer);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);
                     command_buffer.draw(
