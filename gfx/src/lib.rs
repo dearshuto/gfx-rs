@@ -1,9 +1,24 @@
-use sjgfx_interface::{
-    ICommandBuffer, IDevice, IFence, IQueue, ISemaphore, ISwapChain, ShaderInfo,
-};
+use sjgfx_interface::{ICommandBuffer, IDevice, IFence, IQueue, ISemaphore, ISwapChain};
 use sjgfx_wgpu::{
-    CommandBufferWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu, SwapChainWgpu,
+    BufferWgpu, CommandBufferWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu,
+    SwapChainWgpu, VertexStateWgpu,
 };
+
+mod buffer_builder;
+mod command_buffer_builder;
+mod device_builder;
+mod queue_builder;
+mod shader_builder;
+mod swap_chain_builder;
+mod vertex_state_builder;
+
+pub use buffer_builder::TBufferBuilder;
+pub use command_buffer_builder::TCommandBufferBuilder;
+pub use device_builder::TDeviceBuilder;
+pub use queue_builder::TQueueBuilder;
+pub use shader_builder::TShaderBuilder;
+pub use swap_chain_builder::TSwapChainBuilder;
+pub use vertex_state_builder::TVertexStateBuilder;
 
 pub mod vulkano;
 pub mod wgpu;
@@ -27,103 +42,13 @@ impl IApi for ApiWgpu {
     type SwapChainType = SwapChainWgpu;
 }
 
-pub trait IDeviceBuilder<TDevice: IDevice> {
-    fn build(&self) -> TDevice;
-}
-impl IDeviceBuilder<DeviceWgpu> for DeviceBuilder {
-    fn build(&self) -> DeviceWgpu {
-        todo!()
-    }
-}
-
-pub struct DeviceBuilder;
-impl DeviceBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct QueueBuilder;
-impl QueueBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct CommandBufferBuilder;
-impl CommandBufferBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct SwapChainBuilder;
-impl SwapChainBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct ShaderBuilder {
-    compute_shader_binary: Option<Vec<u8>>,
-    vertex_shader_binary: Option<Vec<u8>>,
-    pixel_shader_binary: Option<Vec<u8>>,
-}
-
-impl ShaderBuilder {
-    pub fn new() -> Self {
-        Self {
-            compute_shader_binary: None,
-            vertex_shader_binary: None,
-            pixel_shader_binary: None,
-        }
-    }
-
-    pub fn set_compute_shader_binary(self, shader_binary: &[u8]) -> Self {
-        Self {
-            compute_shader_binary: Some(shader_binary.to_vec()),
-            vertex_shader_binary: self.vertex_shader_binary,
-            pixel_shader_binary: self.pixel_shader_binary,
-        }
-    }
-
-    pub fn set_vertex_shader_binary(self, shader_binary: &[u8]) -> Self {
-        Self {
-            compute_shader_binary: self.compute_shader_binary,
-            vertex_shader_binary: Some(shader_binary.to_vec()),
-            pixel_shader_binary: self.pixel_shader_binary,
-        }
-    }
-
-    pub fn set_pixel_shader_binary(self, shader_binary: &[u8]) -> Self {
-        Self {
-            compute_shader_binary: self.compute_shader_binary,
-            vertex_shader_binary: self.vertex_shader_binary,
-            pixel_shader_binary: Some(shader_binary.to_vec()),
-        }
-    }
-
-    pub fn create_info(&self) -> ShaderInfo {
-        let mut shader_info = ShaderInfo::new();
-
-        // 演算シェーダ
-        if let Some(compute_shader_binary) = &self.compute_shader_binary {
-            shader_info = shader_info.set_compute_shader_binary(&compute_shader_binary);
-        }
-
-        // 頂点シェーダ
-        if let Some(vertex_shader_binary) = &self.vertex_shader_binary {
-            shader_info = shader_info.set_vertex_shader_binary(&vertex_shader_binary);
-        }
-
-        // ピクセルシェーダ
-        if let Some(pixel_shader_binary) = &self.pixel_shader_binary {
-            shader_info = shader_info.set_pixel_shader_binary(&pixel_shader_binary);
-        }
-
-        shader_info
-    }
-}
+pub type BufferBuilder = TBufferBuilder<BufferWgpu>;
+pub type CommandBufferBuilder = TCommandBufferBuilder<CommandBufferWgpu>;
+pub type DeviceBuilder = TDeviceBuilder<DeviceWgpu>;
+pub type QueueBuilder = TQueueBuilder<QueueWgpu>;
+pub type ShaderBuilder = TShaderBuilder<ShaderWgpu>;
+pub type SwapChainBuilder = TSwapChainBuilder<SwapChainWgpu>;
+pub type VertexStateBuilder = TVertexStateBuilder<VertexStateWgpu>;
 
 pub struct FenceBuilder;
 impl FenceBuilder {
