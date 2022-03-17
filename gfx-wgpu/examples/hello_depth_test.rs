@@ -1,8 +1,9 @@
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DepthStencilStateInfo, DeviceInfo, GpuAccess, IBuffer,
-    IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader, ISwapChain,
-    ITexture, IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, TextureInfo, VertexBufferStateInfo, VertexStateInfo,
+    AttributeFormat, BufferInfo, CommandBufferInfo, DepthStencilStateInfo, DeviceInfo, GpuAccess,
+    IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader,
+    ISwapChain, ITexture, IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo,
+    ShaderInfo, SwapChainInfo, TextureInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
@@ -81,7 +82,7 @@ where
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
+    let mut device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
@@ -111,11 +112,18 @@ where
             .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
     );
 
+    let attribute_state_info_array = [VertexAttributeStateInfo::new()
+        .set_buffer_index(0)
+        .set_format(AttributeFormat::Float32_32_32)
+        .set_offset(0)
+        .set_slot(0)];
     let vertex_buffer_state_info_array =
         [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex>() as i64)];
     let vertex_state = TVertexState::new(
         &device,
-        &VertexStateInfo::new().set_buffer_state_info_array(vertex_buffer_state_info_array),
+        &VertexStateInfo::new()
+            .set_attribute_state_info_array(attribute_state_info_array.into_iter())
+            .set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
     let vertex_buffer = TBuffer::new(
@@ -178,15 +186,18 @@ where
     let texture = TTexture::new(
         &device,
         &TextureInfo::new()
-            .set_width(640)
-            .set_height(480)
+            .set_width(1280)
+            .set_height(960)
             .set_image_format(ImageFormat::D32)
             .set_gpu_access_flags(GpuAccess::DEPTH_STENCIL),
     );
     let depth_stencil_view =
         TDepthStencilView::new(&device, &DepthStencilStateInfo::new(), &texture);
 
-    let mut swap_chain = TSwapChain::new(&device, &SwapChainInfo::new());
+    let mut swap_chain = TSwapChain::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
 
     let mut should_close = false;
     while !should_close {

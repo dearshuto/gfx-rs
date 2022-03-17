@@ -131,7 +131,7 @@ impl ISwapChain for SwapChainVk {
     type SemaphoreType = SemaphoreVk;
     type FenceType = FenceVk;
 
-    fn new(device: &Self::DeviceType, info: &SwapChainInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &SwapChainInfo) -> Self {
         Self::new(device, info)
     }
 

@@ -164,7 +164,7 @@ impl ISwapChain for SwapChainAsh {
     type SemaphoreType = SemaphoreAsh;
     type FenceType = FenceAsh;
 
-    fn new(device: &Self::DeviceType, info: &SwapChainInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &SwapChainInfo) -> Self {
         Self::new(device, info)
     }
 

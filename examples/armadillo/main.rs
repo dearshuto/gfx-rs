@@ -76,10 +76,13 @@ where
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
+    let mut device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
-    let mut swap_chain = TSwapChain::new(&device, &SwapChainInfo::new());
+    let mut swap_chain = TSwapChain::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
 
     // シェーダ
     let vertex_shader_binary = include_bytes!("../outputs/resources/shaders/armadillo.vs.spv");
@@ -139,8 +142,8 @@ where
     let depth_buffer = TTexture::new(
         &device,
         &TextureInfo::new()
-            .set_width(640)
-            .set_height(480)
+            .set_width(1280)
+            .set_height(960)
             .set_gpu_access_flags(GpuAccess::DEPTH_STENCIL)
             .set_image_format(ImageFormat::D32),
     );
