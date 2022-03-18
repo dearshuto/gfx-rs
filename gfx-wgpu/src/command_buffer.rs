@@ -471,6 +471,27 @@ impl ICommandBuffer for CommandBufferWgpu {
             base_vertex,
         );
     }
+
+    fn draw_indexed_instanced(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
+    ) {
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            index_buffer,
+            index_count,
+            base_vertex,
+            instance_count,
+            base_instance,
+        );
+    }
 }
 
 #[cfg(test)]
