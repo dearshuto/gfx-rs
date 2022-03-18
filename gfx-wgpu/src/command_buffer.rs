@@ -11,6 +11,8 @@ struct DrawInfo {
     #[allow(dead_code)]
     pub primitive_topology: PrimitiveTopology,
     pub vertex_count: u32,
+    pub instance_count: u32,
+    pub base_instance: u32,
 }
 
 struct DrawIndexedInfo {
@@ -119,11 +121,30 @@ impl CommandBufferWgpu {
         &mut self,
         primitive_topology: PrimitiveTopology,
         vertex_count: i32,
+        vertex_offset: i32,
+    ) {
+        self.draw_instanced(
+            primitive_topology,
+            vertex_count,
+            vertex_offset,
+            1, /*instance_count*/
+            0, /*base_instnce*/
+        );
+    }
+
+    pub fn draw_instanced(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
         _vertex_offset: i32,
+        instance_count: i32,
+        base_instnce: i32,
     ) {
         let draw_info = DrawInfo {
             primitive_topology,
             vertex_count: vertex_count as u32,
+            base_instance: base_instnce as u32,
+            instance_count: instance_count as u32,
         };
         self.draw_command = Some(DrawCommand::Draw(draw_info));
     }
@@ -250,7 +271,10 @@ impl CommandBufferWgpu {
             if let Some(draw_command) = &self.draw_command {
                 match draw_command {
                     DrawCommand::Draw(ref draw_info) => {
-                        render_pass.draw(0..draw_info.vertex_count, 0..1);
+                        render_pass.draw(
+                            0..draw_info.vertex_count,
+                            draw_info.base_instance..draw_info.instance_count,
+                        );
                     }
                     DrawCommand::DrawIndexed(ref draw_indexed_info) => {
                         let buffer_slice = draw_indexed_info.index_buffer.slice(..);
