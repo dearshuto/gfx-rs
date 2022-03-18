@@ -11,6 +11,10 @@ path = "armadillo/main.rs"
 name = "mandelbrot"
 path = "mandelbrot/main.rs"
 
+[[bin]]
+name = "wave"
+path = "wave/main.rs"
+
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
