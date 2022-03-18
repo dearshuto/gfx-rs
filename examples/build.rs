@@ -14,6 +14,9 @@ fn main() {
         &"resources/shaders/mandelbrot.vs",
         &"resources/shaders/mandelbrot.fs",
     );
+
+    // 波形
+    compiler.build_graphics_shader(&"resources/shaders/wave.vs", &"resources/shaders/wave.fs");
 }
 
 struct Compiler {
