@@ -624,6 +624,17 @@ impl ICommandBuffer for CommandBufferAsh {
         self.draw(primitive_topology, vertex_count, vertex_offset);
     }
 
+    fn draw_instanced(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _vertex_count: i32,
+        _vertex_offset: i32,
+        _instance_count: i32,
+        _base_instance: i32,
+    ) {
+        todo!()
+    }
+
     fn draw_indexed(
         &mut self,
         _primitive_topology: PrimitiveTopology,
