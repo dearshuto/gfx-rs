@@ -52,6 +52,15 @@ pub trait ICommandBuffer {
         vertex_offset: i32,
     );
 
+    fn draw_instanced(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        vertex_count: i32,
+        vertex_offset: i32,
+        instance_count: i32,
+        base_instance: i32,
+    );
+
     fn draw_indexed(
         &mut self,
         primitive_topology: PrimitiveTopology,
