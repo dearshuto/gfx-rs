@@ -21,6 +21,8 @@ struct DrawIndexedInfo {
     pub index_format: wgpu::IndexFormat,
     pub index_buffer: Arc<wgpu::Buffer>,
     pub index_count: u32,
+    pub instance_count: u32,
+    pub base_instance: u32,
 }
 
 enum DrawCommand {
@@ -155,7 +157,28 @@ impl CommandBufferWgpu {
         index_format: IndexFormat,
         index_buffer: &BufferWgpu,
         index_count: i32,
+        base_vertex: i32,
+    ) {
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            index_buffer,
+            index_count,
+            base_vertex,
+            1, /*instance_count*/
+            0, /*base_instance*/
+        );
+    }
+
+    pub fn draw_indexed_instanced(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        index_buffer: &BufferWgpu,
+        index_count: i32,
         _base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
         let index_format_wgpu = match index_format {
             IndexFormat::Uint32 => wgpu::IndexFormat::Uint32,
@@ -166,6 +189,8 @@ impl CommandBufferWgpu {
             index_format: index_format_wgpu,
             index_buffer: index_buffer.close_buffer(),
             index_count: index_count as u32,
+            instance_count: instance_count as u32,
+            base_instance: base_instance as u32,
         };
         self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
     }
@@ -279,7 +304,11 @@ impl CommandBufferWgpu {
                     DrawCommand::DrawIndexed(ref draw_indexed_info) => {
                         let buffer_slice = draw_indexed_info.index_buffer.slice(..);
                         render_pass.set_index_buffer(buffer_slice, draw_indexed_info.index_format);
-                        render_pass.draw_indexed(0..draw_indexed_info.index_count, 0, 0..1);
+                        render_pass.draw_indexed(
+                            0..draw_indexed_info.index_count,
+                            0,
+                            draw_indexed_info.base_instance..draw_indexed_info.instance_count,
+                        );
                     }
                 }
             }
