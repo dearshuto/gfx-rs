@@ -1,6 +1,7 @@
 extern crate nalgebra_glm as glm;
 use sjgfx::{BufferBuilder, CommandBufferBuilder, DeviceBuilder, QueueBuilder, SwapChainBuilder};
 
+use sjgfx_interface::{IndexFormat, PrimitiveTopology};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -15,6 +16,7 @@ struct ConstantBuffer {
 }
 
 fn main() {
+    let particle_count = 16;
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
@@ -22,6 +24,7 @@ fn main() {
     let mut queue = QueueBuilder::new().build(&device);
     let mut swap_chain = SwapChainBuilder::new().build(&mut device);
     let mut command_buffer = CommandBufferBuilder::new().build(&device);
+    let mut compute_command_buffer = CommandBufferBuilder::new().build(&device);
     let simulation_buffer = BufferBuilder::new()
         .with_size(64)
         .enable_vertex_buffer()
@@ -56,6 +59,12 @@ fn main() {
 
             match event {
                 Event::RedrawRequested(_) => {
+                    compute_command_buffer.begin();
+                    // compute_command_buffer.set_shader(shader);
+                    compute_command_buffer.set_unordered_access_buffer(0, &simulation_buffer);
+                    compute_command_buffer.dispatch(1, 1, 1);
+                    compute_command_buffer.end();
+
                     let next_scan_buffer_view =
                         swap_chain.acquire_next_scan_buffer_view(None, None);
 
@@ -66,15 +75,18 @@ fn main() {
                     // command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &obj_data.vertex_buffer);
                     command_buffer.set_vertex_buffer(1, &simulation_buffer);
-                    // command_buffer.draw_instanced(
-                    //     PrimitiveTopology::TriangleList,
-                    //     IndexFormat::Uint32,
-                    //     &obj_data.index_buffer,
-                    //     obj_data.index_count,
-                    //     0, /*base_vertex*/
-                    // );
+                    command_buffer.draw_indexed_instanced(
+                        PrimitiveTopology::TriangleList,
+                        IndexFormat::Uint32,
+                        &obj_data.index_buffer,
+                        obj_data.index_count,
+                        0,              /*base_vertex*/
+                        particle_count, /*instance_count*/
+                        0,              /*base_instance*/
+                    );
                     command_buffer.end();
 
+                    queue.execute(&compute_command_buffer);
                     queue.execute(&command_buffer);
                     queue.present(&mut swap_chain);
                     queue.flush();
