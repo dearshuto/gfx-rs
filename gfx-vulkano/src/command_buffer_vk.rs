@@ -411,6 +411,19 @@ impl ICommandBuffer for CommandBufferVk {
     ) {
         todo!()
     }
+
+    fn draw_indexed_instanced(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: sjgfx_interface::IndexFormat,
+        _index_buffer: &Self::BufferType,
+        _index_count: i32,
+        _base_vertex: i32,
+        _instance_count: i32,
+        _base_instance: i32,
+    ) {
+        todo!()
+    }
 }
 
 // #[cfg(test)]

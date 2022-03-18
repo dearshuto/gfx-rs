@@ -69,4 +69,15 @@ pub trait ICommandBuffer {
         index_count: i32,
         base_vertex: i32,
     );
+
+    fn draw_indexed_instanced(
+        &mut self,
+        primitive_topology: PrimitiveTopology,
+        index_format: IndexFormat,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
+    );
 }
