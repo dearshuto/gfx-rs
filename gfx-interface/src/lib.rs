@@ -6,6 +6,7 @@ mod device_api;
 mod enums;
 mod fence_api;
 mod queue_api;
+mod sampler_api;
 mod semaphore_api;
 mod shader_api;
 mod swap_chain_api;
@@ -18,9 +19,12 @@ pub use color_target_view_api::{ColorTargetViewInfo, IColorTargetView};
 pub use command_buffer_api::{CommandBufferInfo, ICommandBuffer};
 pub use depth_stencil_view_api::{DepthStencilStateInfo, IDepthStencilView};
 pub use device_api::{DeviceInfo, IDevice};
-pub use enums::{AttributeFormat, GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage};
+pub use enums::{
+    AttributeFormat, GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage,
+};
 pub use fence_api::{FenceInfo, IFence};
 pub use queue_api::{IQueue, QueueInfo};
+pub use sampler_api::{ISampler, SamplerInfo};
 pub use semaphore_api::{ISemaphore, SemaphoreInfo};
 pub use shader_api::{IShader, ShaderInfo};
 pub use swap_chain_api::{ISwapChain, SwapChainInfo};

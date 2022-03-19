@@ -4,7 +4,7 @@ use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveT
 
 use crate::{
     shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
-    DepthStencilViewWgpu, DeviceWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
+    DepthStencilViewWgpu, DeviceWgpu, SamplerWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -42,6 +42,10 @@ pub struct CommandBufferWgpu {
     unordered_access_buffer: [Option<Arc<wgpu::Buffer>>; 8],
     dispatch_count: Option<(u32, u32, u32)>,
 
+    // テクスチャ
+    textures: [Option<Arc<wgpu::TextureView>>; 8],
+    samplers: [Option<Arc<wgpu::Sampler>>; 8],
+
     // Draw
     vertex_buffer: [Option<Arc<wgpu::Buffer>>; 8],
     vertex_state: Option<VertexStateView>,
@@ -57,6 +61,11 @@ impl CommandBufferWgpu {
             shader: None,
             constant_buffers: [None, None, None, None, None, None, None, None],
             unordered_access_buffer: [None, None, None, None, None, None, None, None],
+
+            // テクスチャ
+            textures: [None, None, None, None, None, None, None, None],
+            samplers: [None, None, None, None, None, None, None, None],
+
             dispatch_count: None,
             vertex_buffer: [None, None, None, None, None, None, None, None],
             vertex_state: None,
@@ -96,6 +105,18 @@ impl CommandBufferWgpu {
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
         self.unordered_access_buffer[index as usize] = Some(buffer.close_buffer());
+    }
+
+    pub fn set_texture(&mut self, index: i32, texture: &TextureWgpu) {
+        self.textures[index as usize] = Some(Arc::new(
+            texture
+                .get_texture()
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+        ));
+    }
+
+    pub fn set_sampler(&mut self, index: i32, sampler: &SamplerWgpu) {
+        self.samplers[index as usize] = Some(sampler.clone_sampler());
     }
 
     pub fn set_vertex_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
@@ -317,31 +338,53 @@ impl CommandBufferWgpu {
     }
 
     fn create_bind_group(&self) -> wgpu::BindGroup {
-        if let Some(unordered_access_buffer) = &self.unordered_access_buffer[0] {
-            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: None,
-                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
+        let mut entries = Vec::new();
+
+        // バッファ
+        for index in 0..self.unordered_access_buffer.len() {
+            if let Some(unordered_access_buffer) = &self.unordered_access_buffer[index] {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: index as u32,
                     resource: unordered_access_buffer.as_entire_binding(),
-                }],
-            })
-        } else if let Some(constant_buffer) = &self.constant_buffers[0] {
-            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: None,
-                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: constant_buffer.as_entire_binding(),
-                }],
-            })
-        } else {
-            self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: None,
-                layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
-                entries: &[],
-            })
+                });
+            }
         }
+
+        // 定数バッファ
+        for index in 0..self.constant_buffers.len() {
+            if let Some(constant_buffer) = &self.constant_buffers[index] {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: index as u32,
+                    resource: constant_buffer.as_entire_binding(),
+                });
+            }
+        }
+
+        // テクスチャ
+        for index in 0..self.textures.len() {
+            if let Some(texture) = &self.textures[index] {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: index as u32,
+                    resource: wgpu::BindingResource::TextureView(texture),
+                })
+            }
+        }
+
+        // サンプラ
+        for index in 0..self.samplers.len() {
+            if let Some(sampler) = &self.samplers[index] {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: index as u32,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                })
+            }
+        }
+
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
+            entries: &entries,
+        })
     }
 
     fn create_depth_stencil_state(&self) -> Option<wgpu::DepthStencilState> {

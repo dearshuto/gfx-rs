@@ -51,6 +51,7 @@ struct Converter;
 impl Converter {
     pub fn convert_format(&self, image_format: ImageFormat) -> Format {
         match image_format {
+            ImageFormat::R8G8B8Unorm => Format::R8G8B8_UNORM,
             ImageFormat::R8G8B8A8Unorm => Format::R8G8B8A8_UNORM,
             ImageFormat::D32 => Format::D32_SFLOAT,
         }

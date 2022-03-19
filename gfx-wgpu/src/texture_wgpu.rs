@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{GpuAccess, ITexture, ImageFormat, TextureInfo};
+use wgpu::util::DeviceExt;
 
 use crate::DeviceWgpu;
 
@@ -10,23 +11,21 @@ pub struct TextureWgpu {
 
 impl TextureWgpu {
     pub fn new(device: &DeviceWgpu, info: &TextureInfo) -> Self {
-        let texture_size = wgpu::Extent3d {
-            width: info.get_width() as u32,
-            height: info.get_height() as u32,
-            depth_or_array_layers: info.get_depth() as u32,
-        };
+        let texture_descriptor = Self::create_descriptor(info);
+        let texture = device.get_device().create_texture(&texture_descriptor);
 
-        let texture = device
-            .get_device()
-            .create_texture(&wgpu::TextureDescriptor {
-                label: None,
-                size: texture_size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: Self::convert_format(info.get_image_format().clone()),
-                usage: Self::convert_usage(info.get_gpu_access_flags()),
-            });
+        Self {
+            texture: Arc::new(texture),
+        }
+    }
+
+    pub fn new_with_data(device: &DeviceWgpu, info: &TextureInfo, data: &[u8]) -> Self {
+        let queue = device.get_queue();
+        let texture_descriptor = Self::create_descriptor(info);
+        let texture =
+            device
+                .get_device()
+                .create_texture_with_data(queue, &texture_descriptor, data);
 
         Self {
             texture: Arc::new(texture),
@@ -39,6 +38,23 @@ impl TextureWgpu {
 
     pub fn close_texture(&self) -> Arc<wgpu::Texture> {
         self.texture.clone()
+    }
+
+    fn create_descriptor(info: &TextureInfo) -> wgpu::TextureDescriptor {
+        let texture_size = wgpu::Extent3d {
+            width: info.get_width() as u32,
+            height: info.get_height() as u32,
+            depth_or_array_layers: info.get_depth() as u32,
+        };
+        wgpu::TextureDescriptor {
+            label: None,
+            size: texture_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: Self::convert_format(info.get_image_format().clone()),
+            usage: Self::convert_usage(info.get_gpu_access_flags()),
+        }
     }
 
     fn convert_usage(gpu_access: &GpuAccess) -> wgpu::TextureUsages {
@@ -67,6 +83,7 @@ impl TextureWgpu {
 
     fn convert_format(format: ImageFormat) -> wgpu::TextureFormat {
         match format {
+            ImageFormat::R8G8B8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::R8G8B8A8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::D32 => wgpu::TextureFormat::Depth32Float,
         }
