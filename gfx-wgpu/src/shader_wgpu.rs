@@ -146,7 +146,12 @@ impl ShaderWgpu {
             .into_iter()
             .map(|x| match x.resource_type {
                 spirv_reflect::types::ReflectResourceType::Undefined => todo!(),
-                spirv_reflect::types::ReflectResourceType::Sampler => todo!(),
+                spirv_reflect::types::ReflectResourceType::Sampler => wgpu::BindGroupLayoutEntry {
+                    binding: x.binding,
+                    visibility: Self::convert_shader_stage(shader_stage),
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
                 spirv_reflect::types::ReflectResourceType::CombinedImageSampler => todo!(),
                 spirv_reflect::types::ReflectResourceType::ConstantBufferView => {
                     wgpu::BindGroupLayoutEntry {
@@ -160,7 +165,18 @@ impl ShaderWgpu {
                         count: None,
                     }
                 }
-                spirv_reflect::types::ReflectResourceType::ShaderResourceView => todo!(),
+                spirv_reflect::types::ReflectResourceType::ShaderResourceView => {
+                    wgpu::BindGroupLayoutEntry {
+                        binding: x.binding,
+                        visibility: Self::convert_shader_stage(shader_stage),
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    }
+                }
                 spirv_reflect::types::ReflectResourceType::UnorderedAccessView => {
                     wgpu::BindGroupLayoutEntry {
                         binding: x.binding,
