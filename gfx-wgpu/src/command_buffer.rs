@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology};
+use sjgfx_interface::{
+    CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology, ScissorStateInfo,
+    ViewportStateInfo,
+};
 
 use crate::{
     shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
@@ -37,6 +40,10 @@ pub struct CommandBufferWgpu {
     color_target_view: Option<ColorTargetViewWgpu>,
     depth_stencil_view: Option<Arc<wgpu::TextureView>>,
 
+    // ビューポートシザー
+    viewport_state_info: Option<ViewportStateInfo>,
+    scissor_state_info: Option<ScissorStateInfo>,
+
     shader: Option<ShaderView>,
     constant_buffers: [Option<Arc<wgpu::Buffer>>; 8],
     unordered_access_buffer: [Option<Arc<wgpu::Buffer>>; 8],
@@ -58,6 +65,11 @@ impl CommandBufferWgpu {
             device: device.close_device(),
             color_target_view: None,
             depth_stencil_view: None,
+
+            // ビューポートシザー
+            viewport_state_info: None,
+            scissor_state_info: None,
+
             shader: None,
             constant_buffers: [None, None, None, None, None, None, None, None],
             unordered_access_buffer: [None, None, None, None, None, None, None, None],
@@ -93,6 +105,14 @@ impl CommandBufferWgpu {
         } else {
             self.depth_stencil_view = None;
         }
+    }
+
+    pub fn set_viewport(&mut self, viewport_state_info: &ViewportStateInfo) {
+        self.viewport_state_info = Some(viewport_state_info.clone());
+    }
+
+    pub fn set_scissor(&mut self, scissor_state_info: &ScissorStateInfo) {
+        self.scissor_state_info = Some(scissor_state_info.clone());
     }
 
     pub fn set_shader(&mut self, shader: &ShaderWgpu) {
@@ -307,6 +327,28 @@ impl CommandBufferWgpu {
 
             // デスクリプタたち
             render_pass.set_bind_group(0, &bind_group, &[]);
+
+            // ビューポート
+            if let Some(viewport_state_info) = &self.viewport_state_info {
+                render_pass.set_viewport(
+                    viewport_state_info.get_origin_x(),
+                    viewport_state_info.get_origin_y(),
+                    viewport_state_info.get_width(),
+                    viewport_state_info.get_height(),
+                    -1.0, /*min_depth*/
+                    1.0,  /*max_depth*/
+                )
+            }
+
+            // シザリング
+            if let Some(scissor_state_info) = &self.scissor_state_info {
+                render_pass.set_scissor_rect(
+                    scissor_state_info.get_origin_x() as u32,
+                    scissor_state_info.get_origin_y() as u32,
+                    scissor_state_info.get_width() as u32,
+                    scissor_state_info.get_height() as u32,
+                );
+            }
 
             // 頂点バッファ
             if let Some(vertex_buffer) = &self.vertex_buffer[0] {

@@ -35,4 +35,6 @@ pub use texture_api::{
 pub use vertex_state_api::{
     IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
-pub use viewport_scissor_state_api::ViewportScissorStateInfo;
+pub use viewport_scissor_state_api::{
+    ScissorStateInfo, ViewportScissorStateInfo, ViewportStateInfo,
+};
