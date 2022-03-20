@@ -8,6 +8,7 @@ pub struct BufferAsh {
     buffer: ash::vk::Buffer,
     device_memory: ash::vk::DeviceMemory,
     size: usize,
+    id: uuid::Uuid,
 }
 
 impl BufferAsh {
@@ -60,6 +61,7 @@ impl BufferAsh {
             buffer,
             device_memory,
             size: info.get_size(),
+            id: uuid::Uuid::new_v4(),
         }
     }
 
@@ -168,6 +170,10 @@ impl BufferAsh {
 
     pub fn get_buffer(&self) -> ash::vk::Buffer {
         self.buffer
+    }
+
+    pub fn get_id(&self) -> &uuid::Uuid {
+        &self.id
     }
 
     fn convert_gpu_access_to_ash(gpu_access: &GpuAccess) -> ash::vk::BufferUsageFlags {

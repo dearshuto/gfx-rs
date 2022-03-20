@@ -11,6 +11,7 @@ pub struct ShaderAsh {
     compute_shader_module: Option<ash::vk::ShaderModule>,
     vertex_shader_module: Option<ash::vk::ShaderModule>,
     pixel_shader_module: Option<ash::vk::ShaderModule>,
+    id: uuid::Uuid,
 }
 
 impl ShaderAsh {
@@ -46,6 +47,10 @@ impl ShaderAsh {
         self.descriptor_set_layout
     }
 
+    pub fn get_id(&self) -> &uuid::Uuid {
+        &self.id
+    }
+
     fn new_as_graphics(device: &DeviceAsh, info: &ShaderInfo) -> Self {
         let (descriptor_set_layout, pipeline_layout) =
             Self::create_descriptor_set_layout_and_pipeline_layout(device, info);
@@ -63,6 +68,7 @@ impl ShaderAsh {
             )),
             descriptor_set_layout,
             pipeline_layout,
+            id: uuid::Uuid::new_v4(),
         }
     }
 
@@ -80,6 +86,7 @@ impl ShaderAsh {
             pixel_shader_module: None,
             descriptor_set_layout,
             pipeline_layout,
+            id: uuid::Uuid::new_v4(),
         }
     }
 
