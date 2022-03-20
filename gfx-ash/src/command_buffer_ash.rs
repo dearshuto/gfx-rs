@@ -39,6 +39,10 @@ pub struct CommandBufferAsh {
     unordered_accss_buffer_ids: [uuid::Uuid; 8],
     is_unordered_access_buffer_dirty: bool,
 
+    // 頂点バッファ
+    vertex_buffer: [Option<ash::vk::Buffer>; 8],
+    vertex_inpute_state_create_info: Option<ash::vk::PipelineVertexInputStateCreateInfo>,
+
     // 描画コマンド
     vertex_count: Option<u32>,
 
@@ -95,6 +99,10 @@ impl CommandBufferAsh {
             unordered_accss_buffer: [None; 8],
             unordered_accss_buffer_ids: [uuid::Uuid::nil(); 8],
             is_unordered_access_buffer_dirty: true,
+
+            // 頂点バッファ
+            vertex_buffer: [None; 8],
+            vertex_inpute_state_create_info: None,
 
             // 描画コマンド
             vertex_count: None,
@@ -341,6 +349,19 @@ impl CommandBufferAsh {
                 .cmd_set_scissor(self.command_buffer, 0, &scissors);
         }
 
+        // 頂点バッファ
+        // TODO: 複数の頂点バッファ対応
+        if let Some(vertex_buffer) = self.vertex_buffer[0] {
+            unsafe {
+                self.device.cmd_bind_vertex_buffers(
+                    self.command_buffer,
+                    0, /*firsrt binding*/
+                    &[vertex_buffer],
+                    &[0], /*offset*/
+                )
+            };
+        }
+
         // 描画コマンド
         if let Some(vertex_count) = self.vertex_count {
             unsafe {
@@ -492,9 +513,7 @@ impl CommandBufferAsh {
                 height: 480,
             })
             .build()];
-        let vertex_input_state_info = ash::vk::PipelineVertexInputStateCreateInfo::builder()
-            .vertex_attribute_descriptions(&[])
-            .vertex_binding_descriptions(&[]);
+        let vertex_input_state_info = self.vertex_inpute_state_create_info.unwrap();
         let viewport_state_info = ash::vk::PipelineViewportStateCreateInfo::builder()
             .scissors(&scissors)
             .viewports(&viewports);
@@ -662,12 +681,14 @@ impl ICommandBuffer for CommandBufferAsh {
         self.set_unordered_access_buffer(index, buffer);
     }
 
-    fn set_vertex_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
-        todo!()
+    fn set_vertex_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        let index = index as usize;
+        self.vertex_buffer[index] = Some(buffer.get_buffer());
     }
 
-    fn set_vertex_state(&mut self, _vertex_state: &Self::VertexStateType) {
-        todo!()
+    fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType) {
+        self.vertex_inpute_state_create_info =
+            Some(vertex_state.clone_vertex_input_state_create_info());
     }
 
     fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {

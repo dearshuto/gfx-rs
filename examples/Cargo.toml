@@ -11,11 +11,18 @@ path = "armadillo/main.rs"
 name = "mandelbrot"
 path = "mandelbrot/main.rs"
 
+
 [[bin]]
 name = "wave"
 path = "wave/main.rs"
 
+[features]
+# default = ["backend-wgpu"]
+backend-wgpu = []
+backend-ash = []
+
 [dependencies]
+sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 winit = "0.26.0"
