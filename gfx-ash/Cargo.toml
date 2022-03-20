@@ -9,6 +9,7 @@ ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.36.0", default-fe
 ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.36.0" }
 raw-window-handle = "0.4.0"
 winit = "0.26"
+uuid = { version = "0.8.0", features = ["v4"] }
 
 [dev-dependencies]
 shaderc = "0.7"

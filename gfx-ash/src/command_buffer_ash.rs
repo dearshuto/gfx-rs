@@ -21,6 +21,8 @@ pub struct CommandBufferAsh {
     framebuffer: Option<Framebuffer>,
 
     // シェーダ
+    previous_shader_id: Option<uuid::Uuid>,
+    is_shader_dirty: bool,
     compute_shader_module: Option<ash::vk::ShaderModule>,
     vertex_shader_module: Option<ash::vk::ShaderModule>,
     pixel_shader_module: Option<ash::vk::ShaderModule>,
@@ -31,7 +33,11 @@ pub struct CommandBufferAsh {
     descriptor_pool: Option<ash::vk::DescriptorPool>,
     descriptor_set: Option<ash::vk::DescriptorSet>,
     descriptor_set_layout: Option<ash::vk::DescriptorSetLayout>,
-    unordered_accss_buffer: [Option<ash::vk::Buffer>; 64],
+
+    // UnorderedAccessBuffer
+    unordered_accss_buffer: [Option<ash::vk::Buffer>; 8],
+    unordered_accss_buffer_ids: [uuid::Uuid; 8],
+    is_unordered_access_buffer_dirty: bool,
 
     // 描画コマンド
     vertex_count: Option<u32>,
@@ -71,6 +77,9 @@ impl CommandBufferAsh {
             render_pass: None,
             framebuffer: None,
 
+            // シェーダ
+            previous_shader_id: None,
+            is_shader_dirty: true,
             compute_shader_module: None,
             vertex_shader_module: None,
             pixel_shader_module: None,
@@ -81,7 +90,11 @@ impl CommandBufferAsh {
             descriptor_pool: None,
             descriptor_set: None,
             descriptor_set_layout: None,
-            unordered_accss_buffer: [None; 64],
+
+            // UnorderedAccessBuffer
+            unordered_accss_buffer: [None; 8],
+            unordered_accss_buffer_ids: [uuid::Uuid::nil(); 8],
+            is_unordered_access_buffer_dirty: true,
 
             // 描画コマンド
             vertex_count: None,
@@ -125,6 +138,14 @@ impl CommandBufferAsh {
     }
 
     pub fn set_shader(&mut self, shader: &ShaderAsh) {
+        // シェーダが更新されてなかったら Dirty フラグをオフにしてなにもしない
+        if let Some(previous_shader_id) = self.previous_shader_id {
+            if previous_shader_id.eq(shader.get_id()) {
+                self.is_shader_dirty = false;
+                return;
+            }
+        }
+
         // シェーダをもとにパイプラインを作る必要があるのでコマンドの作成は end() が呼ばれるまで遅延する
         if shader.is_compute() {
             self.compute_shader_module = Some(shader.get_compute_shader_module());
@@ -138,10 +159,23 @@ impl CommandBufferAsh {
 
         self.pipeline_layout = Some(shader.get_pipeline_layout());
         self.descriptor_set_layout = Some(shader.get_descriptor_set_layout());
+
+        // 作りなおしが必要かを判別するためのフラグ
+        self.previous_shader_id = Some(shader.get_id().clone());
+        self.is_shader_dirty = true;
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferAsh) {
-        self.unordered_accss_buffer[index as usize] = Some(buffer.get_buffer());
+        let index = index as usize;
+
+        // セットしているバッファに変更がなければなにもしない
+        if self.unordered_accss_buffer_ids[index].eq(buffer.get_id()) {
+            return;
+        } else {
+            self.unordered_accss_buffer[index as usize] = Some(buffer.get_buffer());
+            self.unordered_accss_buffer_ids[index as usize] = buffer.get_id().clone();
+            self.is_unordered_access_buffer_dirty = true;
+        }
     }
 
     pub fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
@@ -163,7 +197,10 @@ impl CommandBufferAsh {
 
     fn push_compute_pass_command(&mut self) {
         self.update_pipeline();
-        self.update_descriptor_set();
+
+        if self.should_update_descriptor_sets() {
+            self.update_descriptor_set();
+        }
 
         // 演算パイプラインの開始
         unsafe {
@@ -324,9 +361,18 @@ impl CommandBufferAsh {
     }
 
     fn update_pipeline(&mut self) {
+        // パイプラインを作り直すときは古いパイプラインを破棄する
         let mut new_pipeline = if self.compute_shader_module.is_some() {
+            if let Some(pipeline) = self.pipeline {
+                unsafe { self.device.destroy_pipeline(pipeline, None) }
+                self.pipeline = None;
+            }
             Some(self.create_compute_pipeline())
-        } else if self.vertex_shader_module.is_some() {
+        } else if self.should_update_graphics_pipeline() {
+            if let Some(pipeline) = self.pipeline {
+                unsafe { self.device.destroy_pipeline(pipeline, None) }
+                self.pipeline = None;
+            }
             Some(self.create_graphics_pipeline())
         } else {
             None
@@ -476,7 +522,16 @@ impl CommandBufferAsh {
         graphics_pipeline[0]
     }
 
+    fn should_update_graphics_pipeline(&self) -> bool {
+        self.is_shader_dirty
+    }
+
     fn update_descriptor_set(&mut self) {
+        // すでにプールが存在する場合は破棄
+        if let Some(descriptor_pool) = self.descriptor_pool {
+            unsafe { self.device.destroy_descriptor_pool(descriptor_pool, None) };
+        }
+
         // デスクリプタプールを作る
         // TODO: キャッシュ
         let descriptor_sizes = [ash::vk::DescriptorPoolSize {
@@ -522,6 +577,10 @@ impl CommandBufferAsh {
             self.device
                 .update_descriptor_sets(&write_descriptor_sets, &[]);
         }
+    }
+
+    fn should_update_descriptor_sets(&self) -> bool {
+        self.is_unordered_access_buffer_dirty
     }
 }
 
