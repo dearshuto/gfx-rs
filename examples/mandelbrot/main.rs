@@ -1,13 +1,22 @@
+#[cfg(feature = "backend-ash")]
+use sjgfx_ash::{
+    BufferAsh, ColorTargetViewAsh, CommandBufferAsh, DeviceAsh, QueueAsh, SemaphoreAsh, ShaderAsh,
+    SwapChainAsh, VertexStateAsh,
+};
+
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IBuffer,
-    IColorTargetView, ICommandBuffer, IDevice, IQueue, IShader, ISwapChain, IVertexState,
-    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo,
-    VertexBufferStateInfo, VertexStateInfo,
+    IColorTargetView, ICommandBuffer, IDevice, IQueue, ISemaphore, IShader, ISwapChain,
+    IVertexState, PrimitiveTopology, QueueInfo, SemaphoreInfo, ShaderInfo, SwapChainInfo,
+    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
+
+#[cfg(feature = "backend-wgpu")]
 use sjgfx_wgpu::{
-    BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
-    SwapChainWgpu, VertexStateWgpu,
+    BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, SemaphoreWgpu,
+    ShaderWgpu, SwapChainWgpu, VertexStateWgpu,
 };
+
 use winit::event::WindowEvent;
 use winit::event_loop::EventLoop;
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -15,7 +24,20 @@ use winit::window::WindowBuilder;
 use winit::{event::Event, event_loop::ControlFlow};
 
 fn main() {
-    // ひとまず wgpu 実装を用意
+    #[cfg(feature = "backend-ash")]
+    run::<
+        DeviceAsh,
+        QueueAsh,
+        CommandBufferAsh,
+        SwapChainAsh,
+        ColorTargetViewAsh,
+        ShaderAsh,
+        VertexStateAsh,
+        BufferAsh,
+        SemaphoreAsh,
+    >();
+
+    #[cfg(feature = "backend-wgpu")]
     run::<
         DeviceWgpu,
         QueueWgpu,
@@ -25,6 +47,7 @@ fn main() {
         ShaderWgpu,
         VertexStateWgpu,
         BufferWgpu,
+        SemaphoreWgpu,
     >();
 }
 
@@ -37,6 +60,7 @@ fn run<
     TShader,
     TVertexState,
     TBuffer,
+    TSemaphore,
 >()
 where
     TDevice: IDevice,
@@ -52,11 +76,16 @@ where
         VertexStateType = TVertexState,
         ColorTargetViewType = TColorTargetView,
     >,
-    TSwapChain: ISwapChain<DeviceType = TDevice, ColorTargetViewType = TColorTargetView>,
+    TSwapChain: ISwapChain<
+        DeviceType = TDevice,
+        ColorTargetViewType = TColorTargetView,
+        SemaphoreType = TSemaphore,
+    >,
     TColorTargetView: IColorTargetView<DeviceType = TDevice>,
     TShader: IShader<DeviceType = TDevice>,
     TVertexState: IVertexState<DeviceType = TDevice>,
     TBuffer: IBuffer<DeviceType = TDevice>,
+    TSemaphore: ISemaphore<DeviceType = TDevice>,
 {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -111,9 +140,9 @@ where
         mapped_data[10] = 1.0;
         mapped_data[11] = 1.0;
     });
-    vertex_buffer.flush_mapped_range(0, 0x40);
+    vertex_buffer.flush_mapped_range(0, 128);
 
-    //let mut semaphore = sj::gfx::Semaphore::new(&device, &sj::gfx::SemaphoreInfo::new());
+    let mut semaphore = TSemaphore::new(&device, &SemaphoreInfo::new());
 
     let mut should_close = false;
     while !should_close {
@@ -125,7 +154,7 @@ where
                     // queue.sync_semaphore(&mut semaphore);
 
                     let next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(None, None);
+                        swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
                     command_buffer.begin();
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);

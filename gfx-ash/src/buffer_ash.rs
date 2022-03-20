@@ -114,23 +114,34 @@ impl BufferAsh {
         unsafe { self.device.unmap_memory(self.device_memory) }
     }
 
-    // pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, size: usize, func: F) {
-    //     let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write);
+    pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, size: usize, func: F) {
+        let mapped_data_raw = unsafe {
+            self.device.map_memory(
+                self.device_memory,
+                0, /*offset*/
+                self.size as ash::vk::DeviceSize,
+                ash::vk::MemoryMapFlags::empty(),
+            )
+        }
+        .unwrap();
+        let mapped_data = mapped_data_raw as *mut T;
+        let mapped_slice_data = unsafe { std::slice::from_raw_parts_mut::<T>(mapped_data, size) };
 
-    //     self.device.get_device().poll(wgpu::Maintain::Wait);
-
-    //     let ptr = self
-    //         .buffer
-    //         .slice(..)
-    //         .get_mapped_range_mut()
-    //         .as_mut_ptr()
-    //         .cast::<T>();
-    //     let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
-    //     func(slice);
-    //     self.buffer.unmap();
-    // }
+        func(mapped_slice_data);
+        unsafe { self.device.unmap_memory(self.device_memory) }
+    }
 
     pub fn flush_mapped_range(&self, offset: isize, size: usize) {
+        unsafe {
+            self.device.map_memory(
+                self.device_memory,
+                offset as ash::vk::DeviceSize,
+                size as ash::vk::DeviceSize,
+                ash::vk::MemoryMapFlags::empty(),
+            )
+        }
+        .unwrap();
+
         let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
             .memory(self.device_memory)
             .offset(offset as ash::vk::DeviceSize)
@@ -141,6 +152,8 @@ impl BufferAsh {
                 .flush_mapped_memory_ranges(&[mapped_memory_range])
         }
         .unwrap();
+
+        unsafe { self.device.unmap_memory(self.device_memory) }
     }
 
     pub fn invalidate_mapped_range(&self, offset: isize, size: usize) {
@@ -225,11 +238,13 @@ impl IBuffer for BufferAsh {
     }
 
     fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
-        self.map_as_slice(64, func);
+        let length = self.size / std::mem::size_of::<T>();
+        self.map_as_slice(length, func);
     }
 
-    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
-        todo!()
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
+        let length = self.size / std::mem::size_of::<T>();
+        self.map_as_slice_mut(length, func);
     }
 
     fn flush_mapped_range(&self, offset: isize, size: usize) {
