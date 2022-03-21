@@ -1,11 +1,13 @@
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 
-pub struct TBufferBuilder<T: IBuffer> {
+use crate::api::IApi;
+
+pub struct TBufferBuilder<T: IApi> {
     info: BufferInfo,
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: IBuffer> TBufferBuilder<T> {
+impl<T: IApi> TBufferBuilder<T> {
     pub fn new() -> Self {
         Self {
             info: BufferInfo::new(),
@@ -13,8 +15,8 @@ impl<T: IBuffer> TBufferBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::DeviceType) -> T {
-        T::new(device, &self.info)
+    pub fn build(&self, device: &T::Device) -> T::Buffer {
+        T::Buffer::new(device, &self.info)
     }
 
     pub fn with_size(self, size: usize) -> Self {

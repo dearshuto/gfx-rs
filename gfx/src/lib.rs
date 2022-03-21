@@ -1,9 +1,4 @@
-use sjgfx_interface::{ICommandBuffer, IDevice, IFence, IQueue, ISemaphore, ISwapChain};
-use sjgfx_wgpu::{
-    BufferWgpu, CommandBufferWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu,
-    SwapChainWgpu, VertexStateWgpu,
-};
-
+pub mod api;
 mod buffer_builder;
 mod command_buffer_builder;
 mod device_builder;
@@ -23,32 +18,19 @@ pub use vertex_state_builder::TVertexStateBuilder;
 pub mod vulkano;
 pub mod wgpu;
 
-pub trait IApi {
-    type DeviceType: IDevice;
-    type QueueType: IQueue;
-    type CommandBufferType: ICommandBuffer<DeviceType = Self::DeviceType>;
-    type FenceType: IFence<DeviceType = Self::DeviceType>;
-    type SemaphoreType: ISemaphore<DeviceType = Self::DeviceType>;
-    type SwapChainType: ISwapChain<DeviceType = Self::DeviceType>;
-}
+#[cfg(feature = "backend-ash")]
+type BackendApi = api::Ash;
 
-pub struct ApiWgpu;
-impl IApi for ApiWgpu {
-    type DeviceType = DeviceWgpu;
-    type QueueType = QueueWgpu;
-    type CommandBufferType = CommandBufferWgpu;
-    type FenceType = FenceWgpu;
-    type SemaphoreType = SemaphoreWgpu;
-    type SwapChainType = SwapChainWgpu;
-}
+#[cfg(all(not(feature = "backend-ash"), feature = "backend-wgpu"))]
+type BackendApi = api::Wgpu;
 
-pub type BufferBuilder = TBufferBuilder<BufferWgpu>;
-pub type CommandBufferBuilder = TCommandBufferBuilder<CommandBufferWgpu>;
-pub type DeviceBuilder = TDeviceBuilder<DeviceWgpu>;
-pub type QueueBuilder = TQueueBuilder<QueueWgpu>;
-pub type ShaderBuilder = TShaderBuilder<ShaderWgpu>;
-pub type SwapChainBuilder = TSwapChainBuilder<SwapChainWgpu>;
-pub type VertexStateBuilder = TVertexStateBuilder<VertexStateWgpu>;
+pub type BufferBuilder = TBufferBuilder<BackendApi>;
+pub type CommandBufferBuilder = TCommandBufferBuilder<BackendApi>;
+pub type DeviceBuilder = TDeviceBuilder<BackendApi>;
+pub type QueueBuilder = TQueueBuilder<BackendApi>;
+pub type ShaderBuilder = TShaderBuilder<BackendApi>;
+pub type SwapChainBuilder = TSwapChainBuilder<BackendApi>;
+pub type VertexStateBuilder = TVertexStateBuilder<BackendApi>;
 
 pub struct FenceBuilder;
 impl FenceBuilder {

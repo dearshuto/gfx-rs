@@ -1,13 +1,15 @@
 use sjgfx_interface::{IShader, ShaderInfo};
 
-pub struct TShaderBuilder<T: IShader> {
+use crate::api::IApi;
+
+pub struct TShaderBuilder<T: IApi> {
     compute_shader_binary: Option<Vec<u8>>,
     vertex_shader_binary: Option<Vec<u8>>,
     pixel_shader_binary: Option<Vec<u8>>,
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: IShader> TShaderBuilder<T> {
+impl<T: IApi> TShaderBuilder<T> {
     pub fn new() -> Self {
         Self {
             compute_shader_binary: None,
@@ -17,9 +19,9 @@ impl<T: IShader> TShaderBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::DeviceType) -> T {
+    pub fn build(&self, device: &T::Device) -> T::Shader {
         let shader_info = self.create_info();
-        T::new(device, &shader_info)
+        T::Shader::new(device, &shader_info)
     }
 
     pub fn set_compute_shader_binary(self, shader_binary: &[u8]) -> Self {

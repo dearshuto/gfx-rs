@@ -1,6 +1,8 @@
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
 
-pub struct TSwapChainBuilder<T: ISwapChain> {
+use crate::api::IApi;
+
+pub struct TSwapChainBuilder<T: IApi> {
     #[allow(dead_code)]
     width: u32,
     #[allow(dead_code)]
@@ -8,7 +10,7 @@ pub struct TSwapChainBuilder<T: ISwapChain> {
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: ISwapChain> TSwapChainBuilder<T> {
+impl<T: IApi> TSwapChainBuilder<T> {
     pub fn new() -> Self {
         Self {
             width: 640,
@@ -17,7 +19,7 @@ impl<T: ISwapChain> TSwapChainBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &mut T::DeviceType) -> T {
-        T::new(device, &SwapChainInfo::new())
+    pub fn build(&self, device: &mut T::Device) -> T::SwapChain {
+        T::SwapChain::new(device, &SwapChainInfo::new())
     }
 }
