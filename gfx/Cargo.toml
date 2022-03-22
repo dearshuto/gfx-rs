@@ -4,6 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
+sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx-vulkano = { path = "../gfx-vulkano" }
@@ -15,3 +16,8 @@ shaderc = "0.7"
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 # nalgebra-glm = "0.3"
+
+[features]
+default = [ "backend-wgpu" ]
+backend-ash = []
+backend-wgpu = []

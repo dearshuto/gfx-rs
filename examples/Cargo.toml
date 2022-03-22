@@ -17,14 +17,15 @@ name = "wave"
 path = "wave/main.rs"
 
 [features]
-# default = ["backend-wgpu"]
-backend-wgpu = []
-backend-ash = []
+default = [ ]
+backend-wgpu = [ ]
+backend-ash = [ ]
 
 [dependencies]
 sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
+sjgfx = { path = "../gfx" }
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 nalgebra-glm = "0.3"

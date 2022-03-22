@@ -2,12 +2,14 @@ use sjgfx_interface::{
     IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
 
-pub struct TVertexStateBuilder<T: IVertexState> {
+use crate::api::IApi;
+
+pub struct TVertexStateBuilder<T: IApi> {
     info: VertexStateInfo,
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: IVertexState> TVertexStateBuilder<T> {
+impl<T: IApi> TVertexStateBuilder<T> {
     pub fn new() -> Self {
         Self {
             info: VertexStateInfo::new(),
@@ -15,8 +17,8 @@ impl<T: IVertexState> TVertexStateBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::DeviceType) -> T {
-        T::new(device, &self.info)
+    pub fn build(&self, device: &T::Device) -> T::VertexState {
+        T::VertexState::new(device, &self.info)
     }
 
     pub fn set_vertex_attribute_states<TAttributes>(
