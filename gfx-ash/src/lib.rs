@@ -9,6 +9,7 @@ mod semaphore_ash;
 mod shader_ash;
 mod swap_chain_ash;
 mod texture_ash;
+mod util;
 mod vertex_state_ash;
 
 pub use buffer_ash::BufferAsh;
