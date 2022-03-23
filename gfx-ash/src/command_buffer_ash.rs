@@ -6,6 +6,24 @@ use crate::{
     VertexStateAsh,
 };
 
+struct DrawInfo {
+    pub vertex_count: u32,
+}
+
+struct DrawIndexedInfo {
+    pub index_buffer: ash::vk::Buffer,
+    pub index_count: u32,
+    pub instance_count: u32,
+    pub first_index: u32,
+    pub vertex_offset: i32,
+    pub first_instance: u32,
+}
+
+enum DrawCommand {
+    Draw(DrawInfo),
+    DrawIndexed(DrawIndexedInfo),
+}
+
 pub struct CommandBufferAsh {
     #[allow(dead_code)]
     device: ash::Device,
@@ -32,7 +50,7 @@ pub struct CommandBufferAsh {
     // デスクリプタたち
     descriptor_pool: Option<ash::vk::DescriptorPool>,
     descriptor_set: Option<ash::vk::DescriptorSet>,
-    descriptor_set_layout: Option<ash::vk::DescriptorSetLayout>,
+    descriptor_set_layouts: Option<Vec<ash::vk::DescriptorSetLayout>>,
 
     // 定数バッファ
     constant_buffers: [Option<ash::vk::Buffer>; 8],
@@ -47,7 +65,7 @@ pub struct CommandBufferAsh {
     vertex_inpute_state_create_info: Option<ash::vk::PipelineVertexInputStateCreateInfo>,
 
     // 描画コマンド
-    vertex_count: Option<u32>,
+    draw_command: Option<DrawCommand>,
 
     // ディスパッチコマンド
     dispatch_count: Option<(u32, u32, u32)>,
@@ -96,7 +114,7 @@ impl CommandBufferAsh {
             // デスクリプタたち
             descriptor_pool: None,
             descriptor_set: None,
-            descriptor_set_layout: None,
+            descriptor_set_layouts: None,
 
             // 定数バッファ
             constant_buffers: [None; 8],
@@ -111,7 +129,7 @@ impl CommandBufferAsh {
             vertex_inpute_state_create_info: None,
 
             // 描画コマンド
-            vertex_count: None,
+            draw_command: None,
 
             // ディスパッチコマンド
             dispatch_count: None,
@@ -172,11 +190,17 @@ impl CommandBufferAsh {
         }
 
         self.pipeline_layout = Some(shader.get_pipeline_layout());
-        self.descriptor_set_layout = Some(shader.get_descriptor_set_layout());
+        self.descriptor_set_layouts = Some(shader.get_descriptor_set_layouts().to_vec());
 
         // 作りなおしが必要かを判別するためのフラグ
         self.previous_shader_id = Some(shader.get_id().clone());
         self.is_shader_dirty = true;
+    }
+
+    pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferAsh) {
+        let index = index as usize;
+
+        self.constant_buffers[index] = Some(buffer.get_buffer());
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferAsh) {
@@ -202,7 +226,10 @@ impl CommandBufferAsh {
         vertex_count: i32,
         _vertex_offset: i32,
     ) {
-        self.vertex_count = Some(vertex_count as u32);
+        let draw_info = DrawInfo {
+            vertex_count: vertex_count as u32,
+        };
+        self.draw_command = Some(DrawCommand::Draw(draw_info));
     }
 
     pub fn get_command_buffer(&self) -> ash::vk::CommandBuffer {
@@ -247,6 +274,10 @@ impl CommandBufferAsh {
     }
 
     fn push_graphics_pass_command(&mut self) {
+        if self.should_update_descriptor_sets() {
+            self.update_descriptor_set();
+        }
+
         let render_area = ash::vk::Rect2D::builder()
             .extent(ash::vk::Extent2D::builder().width(640).height(480).build())
             .build();
@@ -368,17 +399,49 @@ impl CommandBufferAsh {
             };
         }
 
+        // デスクリプタたち
+        unsafe {
+            self.device.cmd_bind_descriptor_sets(
+                self.command_buffer,
+                ash::vk::PipelineBindPoint::GRAPHICS,
+                self.pipeline_layout.unwrap(),
+                0, /*first_set*/
+                &[self.descriptor_set.unwrap()],
+                &[],
+            );
+        }
+
         // 描画コマンド
-        if let Some(vertex_count) = self.vertex_count {
-            unsafe {
-                self.device.cmd_draw(
-                    self.command_buffer,
-                    vertex_count,
-                    1, /*instance_count*/
-                    0, /*first_vertex*/
-                    0, /*first_instance*/
-                )
-            };
+        if let Some(draw_command) = &self.draw_command {
+            match draw_command {
+                DrawCommand::Draw(ref draw_info) => {
+                    unsafe {
+                        self.device.cmd_draw(
+                            self.command_buffer,
+                            draw_info.vertex_count,
+                            1, /*instance_count*/
+                            0, /*first_vertex*/
+                            0, /*first_instance*/
+                        )
+                    };
+                }
+                DrawCommand::DrawIndexed(ref draw_indexed_info) => unsafe {
+                    self.device.cmd_bind_index_buffer(
+                        self.command_buffer,
+                        draw_indexed_info.index_buffer,
+                        0,
+                        ash::vk::IndexType::UINT32,
+                    );
+                    self.device.cmd_draw_indexed(
+                        self.command_buffer,
+                        draw_indexed_info.index_count,
+                        draw_indexed_info.instance_count,
+                        draw_indexed_info.first_index,
+                        draw_indexed_info.vertex_offset,
+                        draw_indexed_info.first_instance,
+                    );
+                },
+            }
         }
 
         // 描画パス終わり
@@ -568,10 +631,16 @@ impl CommandBufferAsh {
 
         // デスクリプタプールを作る
         // TODO: キャッシュ
-        let descriptor_sizes = [ash::vk::DescriptorPoolSize {
-            ty: ash::vk::DescriptorType::STORAGE_BUFFER,
-            descriptor_count: 1,
-        }];
+        let descriptor_sizes = [
+            ash::vk::DescriptorPoolSize {
+                ty: ash::vk::DescriptorType::STORAGE_BUFFER,
+                descriptor_count: 16,
+            },
+            ash::vk::DescriptorPoolSize {
+                ty: ash::vk::DescriptorType::UNIFORM_BUFFER,
+                descriptor_count: 16,
+            },
+        ];
         let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
             .pool_sizes(&descriptor_sizes)
             .max_sets(1);
@@ -584,7 +653,7 @@ impl CommandBufferAsh {
 
         // デスクリプタセットを作る
         // TODO: キャッシュ
-        let descriptor_set_layouts = [self.descriptor_set_layout.unwrap()];
+        let descriptor_set_layouts = self.descriptor_set_layouts.as_ref().unwrap();
         let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::builder()
             .descriptor_pool(descriptor_pool)
             .set_layouts(&descriptor_set_layouts)
@@ -611,7 +680,7 @@ impl CommandBufferAsh {
         if let Some(constant_buffer) = self.constant_buffers[0] {
             let info = ash::vk::DescriptorBufferInfo::builder()
                 .buffer(constant_buffer)
-                .range(128)
+                .range(64)
                 .build();
             let write_descriptor_set = ash::vk::WriteDescriptorSet {
                 dst_set: descriptor_set,
@@ -717,8 +786,8 @@ impl ICommandBuffer for CommandBufferAsh {
         self.set_shader(shader);
     }
 
-    fn set_constant_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
-        todo!()
+    fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_constant_buffer(index, buffer);
     }
 
     fn set_unordered_access_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
@@ -761,26 +830,43 @@ impl ICommandBuffer for CommandBufferAsh {
 
     fn draw_indexed(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: sjgfx_interface::IndexFormat,
-        _index_buffer: &Self::BufferType,
-        _index_count: i32,
-        _base_vertex: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: sjgfx_interface::IndexFormat,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
     ) {
-        todo!()
+        self.draw_indexed_instanced(
+            primitive_topology,
+            index_format,
+            index_buffer,
+            index_count,
+            base_vertex,
+            1, /*instance_count*/
+            1, /*base_instance*/
+        );
     }
 
     fn draw_indexed_instanced(
         &mut self,
         _primitive_topology: PrimitiveTopology,
         _index_format: sjgfx_interface::IndexFormat,
-        _index_buffer: &Self::BufferType,
-        _index_count: i32,
-        _base_vertex: i32,
-        _instance_count: i32,
-        _base_instance: i32,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
+        instance_count: i32,
+        base_instance: i32,
     ) {
-        todo!()
+        let draw_indexed_info = DrawIndexedInfo {
+            index_buffer: index_buffer.get_buffer(),
+            index_count: index_count as u32,
+            instance_count: instance_count as u32,
+            first_index: 0,
+            vertex_offset: base_vertex,
+            first_instance: base_instance as u32,
+        };
+        let draw_command = DrawCommand::DrawIndexed(draw_indexed_info);
+        self.draw_command = Some(draw_command);
     }
 }
 

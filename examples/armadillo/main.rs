@@ -3,9 +3,10 @@ extern crate nalgebra_glm as glm;
 use sjgfx::api::IApi;
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DepthStencilStateInfo, DeviceInfo, GpuAccess,
-    IBuffer, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader, ISwapChain, ITexture,
-    IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, TextureInfo, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+    IBuffer, ICommandBuffer, IDepthStencilView, IDevice, IQueue, ISemaphore, IShader, ISwapChain,
+    ITexture, IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo, SemaphoreInfo,
+    ShaderInfo, SwapChainInfo, TextureInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -107,6 +108,8 @@ fn run<TApi: IApi>() {
     let depth_stencil_view =
         TApi::DepthStencilView::new(&device, &DepthStencilStateInfo::new(), &depth_buffer);
 
+    let mut semaphore = TApi::Semaphore::new(&device, &SemaphoreInfo::new());
+
     let mut should_close = false;
     while !should_close {
         event_loop.run_return(|event, _, control_flow| {
@@ -117,7 +120,7 @@ fn run<TApi: IApi>() {
                     // queue.sync_semaphore(&mut semaphore);
 
                     let next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(None, None);
+                        swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
                     command_buffer.begin();
                     command_buffer.set_render_targets(

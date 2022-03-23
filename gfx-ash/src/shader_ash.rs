@@ -4,14 +4,23 @@ use sjgfx_interface::{GpuAccess, IShader, ShaderInfo, ShaderStage};
 
 use crate::DeviceAsh;
 
+struct DescriptorInfo {
+    pub stage: ShaderStage,
+    pub constant_buffer_count: u32,
+    pub unordered_access_buffer_count: u32,
+}
+
 pub struct ShaderAsh {
     device: ash::Device,
-    descriptor_set_layout: ash::vk::DescriptorSetLayout,
+    descriptor_set_layouts: Vec<ash::vk::DescriptorSetLayout>,
     pipeline_layout: ash::vk::PipelineLayout,
     compute_shader_module: Option<ash::vk::ShaderModule>,
     vertex_shader_module: Option<ash::vk::ShaderModule>,
     pixel_shader_module: Option<ash::vk::ShaderModule>,
     id: uuid::Uuid,
+    // vertex_stage_descriptor_info: Option<DescriptorInfo>,
+    // pixel_stage_descriptor_info: Option<DescriptorInfo>,
+    // compute_state_descriptor_info: Option<DescriptorInfo>,
 }
 
 impl ShaderAsh {
@@ -43,8 +52,8 @@ impl ShaderAsh {
         self.pipeline_layout
     }
 
-    pub fn get_descriptor_set_layout(&self) -> ash::vk::DescriptorSetLayout {
-        self.descriptor_set_layout
+    pub fn get_descriptor_set_layouts(&self) -> &[ash::vk::DescriptorSetLayout] {
+        &self.descriptor_set_layouts
     }
 
     pub fn get_id(&self) -> &uuid::Uuid {
@@ -52,8 +61,19 @@ impl ShaderAsh {
     }
 
     fn new_as_graphics(device: &DeviceAsh, info: &ShaderInfo) -> Self {
+        let vertex_stage_dexcriptor_info = Self::create_descriptor_info(
+            ShaderStage::Vertex,
+            info.get_vertex_shader_binary().unwrap(),
+        );
+        let pixel_stage_dexcriptor_info = Self::create_descriptor_info(
+            ShaderStage::Pixel,
+            info.get_pixel_shader_binary().unwrap(),
+        );
         let (descriptor_set_layout, pipeline_layout) =
-            Self::create_descriptor_set_layout_and_pipeline_layout(device, info);
+            Self::create_descriptor_set_layout_and_pipeline_layout(
+                device,
+                &[&vertex_stage_dexcriptor_info, &pixel_stage_dexcriptor_info],
+            );
 
         Self {
             device: device.get_device(),
@@ -66,15 +86,19 @@ impl ShaderAsh {
                 device,
                 info.get_pixel_shader_binary().as_ref().unwrap(),
             )),
-            descriptor_set_layout,
+            descriptor_set_layouts: vec![descriptor_set_layout],
             pipeline_layout,
             id: uuid::Uuid::new_v4(),
         }
     }
 
     fn new_as_compute(device: &DeviceAsh, info: &ShaderInfo) -> Self {
+        let descriptor_info = Self::create_descriptor_info(
+            ShaderStage::Compute,
+            info.get_compute_shader_binary().unwrap(),
+        );
         let (descriptor_set_layout, pipeline_layout) =
-            Self::create_descriptor_set_layout_and_pipeline_layout(device, info);
+            Self::create_descriptor_set_layout_and_pipeline_layout(device, &[&descriptor_info]);
 
         Self {
             device: device.get_device(),
@@ -84,7 +108,7 @@ impl ShaderAsh {
             )),
             vertex_shader_module: None,
             pixel_shader_module: None,
-            descriptor_set_layout,
+            descriptor_set_layouts: vec![descriptor_set_layout],
             pipeline_layout,
             id: uuid::Uuid::new_v4(),
         }
@@ -107,28 +131,66 @@ impl ShaderAsh {
         shader_module
     }
 
+    fn create_descriptor_info(shader_stage: ShaderStage, shader_binary: &[u8]) -> DescriptorInfo {
+        #[allow(unused_variables)]
+        let mut sampler_count = 0;
+        let mut unordered_access_buffer_count = 0;
+        let mut constant_buffer_count = 0;
+
+        let module = spirv_reflect::ShaderModule::load_u8_data(shader_binary).unwrap();
+        for item in module.enumerate_descriptor_bindings(None).unwrap().iter() {
+            match item.resource_type {
+                spirv_reflect::types::ReflectResourceType::Undefined => todo!(),
+                spirv_reflect::types::ReflectResourceType::Sampler => sampler_count += 1,
+                spirv_reflect::types::ReflectResourceType::CombinedImageSampler => todo!(),
+                spirv_reflect::types::ReflectResourceType::ConstantBufferView => {
+                    constant_buffer_count += 1
+                }
+                spirv_reflect::types::ReflectResourceType::ShaderResourceView => todo!(),
+                spirv_reflect::types::ReflectResourceType::UnorderedAccessView => {
+                    unordered_access_buffer_count += 1
+                }
+            }
+        }
+
+        DescriptorInfo {
+            stage: shader_stage,
+            constant_buffer_count,
+            unordered_access_buffer_count,
+        }
+    }
+
     fn create_descriptor_set_layout_and_pipeline_layout(
         device: &DeviceAsh,
-        _info: &ShaderInfo,
+        descriptor_infos: &[&DescriptorInfo],
     ) -> (ash::vk::DescriptorSetLayout, ash::vk::PipelineLayout) {
-        let compute_layout_table = LayoutTable::new(
-            Self::to_ash(ShaderStage::Compute),
-            0, /*uniform_block_count*/
-            1, /*shader_storage_block_count*/
-            0, /*texture_count*/
-            0, /*image_count*/
-        );
-        // TODO
+        let tables = descriptor_infos.iter().map(|x| {
+            LayoutTable::new(
+                Self::to_ash(x.stage.clone()),
+                x.constant_buffer_count,         /*uniform_block_count*/
+                x.unordered_access_buffer_count, /*shader_storage_block_count*/
+                0,                               /*texture_count*/
+                0,                               /*image_count*/
+            )
+        });
+
+        let mut descriptor_set_layout_bindings = Vec::new();
+        for table in tables {
+            for binding in table.get_descriptor_set_layout_bindings() {
+                descriptor_set_layout_bindings.push(*binding);
+            }
+        }
 
         let descriptor_set_layout = unsafe {
             device.get_device().create_descriptor_set_layout(
                 &ash::vk::DescriptorSetLayoutCreateInfo::builder()
-                    .bindings(compute_layout_table.get_descriptor_set_layout_bindings())
+                    .bindings(&descriptor_set_layout_bindings)
                     .build(),
                 None,
             )
         }
         .unwrap();
+
         let pipeline_layout = unsafe {
             device.get_device().create_pipeline_layout(
                 &ash::vk::PipelineLayoutCreateInfo::builder()
@@ -168,9 +230,11 @@ impl Drop for ShaderAsh {
         }
 
         // デスクリプタセットレイアウトの破棄
-        unsafe {
-            self.device
-                .destroy_descriptor_set_layout(self.descriptor_set_layout, None);
+        for descriptor_set_layout in &self.descriptor_set_layouts {
+            unsafe {
+                self.device
+                    .destroy_descriptor_set_layout(*descriptor_set_layout, None);
+            }
         }
 
         // 演算シェーダの破棄
