@@ -513,7 +513,16 @@ impl CommandBufferAsh {
                 height: 480,
             })
             .build()];
-        let vertex_input_state_info = self.vertex_inpute_state_create_info.unwrap();
+        let vertex_input_state_info =
+            if let Some(vertex_inpute_state_create_info) = self.vertex_inpute_state_create_info {
+                vertex_inpute_state_create_info
+            } else {
+                ash::vk::PipelineVertexInputStateCreateInfo::builder()
+                    .vertex_attribute_descriptions(&[])
+                    .vertex_binding_descriptions(&[])
+                    .build()
+            };
+
         let viewport_state_info = ash::vk::PipelineViewportStateCreateInfo::builder()
             .scissors(&scissors)
             .viewports(&viewports);
