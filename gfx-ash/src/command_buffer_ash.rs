@@ -34,6 +34,9 @@ pub struct CommandBufferAsh {
     descriptor_set: Option<ash::vk::DescriptorSet>,
     descriptor_set_layout: Option<ash::vk::DescriptorSetLayout>,
 
+    // 定数バッファ
+    constant_buffers: [Option<ash::vk::Buffer>; 8],
+
     // UnorderedAccessBuffer
     unordered_accss_buffer: [Option<ash::vk::Buffer>; 8],
     unordered_accss_buffer_ids: [uuid::Uuid; 8],
@@ -94,6 +97,9 @@ impl CommandBufferAsh {
             descriptor_pool: None,
             descriptor_set: None,
             descriptor_set_layout: None,
+
+            // 定数バッファ
+            constant_buffers: [None; 8],
 
             // UnorderedAccessBuffer
             unordered_accss_buffer: [None; 8],
@@ -590,25 +596,54 @@ impl CommandBufferAsh {
         .unwrap();
         self.descriptor_set = Some(descriptor_sets[0]);
 
-        let info = ash::vk::DescriptorBufferInfo::builder()
-            .buffer(self.unordered_accss_buffer[0].unwrap())
-            .range(128)
-            .build();
-        let write_descriptor_sets = [ash::vk::WriteDescriptorSet {
-            dst_set: descriptor_sets[0],
-            descriptor_count: 1,
-            descriptor_type: ash::vk::DescriptorType::STORAGE_BUFFER,
-            p_buffer_info: &info,
-            ..Default::default()
-        }];
-        unsafe {
-            self.device
-                .update_descriptor_sets(&write_descriptor_sets, &[]);
-        }
+        self.update_descriptors();
     }
 
     fn should_update_descriptor_sets(&self) -> bool {
         self.is_unordered_access_buffer_dirty
+    }
+
+    fn update_descriptors(&self) {
+        let descriptor_set = self.descriptor_set.unwrap();
+        let mut write_descriptor_sets = Vec::new();
+
+        // 定数バッファ
+        if let Some(constant_buffer) = self.constant_buffers[0] {
+            let info = ash::vk::DescriptorBufferInfo::builder()
+                .buffer(constant_buffer)
+                .range(128)
+                .build();
+            let write_descriptor_set = ash::vk::WriteDescriptorSet {
+                dst_set: descriptor_set,
+                descriptor_count: 1,
+                descriptor_type: ash::vk::DescriptorType::UNIFORM_BUFFER,
+                p_buffer_info: &info,
+                ..Default::default()
+            };
+
+            write_descriptor_sets.push(write_descriptor_set);
+        }
+
+        if let Some(unordered_access_buffer) = self.unordered_accss_buffer[0] {
+            let info = ash::vk::DescriptorBufferInfo::builder()
+                .buffer(unordered_access_buffer)
+                .range(128)
+                .build();
+            let write_descriptor_set = ash::vk::WriteDescriptorSet {
+                dst_set: descriptor_set,
+                descriptor_count: 1,
+                descriptor_type: ash::vk::DescriptorType::STORAGE_BUFFER,
+                p_buffer_info: &info,
+                ..Default::default()
+            };
+
+            write_descriptor_sets.push(write_descriptor_set);
+        }
+
+        unsafe {
+            self.device
+                .update_descriptor_sets(&write_descriptor_sets, &[]);
+        }
     }
 }
 
