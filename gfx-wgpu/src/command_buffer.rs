@@ -500,6 +500,10 @@ impl ICommandBuffer for CommandBufferWgpu {
         self.set_shader(shader);
     }
 
+    fn set_image(&mut self, _index: i32, _texture: &Self::TextureType) {
+        todo!()
+    }
+
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
         self.set_constant_buffer(index, buffer);
     }

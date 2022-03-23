@@ -1,6 +1,4 @@
-use std::ops::Index;
-
-use sjgfx_interface::{GpuAccess, IShader, ShaderInfo, ShaderStage};
+use sjgfx_interface::{IShader, ShaderInfo, ShaderStage};
 
 use crate::DeviceAsh;
 
@@ -8,6 +6,9 @@ struct DescriptorInfo {
     pub stage: ShaderStage,
     pub constant_buffer_count: u32,
     pub unordered_access_buffer_count: u32,
+    #[allow(dead_code)]
+    pub sampler_count: u32,
+    pub image_count: u32,
 }
 
 pub struct ShaderAsh {
@@ -136,20 +137,24 @@ impl ShaderAsh {
         let mut sampler_count = 0;
         let mut unordered_access_buffer_count = 0;
         let mut constant_buffer_count = 0;
+        let mut image_count = 0;
 
         let module = spirv_reflect::ShaderModule::load_u8_data(shader_binary).unwrap();
         for item in module.enumerate_descriptor_bindings(None).unwrap().iter() {
-            match item.resource_type {
-                spirv_reflect::types::ReflectResourceType::Undefined => todo!(),
-                spirv_reflect::types::ReflectResourceType::Sampler => sampler_count += 1,
-                spirv_reflect::types::ReflectResourceType::CombinedImageSampler => todo!(),
-                spirv_reflect::types::ReflectResourceType::ConstantBufferView => {
-                    constant_buffer_count += 1
-                }
-                spirv_reflect::types::ReflectResourceType::ShaderResourceView => todo!(),
-                spirv_reflect::types::ReflectResourceType::UnorderedAccessView => {
-                    unordered_access_buffer_count += 1
-                }
+            match item.descriptor_type {
+                spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::Sampler => sampler_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::SampledImage => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::StorageImage => image_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => constant_buffer_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => unordered_access_buffer_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
             }
         }
 
@@ -157,6 +162,8 @@ impl ShaderAsh {
             stage: shader_stage,
             constant_buffer_count,
             unordered_access_buffer_count,
+            sampler_count,
+            image_count
         }
     }
 
@@ -167,10 +174,10 @@ impl ShaderAsh {
         let tables = descriptor_infos.iter().map(|x| {
             LayoutTable::new(
                 Self::to_ash(x.stage.clone()),
-                x.constant_buffer_count,         /*uniform_block_count*/
-                x.unordered_access_buffer_count, /*shader_storage_block_count*/
-                0,                               /*texture_count*/
-                0,                               /*image_count*/
+                x.constant_buffer_count,
+                x.unordered_access_buffer_count,
+                0, /*texture_count*/
+                x.image_count,
             )
         });
 
@@ -262,7 +269,6 @@ impl Drop for ShaderAsh {
 
 pub struct LayoutTable {
     _descriptor_set_layout_bindings: Vec<ash::vk::DescriptorSetLayoutBinding>,
-    _indices: [Vec<u32>; 4],
 }
 
 impl LayoutTable {
@@ -271,7 +277,7 @@ impl LayoutTable {
         uniform_block_count: u32,
         shader_storage_block_count: u32,
         _texture_count: u32,
-        _image_count: u32,
+        image_count: u32,
     ) -> Self {
         let mut descriptor_set_layout_bindings = Vec::new();
 
@@ -298,40 +304,22 @@ impl LayoutTable {
             );
         }
 
+        // Image
+        if image_count > 0 {
+            let binding = ash::vk::DescriptorSetLayoutBinding::builder()
+                .descriptor_type(ash::vk::DescriptorType::STORAGE_IMAGE)
+                .descriptor_count(image_count)
+                .stage_flags(shader_stage)
+                .build();
+            descriptor_set_layout_bindings.push(binding);
+        }
+
         Self {
             _descriptor_set_layout_bindings: descriptor_set_layout_bindings,
-            _indices: [
-                (0..uniform_block_count).map(|x| x).collect::<Vec<u32>>(),
-                (0..shader_storage_block_count)
-                    .map(|x| uniform_block_count + x)
-                    .collect::<Vec<u32>>(),
-                Vec::new(),
-                Vec::new(),
-            ],
         }
     }
 
     pub fn get_descriptor_set_layout_bindings(&self) -> &[ash::vk::DescriptorSetLayoutBinding] {
         &self._descriptor_set_layout_bindings
-    }
-
-    fn enum_to_index(gpu_access: &GpuAccess) -> usize {
-        match gpu_access {
-            &GpuAccess::CONSTANT_BUFFER => 0,
-            &GpuAccess::UNORDERED_ACCESS_BUFFER => 1,
-            &GpuAccess::TEXTURE => 2,
-            &GpuAccess::IMAGE => 3,
-            _ => todo!(),
-        }
-    }
-}
-
-impl Index<GpuAccess> for LayoutTable {
-    type Output = [u32];
-
-    fn index(&self, index: GpuAccess) -> &Self::Output {
-        let actual_index = LayoutTable::enum_to_index(&index);
-        let array = &self._indices[actual_index];
-        &array
     }
 }

@@ -35,6 +35,8 @@ pub trait ICommandBuffer {
 
     fn set_shader(&mut self, shader: &Self::ShaderType);
 
+    fn set_image(&mut self, index: i32, texture: &Self::TextureType);
+
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType);
 
     fn set_unordered_access_buffer(&mut self, index: i32, buffer: &Self::BufferType);

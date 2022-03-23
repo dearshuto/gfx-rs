@@ -27,6 +27,7 @@ pub trait IApi {
         ShaderType = Self::Shader,
         BufferType = Self::Buffer,
         ColorTargetViewType = Self::ColorTargetView,
+        TextureType = Self::Texture,
         VertexStateType = Self::VertexState,
     >;
     type Fence: IFence<DeviceType = Self::Device>;
