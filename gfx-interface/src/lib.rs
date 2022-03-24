@@ -33,7 +33,7 @@ pub use texture_api::{
     BufferTextureCopyRegion, ITexture, TextureArrayRange, TextureCopyRegion, TextureInfo,
     TextureSubresource, TextureSubresourceRange,
 };
-pub use texture_view_api::TextureViewInfo;
+pub use texture_view_api::{ITextureView, TextureViewInfo};
 pub use vertex_state_api::{
     IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
