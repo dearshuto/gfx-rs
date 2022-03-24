@@ -11,6 +11,7 @@ mod semaphore_api;
 mod shader_api;
 mod swap_chain_api;
 mod texture_api;
+mod texture_view_api;
 mod vertex_state_api;
 mod viewport_scissor_state_api;
 
@@ -32,6 +33,7 @@ pub use texture_api::{
     BufferTextureCopyRegion, ITexture, TextureArrayRange, TextureCopyRegion, TextureInfo,
     TextureSubresource, TextureSubresourceRange,
 };
+pub use texture_view_api::TextureViewInfo;
 pub use vertex_state_api::{
     IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
