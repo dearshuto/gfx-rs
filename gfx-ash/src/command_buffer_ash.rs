@@ -3,7 +3,7 @@ use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology};
 
 use crate::{
     BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, ShaderAsh, TextureAsh,
-    VertexStateAsh,
+    TextureViewAsh, VertexStateAsh,
 };
 
 struct DrawInfo {
@@ -51,6 +51,9 @@ pub struct CommandBufferAsh {
     descriptor_pool: Option<ash::vk::DescriptorPool>,
     descriptor_set: Option<ash::vk::DescriptorSet>,
     descriptor_set_layouts: Option<Vec<ash::vk::DescriptorSetLayout>>,
+
+    // テクスチャ
+    images: [Option<ash::vk::ImageView>; 8],
 
     // 定数バッファ
     constant_buffers: [Option<ash::vk::Buffer>; 8],
@@ -115,6 +118,9 @@ impl CommandBufferAsh {
             descriptor_pool: None,
             descriptor_set: None,
             descriptor_set_layouts: None,
+
+            // Image
+            images: Default::default(),
 
             // 定数バッファ
             constant_buffers: [None; 8],
@@ -195,6 +201,16 @@ impl CommandBufferAsh {
         // 作りなおしが必要かを判別するためのフラグ
         self.previous_shader_id = Some(shader.get_id().clone());
         self.is_shader_dirty = true;
+    }
+
+    pub fn set_image_direct(&mut self, index: i32, image: &TextureAsh) {
+        let index = index as usize;
+        self.images[index] = Some(image.get_image_view());
+    }
+
+    pub fn set_image(&mut self, index: i32, image: &TextureViewAsh) {
+        let index = index as usize;
+        self.images[index] = Some(image.get_image_view());
     }
 
     pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferAsh) {
@@ -640,6 +656,10 @@ impl CommandBufferAsh {
                 ty: ash::vk::DescriptorType::UNIFORM_BUFFER,
                 descriptor_count: 16,
             },
+            ash::vk::DescriptorPoolSize {
+                ty: ash::vk::DescriptorType::STORAGE_IMAGE,
+                descriptor_count: 16,
+            },
         ];
         let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
             .pool_sizes(&descriptor_sizes)
@@ -706,6 +726,28 @@ impl CommandBufferAsh {
                 ..Default::default()
             };
 
+            write_descriptor_sets.push(write_descriptor_set);
+        }
+
+        // Image
+        let mut image_infos = Vec::new();
+        {
+            for image_opt in &self.images {
+                if let Some(image) = image_opt {
+                    let info = ash::vk::DescriptorImageInfo::builder()
+                        .image_view(*image)
+                        .build();
+                    image_infos.push(info);
+                }
+            }
+
+            let write_descriptor_set = ash::vk::WriteDescriptorSet {
+                dst_set: descriptor_set,
+                descriptor_count: image_infos.len() as u32,
+                descriptor_type: ash::vk::DescriptorType::STORAGE_IMAGE,
+                p_image_info: image_infos.as_ptr(),
+                ..Default::default()
+            };
             write_descriptor_sets.push(write_descriptor_set);
         }
 
@@ -784,6 +826,10 @@ impl ICommandBuffer for CommandBufferAsh {
 
     fn set_shader(&mut self, shader: &Self::ShaderType) {
         self.set_shader(shader);
+    }
+
+    fn set_image(&mut self, index: i32, texture: &Self::TextureType) {
+        self.set_image_direct(index, texture);
     }
 
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
@@ -872,9 +918,11 @@ impl ICommandBuffer for CommandBufferAsh {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{CommandBufferInfo, DeviceInfo};
+    use sjgfx_interface::{
+        CommandBufferInfo, DeviceInfo, GpuAccess, ITexture, TextureInfo, TextureViewInfo,
+    };
 
-    use crate::{CommandBufferAsh, DeviceAsh};
+    use crate::{CommandBufferAsh, DeviceAsh, TextureAsh, TextureViewAsh};
 
     #[test]
     fn new() {
@@ -888,6 +936,29 @@ mod tests {
         let mut command_buffer = CommandBufferAsh::new(&device, &CommandBufferInfo::new());
 
         command_buffer.begin();
+        command_buffer.end();
+    }
+
+    #[test]
+    fn set_image() {
+        let device = DeviceAsh::new(&DeviceInfo::new());
+        let texture = TextureAsh::new(
+            &device,
+            &TextureInfo::new()
+                .set_width(64)
+                .set_height(64)
+                .set_image_format(sjgfx_interface::ImageFormat::R8Unorm)
+                .set_gpu_access_flags(GpuAccess::IMAGE),
+        );
+        let texture_view = TextureViewAsh::new(
+            &device,
+            &TextureViewInfo::new().set_format(sjgfx_interface::ImageFormat::R8Unorm),
+            &texture,
+        );
+        let mut command_buffer = CommandBufferAsh::new(&device, &CommandBufferInfo::new());
+
+        command_buffer.begin();
+        command_buffer.set_image(0, &texture_view);
         command_buffer.end();
     }
 }
