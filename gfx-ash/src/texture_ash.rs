@@ -78,10 +78,13 @@ impl ITexture for TextureAsh {
         // テクスチャ
         let image = Self::create_image(device.get_device_ref(), info);
 
+        let requirements = unsafe { device.get_device().get_image_memory_requirements(image) };
+
         // デバイスメモリ
         let device_memory = DeviceMemory::new(
             device,
             (info.get_width() * info.get_height() * 4 * 32) as usize,
+            Some(requirements),
         );
 
         // デバイスメモリのひも付け

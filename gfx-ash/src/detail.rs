@@ -8,7 +8,11 @@ pub struct DeviceMemory {
 }
 
 impl DeviceMemory {
-    pub fn new(device: &DeviceAsh, size: usize) -> Self {
+    pub fn new(
+        device: &DeviceAsh,
+        size: usize,
+        memory_requirement: Option<ash::vk::MemoryRequirements>,
+    ) -> Self {
         // デバイスメモリ
         let instance = device.get_instance();
         let physical_device = device.get_physical_device();
@@ -18,8 +22,14 @@ impl DeviceMemory {
             .iter()
             .enumerate()
             .find_map(|(index, memory_type)| {
+                let memory_type_bits = if let Some(memory_requirement) = memory_requirement {
+                    memory_requirement.memory_type_bits
+                } else {
+                    0
+                };
                 let memory_flags = ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
-                let is_contains = memory_type.property_flags.contains(memory_flags);
+                let is_contains = ((memory_type_bits & index as u32) != 0)
+                    && memory_type.property_flags.contains(memory_flags);
 
                 if is_contains {
                     Some(index)
@@ -48,6 +58,6 @@ impl DeviceMemory {
 
 impl Drop for DeviceMemory {
     fn drop(&mut self) {
-        unsafe{ self.device.free_memory(self.handle, None) }
+        unsafe { self.device.free_memory(self.handle, None) }
     }
 }
