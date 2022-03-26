@@ -28,7 +28,7 @@ impl DeviceMemory {
                     0
                 };
                 let memory_flags = ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
-                let is_contains = ((memory_type_bits & index as u32) != 0)
+                let is_contains = ((memory_type_bits & (1 << index) as u32) != 0)
                     && memory_type.property_flags.contains(memory_flags);
 
                 if is_contains {
