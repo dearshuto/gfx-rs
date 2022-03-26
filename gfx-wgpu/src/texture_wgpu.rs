@@ -84,6 +84,7 @@ impl TextureWgpu {
     fn convert_format(format: ImageFormat) -> wgpu::TextureFormat {
         match format {
             ImageFormat::R8Unorm => wgpu::TextureFormat::R8Unorm,
+            ImageFormat::R8Uint => wgpu::TextureFormat::R8Uint,
             ImageFormat::R8G8B8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::R8G8B8A8Unorm => wgpu::TextureFormat::Rgba8Unorm,
             ImageFormat::D32 => wgpu::TextureFormat::Depth32Float,
