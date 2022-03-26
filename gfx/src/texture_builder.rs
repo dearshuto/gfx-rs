@@ -1,10 +1,10 @@
-use sjgfx_interface::{TextureInfo, GpuAccess, ImageFormat, ITexture};
+use sjgfx_interface::{GpuAccess, ITexture, ImageFormat, TextureInfo};
 
 use crate::api::IApi;
 
 pub struct TTextureBuilder<TApi: IApi> {
     info: TextureInfo,
-    _marker: std::marker::PhantomData<TApi>
+    _marker: std::marker::PhantomData<TApi>,
 }
 
 impl<TApi: IApi> TTextureBuilder<TApi> {
