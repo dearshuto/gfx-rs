@@ -1,7 +1,9 @@
-use sjgfx_interface::{ICommandBuffer, IQueue, ImageFormat};
 use sjgfx::api::IApi;
+use sjgfx_interface::{ICommandBuffer, IQueue, ImageFormat};
 
-use sjgfx::{TDeviceBuilder, TQueueBuilder, TCommandBufferBuilder, TTextureBuilder};
+use sjgfx::{
+    TCommandBufferBuilder, TDeviceBuilder, TQueueBuilder, TTextureBuilder, TTextureViewBuilder,
+};
 
 #[test]
 fn new() {
@@ -34,10 +36,11 @@ fn image_impl<TApi: IApi>() {
         .with_format(ImageFormat::R8Unorm)
         .enable_image()
         .build(&device);
+    let texture_view = TTextureViewBuilder::<TApi>::new().build(&device, &texture);
 
     command_buffer.begin();
     // command_buffer.set_shader(&shader);
-    command_buffer.set_image(0, &texture);
+    command_buffer.set_image(0, &texture_view);
     command_buffer.dispatch(64, 64, 1);
     command_buffer.end();
 

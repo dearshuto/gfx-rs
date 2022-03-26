@@ -1,6 +1,6 @@
 use crate::{
     shader_api::IShader, IBuffer, IColorTargetView, IDepthStencilView, IDevice, ITexture,
-    IndexFormat, PrimitiveTopology,
+    ITextureView, IndexFormat, PrimitiveTopology,
 };
 
 pub struct CommandBufferInfo {}
@@ -18,6 +18,7 @@ pub trait ICommandBuffer {
     type DepthStencilViewType: IDepthStencilView;
     type ShaderType: IShader;
     type TextureType: ITexture;
+    type TextureViewType: ITextureView;
     type VertexStateType;
 
     fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self;
@@ -35,7 +36,7 @@ pub trait ICommandBuffer {
 
     fn set_shader(&mut self, shader: &Self::ShaderType);
 
-    fn set_image(&mut self, index: i32, texture: &Self::TextureType);
+    fn set_image(&mut self, index: i32, texture: &Self::TextureViewType);
 
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType);
 
