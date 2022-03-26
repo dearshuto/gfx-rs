@@ -1,4 +1,4 @@
-use sjgfx_interface::TextureViewInfo;
+use sjgfx_interface::{ITextureView, TextureViewInfo};
 
 use crate::{util, DeviceAsh, TextureAsh};
 
@@ -44,6 +44,15 @@ impl TextureViewAsh {
 
     pub fn get_image_view(&self) -> ash::vk::ImageView {
         self.image_view
+    }
+}
+
+impl ITextureView for TextureViewAsh {
+    type DeviceType = DeviceAsh;
+    type TextureType = TextureAsh;
+
+    fn new(device: &Self::DeviceType, info: &TextureViewInfo, texture: &Self::TextureType) -> Self {
+        Self::new(device, info, texture)
     }
 }
 

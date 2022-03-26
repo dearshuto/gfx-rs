@@ -6,6 +6,7 @@ mod queue_builder;
 mod shader_builder;
 mod swap_chain_builder;
 mod texture_builder;
+mod texture_view_builder;
 mod vertex_state_builder;
 
 pub use buffer_builder::TBufferBuilder;
@@ -15,6 +16,7 @@ pub use queue_builder::TQueueBuilder;
 pub use shader_builder::TShaderBuilder;
 pub use swap_chain_builder::TSwapChainBuilder;
 pub use texture_builder::TTextureBuilder;
+pub use texture_view_builder::TTextureViewBuilder;
 pub use vertex_state_builder::TVertexStateBuilder;
 
 pub mod vulkano;

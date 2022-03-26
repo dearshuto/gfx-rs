@@ -800,6 +800,7 @@ impl ICommandBuffer for CommandBufferAsh {
     type DepthStencilViewType = DepthStencilViewAsh;
     type ShaderType = ShaderAsh;
     type TextureType = TextureAsh;
+    type TextureViewType = TextureViewAsh;
     type VertexStateType = VertexStateAsh;
 
     fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self {
@@ -828,8 +829,8 @@ impl ICommandBuffer for CommandBufferAsh {
         self.set_shader(shader);
     }
 
-    fn set_image(&mut self, index: i32, texture: &Self::TextureType) {
-        self.set_image_direct(index, texture);
+    fn set_image(&mut self, index: i32, texture: &Self::TextureViewType) {
+        self.set_image(index, texture);
     }
 
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {

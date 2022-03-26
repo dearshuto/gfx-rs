@@ -7,7 +7,8 @@ use sjgfx_interface::{
 
 use crate::{
     shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
-    DepthStencilViewWgpu, DeviceWgpu, SamplerWgpu, ShaderWgpu, TextureWgpu, VertexStateWgpu,
+    DepthStencilViewWgpu, DeviceWgpu, SamplerWgpu, ShaderWgpu, TextureViewWgpu, TextureWgpu,
+    VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -472,6 +473,7 @@ impl ICommandBuffer for CommandBufferWgpu {
     type DepthStencilViewType = DepthStencilViewWgpu;
     type ShaderType = ShaderWgpu;
     type TextureType = TextureWgpu;
+    type TextureViewType = TextureViewWgpu;
     type VertexStateType = VertexStateWgpu;
 
     fn new(device: &Self::DeviceType, info: &CommandBufferInfo) -> Self {
@@ -500,7 +502,7 @@ impl ICommandBuffer for CommandBufferWgpu {
         self.set_shader(shader);
     }
 
-    fn set_image(&mut self, _index: i32, _texture: &Self::TextureType) {
+    fn set_image(&mut self, _index: i32, _texture: &Self::TextureViewType) {
         todo!()
     }
 
