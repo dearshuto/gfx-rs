@@ -5,7 +5,6 @@ use crate::{util, DeviceAsh, DeviceMemory};
 pub struct TextureAsh {
     device: ash::Device,
     texture_handle: ash::vk::Image,
-    image_view: ash::vk::ImageView,
 
     #[allow(dead_code)]
     device_memory: DeviceMemory,
@@ -14,10 +13,6 @@ pub struct TextureAsh {
 impl TextureAsh {
     pub fn get_texture(&self) -> ash::vk::Image {
         self.texture_handle
-    }
-
-    pub fn get_image_view(&self) -> ash::vk::ImageView {
-        self.image_view
     }
 
     fn create_image(device: &ash::Device, info: &TextureInfo) -> ash::vk::Image {
@@ -97,36 +92,9 @@ impl ITexture for TextureAsh {
         }
         .unwrap();
 
-        let format = util::convert_image_format(info.get_image_format().clone());
-        let create_info = ash::vk::ImageViewCreateInfo::builder()
-            .image(image)
-            .view_type(ash::vk::ImageViewType::TYPE_2D)
-            .format(format)
-            .components(
-                ash::vk::ComponentMapping::builder()
-                    .r(ash::vk::ComponentSwizzle::R)
-                    .g(ash::vk::ComponentSwizzle::G)
-                    .b(ash::vk::ComponentSwizzle::B)
-                    .a(ash::vk::ComponentSwizzle::A)
-                    .build(),
-            )
-            .subresource_range(
-                ash::vk::ImageSubresourceRange::builder()
-                    .aspect_mask(ash::vk::ImageAspectFlags::COLOR)
-                    .base_mip_level(0)
-                    .level_count(1)
-                    .base_array_layer(0)
-                    .layer_count(1)
-                    .build(),
-            )
-            .build();
-        let image_view =
-            unsafe { device.get_device().create_image_view(&create_info, None) }.unwrap();
-
         Self {
             device: device.get_device(),
             texture_handle: image,
-            image_view,
             device_memory,
         }
     }

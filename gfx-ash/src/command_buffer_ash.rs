@@ -203,11 +203,6 @@ impl CommandBufferAsh {
         self.is_shader_dirty = true;
     }
 
-    pub fn set_image_direct(&mut self, index: i32, image: &TextureAsh) {
-        let index = index as usize;
-        self.images[index] = Some(image.get_image_view());
-    }
-
     pub fn set_image(&mut self, index: i32, image: &TextureViewAsh) {
         let index = index as usize;
         self.images[index] = Some(image.get_image_view());

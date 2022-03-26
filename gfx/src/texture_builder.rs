@@ -50,3 +50,23 @@ impl<TApi: IApi> TTextureBuilder<TApi> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use sjgfx_interface::ImageFormat;
+
+    use crate::{api, TDeviceBuilder, TTextureBuilder};
+
+    #[test]
+    fn new() {
+        let device = TDeviceBuilder::<api::Ash>::new().build();
+        let texture_builder = TTextureBuilder::<api::Ash>::new()
+            .with_size(640, 640)
+            .with_format(ImageFormat::R8Uint)
+            .enable_sampler()
+            .enable_image();
+
+        let _ = texture_builder.build(&device);
+        let _ = texture_builder.build(&device);
+    }
+}
