@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::SamplerInfo;
+use sjgfx_interface::{ISampler, SamplerInfo};
 
 use crate::DeviceWgpu;
 
@@ -24,5 +24,13 @@ impl SamplerWgpu {
 
     pub fn clone_sampler(&self) -> Arc<wgpu::Sampler> {
         self.sampler.clone()
+    }
+}
+
+impl ISampler for SamplerWgpu {
+    type DeviceType = DeviceWgpu;
+
+    fn new(device: &Self::DeviceType, info: &SamplerInfo) -> Self {
+        Self::new(device, info)
     }
 }
