@@ -1,15 +1,15 @@
 use sjgfx_ash::{
     BufferAsh, ColorTargetViewAsh, CommandBufferAsh, DepthStencilViewAsh, DeviceAsh, FenceAsh,
-    QueueAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh, VertexStateAsh,
+    QueueAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh, VertexStateAsh, SamplerAsh,
 };
 use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
-    ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState,
+    ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState, ISampler,
 };
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
     FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu, TextureWgpu,
-    VertexStateWgpu,
+    VertexStateWgpu, SamplerWgpu,
 };
 
 pub trait IApi {
@@ -36,6 +36,7 @@ pub trait IApi {
     type Shader: IShader<DeviceType = Self::Device>;
     type Texture: ITexture<DeviceType = Self::Device>;
     type TextureView: ITextureView<DeviceType = Self::Device, TextureType = Self::Texture>;
+    type Sampler: ISampler<DeviceType = Self::Device>;
     type Semaphore: ISemaphore<DeviceType = Self::Device>;
     type SwapChain: ISwapChain<
         DeviceType = Self::Device,
@@ -55,6 +56,7 @@ impl IApi for Ash {
     type CommandBuffer = CommandBufferAsh;
     type Fence = FenceAsh;
     type Shader = ShaderAsh;
+    type Sampler = SamplerAsh;
     type Semaphore = SemaphoreAsh;
     type SwapChain = SwapChainAsh;
     type Texture = TextureAsh;
@@ -71,6 +73,7 @@ impl IApi for Wgpu {
     type Queue = QueueWgpu;
     type CommandBuffer = CommandBufferWgpu;
     type Fence = FenceWgpu;
+    type Sampler = SamplerWgpu;
     type Shader = ShaderWgpu;
     type Semaphore = SemaphoreWgpu;
     type SwapChain = SwapChainWgpu;
