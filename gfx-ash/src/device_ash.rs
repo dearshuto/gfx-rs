@@ -24,9 +24,14 @@ impl DeviceAsh {
     pub fn new(_info: &DeviceInfo) -> Self {
         let entry = Entry::linked();
 
-        // let extension = std::ffi::CString::new("VK_KHR_get_physical_device_properties2").unwrap();
-        // let instance_extensions: &[&CStr] = &[&extension];
-        let instance = Self::create_instance(&entry, &[]);
+        let extension = std::ffi::CString::new("VK_KHR_get_physical_device_properties2").unwrap();
+        let instance_extensions: &[&CStr] = &[&extension];
+        let instance_extensions: &[&CStr] = if cfg!(target_os = "macos") {
+            instance_extensions
+        } else {
+            &[]
+        };
+        let instance = Self::create_instance(&entry, &instance_extensions);
 
         // 物理デバイス
         let (physical_device, queue_family_index) = Self::find_physical_device(&instance);
@@ -34,13 +39,14 @@ impl DeviceAsh {
             unsafe { instance.get_physical_device_queue_family_properties(physical_device) };
 
         // デバイスとキュー
-        // let device_extension = std::ffi::CString::new("VK_KHR_portability_subset").unwrap();
-        // let device_extensions: &[&CStr] = &[&device_extension];
+        let device_extension = std::ffi::CString::new("VK_KHR_portability_subset").unwrap();
+        let device_extensions: &[&CStr] = &[&device_extension];
         let (device, queue) = Self::create_device_and_queue(
             &instance,
             physical_device,
             queue_family_index as u32,
-            &[],
+            //&[],
+            &device_extensions,
         );
 
         // デバッグ機能
