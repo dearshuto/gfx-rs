@@ -1,7 +1,7 @@
-use std::ffi::CStr;
+use std::ffi::{c_void, CStr};
 
 use ash::{extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT, Entry};
-use sjgfx_interface::{DeviceInfo, IDevice};
+use sjgfx_interface::{DebugMode, DeviceInfo, IDevice};
 use winit::event_loop::EventLoop;
 
 pub struct DeviceAsh {
@@ -18,10 +18,13 @@ pub struct DeviceAsh {
     queue_family_properties: Vec<ash::vk::QueueFamilyProperties>,
     surface: Option<ash::vk::SurfaceKHR>,
     surface_loader: Option<ash::extensions::khr::Surface>,
+
+    #[allow(dead_code)]
+    debug_mode: Box<DebugMode>, // Validation のコールバック呼び出しで使う
 }
 
 impl DeviceAsh {
-    pub fn new(_info: &DeviceInfo) -> Self {
+    pub fn new(info: &DeviceInfo) -> Self {
         let entry = Entry::linked();
 
         // let extension = std::ffi::CString::new("VK_KHR_get_physical_device_properties2").unwrap();
@@ -44,7 +47,9 @@ impl DeviceAsh {
         );
 
         // デバッグ機能
-        let (debug_utils, debug_utils_messanger) = Self::create_debug_instance(&entry, &instance);
+        let debug_mode = Box::new(info.get_debug_mode());
+        let (debug_utils, debug_utils_messanger) =
+            Self::create_debug_instance(&entry, &instance, &*debug_mode);
 
         Self {
             entry,
@@ -58,11 +63,12 @@ impl DeviceAsh {
             queue_family_properties,
             surface: None,
             surface_loader: None,
+            debug_mode,
         }
     }
 
     pub fn new_with_surface<T: raw_window_handle::HasRawWindowHandle>(
-        _info: &DeviceInfo,
+        info: &DeviceInfo,
         window: &T,
     ) -> Self {
         let entry = Entry::linked();
@@ -102,7 +108,9 @@ impl DeviceAsh {
         );
 
         // デバッグ機能
-        let (debug_utils, debug_utils_messanger) = Self::create_debug_instance(&entry, &instance);
+        let debug_mode = Box::new(info.get_debug_mode());
+        let (debug_utils, debug_utils_messanger) =
+            Self::create_debug_instance(&entry, &instance, &*debug_mode);
 
         Self {
             entry,
@@ -116,6 +124,7 @@ impl DeviceAsh {
             queue_family_properties,
             surface: Some(surface),
             surface_loader: Some(surface_loader),
+            debug_mode,
         }
     }
 
@@ -276,6 +285,7 @@ impl DeviceAsh {
     fn create_debug_instance(
         entry: &ash::Entry,
         instance: &ash::Instance,
+        debug_mode: *const DebugMode,
     ) -> (DebugUtils, DebugUtilsMessengerEXT) {
         let debug_utils = ash::extensions::ext::DebugUtils::new(&entry, &instance);
         let debug_utils_messanger_create_info =
@@ -291,6 +301,7 @@ impl DeviceAsh {
                         | ash::vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
                 )
                 .pfn_user_callback(Some(Self::aa))
+                .user_data(debug_mode as *mut c_void)
                 .build();
 
         let debug_utils_messanger = unsafe {
@@ -306,7 +317,7 @@ impl DeviceAsh {
         message_severity: ash::vk::DebugUtilsMessageSeverityFlagsEXT,
         message_type: ash::vk::DebugUtilsMessageTypeFlagsEXT,
         p_callback_data: *const ash::vk::DebugUtilsMessengerCallbackDataEXT,
-        _user_data: *mut std::ffi::c_void,
+        user_data: *mut std::ffi::c_void,
     ) -> u32 {
         let callback_data = *p_callback_data;
         let message_id_number: i32 = callback_data.message_id_number as i32;
@@ -331,7 +342,12 @@ impl DeviceAsh {
             &message_id_number.to_string(),
             message,
         );
-        ash::vk::FALSE
+
+        let debug_mode = user_data as *mut DebugMode;
+        match *debug_mode {
+            DebugMode::FullAssertion => return ash::vk::TRUE,
+            _ => return ash::vk::FALSE,
+        };
     }
 }
 
@@ -358,7 +374,11 @@ impl IDevice for DeviceAsh {
         Self::new(info)
     }
 
-    fn new_with_surface<TWindow>(info: &DeviceInfo, window: &TWindow, _event_loop: &EventLoop<()>) -> Self
+    fn new_with_surface<TWindow>(
+        info: &DeviceInfo,
+        window: &TWindow,
+        _event_loop: &EventLoop<()>,
+    ) -> Self
     where
         TWindow: raw_window_handle::HasRawWindowHandle,
     {
@@ -368,12 +388,17 @@ impl IDevice for DeviceAsh {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::DeviceInfo;
+    use sjgfx_interface::{DebugMode, DeviceInfo};
 
     use crate::DeviceAsh;
 
     #[test]
     fn new() {
         let _device = DeviceAsh::new(&DeviceInfo::new());
+    }
+
+    #[test]
+    fn new_full_assertion() {
+        let _device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
     }
 }
