@@ -46,8 +46,7 @@ impl TextureAsh {
             result |= ash::vk::ImageUsageFlags::SAMPLED;
         }
         if gpu_access.contains(GpuAccess::IMAGE) {
-            // TODO
-            //result |= ash::vk::ImageUsageFlags::STORAGE;
+            result |= ash::vk::ImageUsageFlags::STORAGE;
         }
         if gpu_access.contains(GpuAccess::COLOR_BUFFER) {
             result |= ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
@@ -109,7 +108,7 @@ impl Drop for TextureAsh {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{DeviceInfo, GpuAccess, ITexture, ImageFormat, TextureInfo};
+    use sjgfx_interface::{DebugMode, DeviceInfo, GpuAccess, ITexture, ImageFormat, TextureInfo};
 
     use crate::{DeviceAsh, TextureAsh};
 
@@ -128,7 +127,7 @@ mod tests {
 
     #[test]
     fn new_image() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _image_texture = TextureAsh::new(
             &device,
             &TextureInfo::new()
@@ -141,7 +140,7 @@ mod tests {
 
     #[test]
     fn new_texture_and_image() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _image_texture = TextureAsh::new(
             &device,
             &TextureInfo::new()
