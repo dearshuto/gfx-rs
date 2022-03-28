@@ -3,7 +3,7 @@ use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology};
 
 use crate::{
     BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, ShaderAsh, TextureAsh,
-    TextureViewAsh, VertexStateAsh,
+    TextureViewAsh, VertexStateAsh, SamplerAsh,
 };
 
 struct DrawInfo {
@@ -53,6 +53,8 @@ pub struct CommandBufferAsh {
     descriptor_set_layouts: Option<Vec<ash::vk::DescriptorSetLayout>>,
 
     // テクスチャ
+    samplers: [Option<ash::vk::Sampler>; 8],
+    texture_views: [Option<ash::vk::ImageView>; 8],
     images: [Option<ash::vk::ImageView>; 8],
 
     // 定数バッファ
@@ -120,6 +122,8 @@ impl CommandBufferAsh {
             descriptor_set_layouts: None,
 
             // Image
+            samplers: Default::default(),
+            texture_views: Default::default(),
             images: Default::default(),
 
             // 定数バッファ
@@ -201,6 +205,16 @@ impl CommandBufferAsh {
         // 作りなおしが必要かを判別するためのフラグ
         self.previous_shader_id = Some(shader.get_id().clone());
         self.is_shader_dirty = true;
+    }
+
+    pub fn set_sampler(&mut self, index: i32, sampler: &SamplerAsh) {
+        let index = index as usize;
+        self.samplers[index] = Some(sampler.get_sampler());
+    }
+
+    pub fn set_texture(&mut self, index: i32, texture_view: &TextureViewAsh) {
+        let index = index as usize;
+        self.texture_views[index] = Some(texture_view.get_image_view());
     }
 
     pub fn set_image(&mut self, index: i32, image: &TextureViewAsh) {
@@ -655,6 +669,10 @@ impl CommandBufferAsh {
                 ty: ash::vk::DescriptorType::STORAGE_IMAGE,
                 descriptor_count: 16,
             },
+            ash::vk::DescriptorPoolSize {
+                ty: ash::vk::DescriptorType::SAMPLER,
+                descriptor_count: 16,
+            }
         ];
         let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
             .pool_sizes(&descriptor_sizes)
@@ -724,26 +742,60 @@ impl CommandBufferAsh {
             write_descriptor_sets.push(write_descriptor_set);
         }
 
+        // Sampler
+        let mut sampler_infos = Vec::new();
+        {
+            for sampler_opt in &self.samplers {
+                if let Some(sampler) = sampler_opt {
+                    let info = ash::vk::DescriptorImageInfo::builder()
+                        .sampler(sampler.clone())
+                        .build();
+                    sampler_infos.push(info);
+                }
+            }
+
+            let write_descriptor_set = ash::vk::WriteDescriptorSet::builder()
+                .dst_set(descriptor_set)
+                .image_info(&sampler_infos)
+                .descriptor_type(ash::vk::DescriptorType::SAMPLER)
+                .build();
+            write_descriptor_sets.push(write_descriptor_set);
+        }
+
+        // Texture
+        let mut texture_infos = Vec::new();
+        {
+            for textuew_opt in self.texture_views {
+                if let Some(texture_view) = textuew_opt {
+                    let info = ash::vk::DescriptorImageInfo::builder()
+                        .image_view(texture_view)
+                        .build();
+                    texture_infos.push(info);
+                }
+            }
+
+            let write_descriptor_set = ash::vk::WriteDescriptorSet::builder().build();
+            write_descriptor_sets.push(write_descriptor_set);
+        }
+
         // Image
         let mut image_infos = Vec::new();
         {
-            for image_opt in &self.images {
+            for (index, image_opt) in self.images.iter().enumerate() {
                 if let Some(image) = image_opt {
                     let info = ash::vk::DescriptorImageInfo::builder()
                         .image_view(*image)
                         .build();
                     image_infos.push(info);
+                    let write_descriptor_set = ash::vk::WriteDescriptorSet::builder()
+                        .dst_set(descriptor_set)
+                        .dst_binding(index as u32)
+                        .image_info(&image_infos)
+                        .descriptor_type(ash::vk::DescriptorType::STORAGE_IMAGE)
+                        .build();
+                    write_descriptor_sets.push(write_descriptor_set);
                 }
             }
-
-            let write_descriptor_set = ash::vk::WriteDescriptorSet {
-                dst_set: descriptor_set,
-                descriptor_count: image_infos.len() as u32,
-                descriptor_type: ash::vk::DescriptorType::STORAGE_IMAGE,
-                p_image_info: image_infos.as_ptr(),
-                ..Default::default()
-            };
-            write_descriptor_sets.push(write_descriptor_set);
         }
 
         unsafe {
