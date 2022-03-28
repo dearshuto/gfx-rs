@@ -21,7 +21,7 @@ pub use command_buffer_api::{CommandBufferInfo, ICommandBuffer};
 pub use depth_stencil_view_api::{DepthStencilStateInfo, IDepthStencilView};
 pub use device_api::{DeviceInfo, IDevice};
 pub use enums::{
-    AttributeFormat, GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage,
+    AttributeFormat, DebugMode, GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage,
 };
 pub use fence_api::{FenceInfo, IFence};
 pub use queue_api::{IQueue, QueueInfo};
