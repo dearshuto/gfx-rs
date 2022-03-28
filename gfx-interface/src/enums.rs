@@ -17,6 +17,12 @@ bitflags! {
 }
 
 #[derive(Clone)]
+pub enum DebugMode {
+    Full,
+    FullAssertion,
+}
+
+#[derive(Clone)]
 pub enum ImageFormat {
     R8Unorm,
     R8Uint,
