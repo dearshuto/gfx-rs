@@ -99,3 +99,64 @@ impl ITexture for TextureWgpu {
         Self::new(device, info)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use sjgfx_interface::{DebugMode, DeviceInfo, GpuAccess, IDevice, ImageFormat, TextureInfo};
+
+    use crate::{DeviceWgpu, TextureWgpu};
+
+    #[test]
+    fn new_texture() {
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = TextureWgpu::new(
+            &device,
+            &TextureInfo::new()
+                .set_width(64)
+                .set_height(64)
+                .set_image_format(ImageFormat::R8Unorm)
+                .set_gpu_access_flags(GpuAccess::TEXTURE),
+        );
+    }
+
+    #[test]
+    fn new_image() {
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = TextureWgpu::new(
+            &device,
+            &TextureInfo::new()
+                .set_width(64)
+                .set_height(64)
+                .set_image_format(ImageFormat::R8G8B8A8Unorm)
+                .set_gpu_access_flags(GpuAccess::IMAGE),
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_image_r8uint() {
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = TextureWgpu::new(
+            &device,
+            &TextureInfo::new()
+                .set_width(64)
+                .set_height(64)
+                .set_image_format(ImageFormat::R8Uint)
+                .set_gpu_access_flags(GpuAccess::IMAGE),
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_image_r8unorm() {
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = TextureWgpu::new(
+            &device,
+            &TextureInfo::new()
+                .set_width(64)
+                .set_height(64)
+                .set_image_format(ImageFormat::R8Unorm)
+                .set_gpu_access_flags(GpuAccess::IMAGE),
+        );
+    }
+}
