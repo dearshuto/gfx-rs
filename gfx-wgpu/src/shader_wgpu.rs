@@ -144,28 +144,18 @@ impl ShaderWgpu {
             .enumerate_descriptor_bindings(None)
             .unwrap()
             .into_iter()
-            .map(|x| match x.resource_type {
-                spirv_reflect::types::ReflectResourceType::Undefined => todo!(),
-                spirv_reflect::types::ReflectResourceType::Sampler => wgpu::BindGroupLayoutEntry {
-                    binding: x.binding,
-                    visibility: Self::convert_shader_stage(shader_stage),
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                spirv_reflect::types::ReflectResourceType::CombinedImageSampler => todo!(),
-                spirv_reflect::types::ReflectResourceType::ConstantBufferView => {
+            .map(|x| match x.descriptor_type {
+                spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::Sampler => {
                     wgpu::BindGroupLayoutEntry {
                         binding: x.binding,
                         visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: wgpu::BufferSize::new(x.block.size as u64),
-                        },
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     }
                 }
-                spirv_reflect::types::ReflectResourceType::ShaderResourceView => {
+                spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::SampledImage => {
                     wgpu::BindGroupLayoutEntry {
                         binding: x.binding,
                         visibility: Self::convert_shader_stage(shader_stage),
@@ -177,7 +167,29 @@ impl ShaderWgpu {
                         count: None,
                     }
                 }
-                spirv_reflect::types::ReflectResourceType::UnorderedAccessView => {
+                spirv_reflect::types::ReflectDescriptorType::StorageImage => {
+                    wgpu::BindGroupLayoutEntry {
+                        binding: x.binding,
+                        visibility: Self::convert_shader_stage(shader_stage),
+                        ty: Self::create_image_bind_group_layout_entry(&x),
+                        count: None,
+                    }
+                }
+                spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
+                    wgpu::BindGroupLayoutEntry {
+                        binding: x.binding,
+                        visibility: Self::convert_shader_stage(shader_stage),
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: wgpu::BufferSize::new(x.block.size as u64),
+                        },
+                        count: None,
+                    }
+                }
+                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
                     wgpu::BindGroupLayoutEntry {
                         binding: x.binding,
                         visibility: Self::convert_shader_stage(shader_stage),
@@ -189,6 +201,10 @@ impl ShaderWgpu {
                         count: None,
                     }
                 }
+                spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
+                spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
             })
             .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
             .to_vec()
@@ -210,6 +226,16 @@ impl ShaderWgpu {
             .to_vec()
     }
 
+    fn create_image_bind_group_layout_entry(
+        info: &spirv_reflect::types::ReflectDescriptorBinding,
+    ) -> wgpu::BindingType {
+        wgpu::BindingType::StorageTexture {
+            access: wgpu::StorageTextureAccess::ReadWrite,
+            format: Self::convert_reflect_image_format(info.image.image_format),
+            view_dimension: Self::convert_reflect_dimension(info.image.dim),
+        }
+    }
+
     fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
         match format {
             spirv_reflect::types::ReflectFormat::Undefined => todo!(),
@@ -227,6 +253,82 @@ impl ShaderWgpu {
             spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => {
                 wgpu::VertexFormat::Float32x4
             }
+        }
+    }
+
+    fn convert_reflect_image_format(
+        format: spirv_reflect::types::ReflectImageFormat,
+    ) -> wgpu::TextureFormat {
+        match format {
+            spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => {
+                wgpu::TextureFormat::Rgba32Float
+            }
+            spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => {
+                wgpu::TextureFormat::Rgba16Float
+            }
+            spirv_reflect::types::ReflectImageFormat::R32_FLOAT => wgpu::TextureFormat::R32Float,
+            spirv_reflect::types::ReflectImageFormat::RGBA8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => {
+                wgpu::TextureFormat::Rgba8Snorm
+            }
+            spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => wgpu::TextureFormat::Rg32Float,
+            spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => wgpu::TextureFormat::Rg16Float,
+            spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => {
+                wgpu::TextureFormat::Rg11b10Float
+            }
+            spirv_reflect::types::ReflectImageFormat::R16_FLOAT => wgpu::TextureFormat::R16Float,
+            spirv_reflect::types::ReflectImageFormat::RGBA16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGB10A2 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => {
+                wgpu::TextureFormat::Rgba16Snorm
+            }
+            spirv_reflect::types::ReflectImageFormat::RG16_SNORM => wgpu::TextureFormat::Rg16Snorm,
+            spirv_reflect::types::ReflectImageFormat::RG8_SNORM => wgpu::TextureFormat::Rg8Snorm,
+            spirv_reflect::types::ReflectImageFormat::R16_SNORM => wgpu::TextureFormat::R16Snorm,
+            spirv_reflect::types::ReflectImageFormat::R8_SNORM => wgpu::TextureFormat::R8Snorm,
+            spirv_reflect::types::ReflectImageFormat::RGBA32_INT => wgpu::TextureFormat::Rgba32Sint,
+            spirv_reflect::types::ReflectImageFormat::RGBA16_INT => wgpu::TextureFormat::Rgba16Sint,
+            spirv_reflect::types::ReflectImageFormat::RGBA8_INT => wgpu::TextureFormat::Rgba8Sint,
+            spirv_reflect::types::ReflectImageFormat::R32_INT => wgpu::TextureFormat::R32Sint,
+            spirv_reflect::types::ReflectImageFormat::RG32_INT => wgpu::TextureFormat::Rg32Sint,
+            spirv_reflect::types::ReflectImageFormat::RG16_INT => wgpu::TextureFormat::Rg16Sint,
+            spirv_reflect::types::ReflectImageFormat::RG8_INT => wgpu::TextureFormat::Rg8Sint,
+            spirv_reflect::types::ReflectImageFormat::R16_INT => wgpu::TextureFormat::R16Sint,
+            spirv_reflect::types::ReflectImageFormat::R8_INT => wgpu::TextureFormat::R8Sint,
+            spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => {
+                wgpu::TextureFormat::Rgba32Uint
+            }
+            spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => {
+                wgpu::TextureFormat::Rgba16Uint
+            }
+            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => wgpu::TextureFormat::Rgba16Uint,
+            spirv_reflect::types::ReflectImageFormat::R32_UINT => wgpu::TextureFormat::R32Uint,
+            spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RG32_UINT => wgpu::TextureFormat::Rg32Uint,
+            spirv_reflect::types::ReflectImageFormat::RG16_UINT => wgpu::TextureFormat::Rg16Uint,
+            spirv_reflect::types::ReflectImageFormat::RG8_UINT => wgpu::TextureFormat::Rg8Uint,
+            spirv_reflect::types::ReflectImageFormat::R16_UINT => wgpu::TextureFormat::R16Uint,
+            spirv_reflect::types::ReflectImageFormat::R8_UINT => wgpu::TextureFormat::R8Uint,
+        }
+    }
+
+    fn convert_reflect_dimension(
+        dimension: spirv_reflect::types::ReflectDimension,
+    ) -> wgpu::TextureViewDimension {
+        match dimension {
+            spirv_reflect::types::ReflectDimension::Undefined => todo!(),
+            spirv_reflect::types::ReflectDimension::Type1d => wgpu::TextureViewDimension::D1,
+            spirv_reflect::types::ReflectDimension::Type2d => wgpu::TextureViewDimension::D2,
+            spirv_reflect::types::ReflectDimension::Type3d => wgpu::TextureViewDimension::D3,
+            spirv_reflect::types::ReflectDimension::Cube => wgpu::TextureViewDimension::Cube,
+            spirv_reflect::types::ReflectDimension::Rect => todo!(),
+            spirv_reflect::types::ReflectDimension::Buffer => todo!(),
+            spirv_reflect::types::ReflectDimension::SubPassData => todo!(),
         }
     }
 
@@ -362,4 +464,40 @@ mod tests {
     //     assert_eq!(attributes[1].shader_location, 1);
     //     assert_eq!(attributes[1].format, VertexFormat::Float32x3);
     // }
+
+    use sjgfx_interface::{DebugMode, DeviceInfo, IDevice, ShaderInfo};
+
+    use crate::{DeviceWgpu, ShaderWgpu};
+
+    #[test]
+    fn new_image_shader() {
+        let shader_source = "
+        		#version 450
+
+            layout (local_size_x=8, local_size_y=8, local_size_z=1) in;
+
+            layout (binding=0, r32i) uniform iimage2D u_Image;
+
+        		void main() {
+              int x = int(gl_GlobalInvocationID.x);
+              int y = int(gl_GlobalInvocationID.y);
+
+              imageStore(u_Image, ivec2(x, y), ivec4(1, 0, 0, 0));
+        		}";
+        let mut compiler = shaderc::Compiler::new().unwrap();
+        let shader_binary = compiler
+            .compile_into_spirv(
+                &shader_source,
+                shaderc::ShaderKind::Compute,
+                "test.glsl",
+                "main",
+                None,
+            )
+            .unwrap();
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = ShaderWgpu::new(
+            &device,
+            &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
+        );
+    }
 }
