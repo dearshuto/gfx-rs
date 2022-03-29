@@ -26,6 +26,9 @@ pub enum DebugMode {
 pub enum ImageFormat {
     R8Unorm,
     R8Uint,
+    R8Sint,
+    R32Uint,
+    R32Sint,
     R8G8B8A8Unorm,
     R8G8B8Unorm,
     D32,
