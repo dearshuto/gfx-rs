@@ -53,6 +53,7 @@ pub struct CommandBufferWgpu {
     // テクスチャ
     textures: [Option<Arc<wgpu::TextureView>>; 8],
     samplers: [Option<Arc<wgpu::Sampler>>; 8],
+    images: [Option<Arc<wgpu::TextureView>>; 8],
 
     // Draw
     vertex_buffer: [Option<Arc<wgpu::Buffer>>; 8],
@@ -78,6 +79,7 @@ impl CommandBufferWgpu {
             // テクスチャ
             textures: [None, None, None, None, None, None, None, None],
             samplers: [None, None, None, None, None, None, None, None],
+            images: Default::default(),
 
             dispatch_count: None,
             vertex_buffer: [None, None, None, None, None, None, None, None],
@@ -134,6 +136,11 @@ impl CommandBufferWgpu {
                 .get_texture()
                 .create_view(&wgpu::TextureViewDescriptor::default()),
         ));
+    }
+
+    pub fn set_image(&mut self, index: i32, texture: &TextureViewWgpu) {
+        let index = index as usize;
+        self.images[index] = Some(texture.clone_texture_view());
     }
 
     pub fn set_sampler(&mut self, index: i32, sampler: &SamplerWgpu) {
@@ -427,6 +434,16 @@ impl CommandBufferWgpu {
             }
         }
 
+        // イメージ
+        for index in 0..self.images.len() {
+            if let Some(image) = &self.images[index] {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: index as u32,
+                    resource: wgpu::BindingResource::TextureView(image),
+                })
+            }
+        }
+
         self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: self.shader.as_ref().unwrap().get_bind_group_layout(),
@@ -515,8 +532,8 @@ impl ICommandBuffer for CommandBufferWgpu {
         self.set_texture(index, texture_view);
     }
 
-    fn set_image(&mut self, _index: i32, _texture: &Self::TextureViewType) {
-        todo!()
+    fn set_image(&mut self, index: i32, texture: &Self::TextureViewType) {
+        self.set_image(index, texture);
     }
 
     fn set_constant_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
