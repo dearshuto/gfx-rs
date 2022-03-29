@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{GpuAccess, ITexture, ImageFormat, TextureInfo};
+use sjgfx_interface::{GpuAccess, ITexture, TextureInfo};
 use wgpu::util::DeviceExt;
 
-use crate::DeviceWgpu;
+use crate::{util, DeviceWgpu};
 
 pub struct TextureWgpu {
     texture: Arc<wgpu::Texture>,
@@ -52,7 +52,7 @@ impl TextureWgpu {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: Self::convert_format(info.get_image_format().clone()),
+            format: util::convert_format(info.get_image_format().clone()),
             usage: Self::convert_usage(info.get_gpu_access_flags()),
         }
     }
@@ -79,19 +79,6 @@ impl TextureWgpu {
         }
 
         result
-    }
-
-    fn convert_format(format: ImageFormat) -> wgpu::TextureFormat {
-        match format {
-            ImageFormat::R8Unorm => wgpu::TextureFormat::R8Unorm,
-            ImageFormat::R8Uint => wgpu::TextureFormat::R8Uint,
-            ImageFormat::R8Sint => wgpu::TextureFormat::R8Sint,
-            ImageFormat::R32Uint => wgpu::TextureFormat::R32Uint,
-            ImageFormat::R32Sint => wgpu::TextureFormat::R32Sint,
-            ImageFormat::R8G8B8Unorm => wgpu::TextureFormat::Rgba8Unorm,
-            ImageFormat::R8G8B8A8Unorm => wgpu::TextureFormat::Rgba8Unorm,
-            ImageFormat::D32 => wgpu::TextureFormat::Depth32Float,
-        }
     }
 }
 
