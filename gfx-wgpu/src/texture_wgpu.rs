@@ -135,13 +135,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn new_image_r8_uint() {
         new_impl(ImageFormat::R8Uint, GpuAccess::IMAGE);
     }
 
     #[test]
-    #[should_panic]
     fn new_image_r8_unorm() {
         new_impl(ImageFormat::R8Unorm, GpuAccess::IMAGE);
     }

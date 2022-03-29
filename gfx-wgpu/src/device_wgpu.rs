@@ -35,7 +35,7 @@ impl DeviceWgpu {
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-                features: wgpu::Features::empty(),
+                features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 label: None,
             },
             None,
@@ -122,7 +122,7 @@ impl IDevice for DeviceWgpu {
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-                features: wgpu::Features::empty(),
+                features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 label: None,
             },
             None,
