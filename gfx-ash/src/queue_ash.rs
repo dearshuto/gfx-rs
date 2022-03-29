@@ -98,26 +98,26 @@ impl Drop for QueueAsh {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{DeviceInfo, QueueInfo};
+    use sjgfx_interface::{DebugMode, DeviceInfo, QueueInfo};
 
     use crate::{DeviceAsh, QueueAsh};
 
     #[test]
     fn new() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _queue = QueueAsh::new(&device, &QueueInfo::new());
     }
 
     #[test]
     fn flush_empty() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let mut queue = QueueAsh::new(&device, &QueueInfo::new());
         queue.flush();
     }
 
     #[test]
     fn sync_empty() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let queue = QueueAsh::new(&device, &QueueInfo::new());
         queue.sync();
     }

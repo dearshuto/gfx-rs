@@ -258,13 +258,13 @@ impl IBuffer for BufferAsh {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{BufferInfo, DeviceInfo, GpuAccess};
+    use sjgfx_interface::{BufferInfo, DebugMode, DeviceInfo, GpuAccess};
 
     use crate::{BufferAsh, DeviceAsh};
 
     #[test]
     fn new() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _buffer = BufferAsh::new(
             &device,
             &BufferInfo::new()
@@ -293,7 +293,7 @@ mod tests {
 
     #[test]
     fn map() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let buffer = BufferAsh::new(
             &device,
             &BufferInfo::new()

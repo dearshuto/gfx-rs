@@ -915,20 +915,20 @@ impl ICommandBuffer for CommandBufferAsh {
 #[cfg(test)]
 mod tests {
     use sjgfx_interface::{
-        CommandBufferInfo, DeviceInfo, GpuAccess, ITexture, TextureInfo, TextureViewInfo,
+        CommandBufferInfo, DebugMode, DeviceInfo, GpuAccess, ITexture, TextureInfo, TextureViewInfo,
     };
 
     use crate::{CommandBufferAsh, DeviceAsh, TextureAsh, TextureViewAsh};
 
     #[test]
     fn new() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _command_buffer = CommandBufferAsh::new(&device, &CommandBufferInfo::new());
     }
 
     #[test]
     fn begin_end() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let mut command_buffer = CommandBufferAsh::new(&device, &CommandBufferInfo::new());
 
         command_buffer.begin();
@@ -937,7 +937,7 @@ mod tests {
 
     #[test]
     fn set_image() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let texture = TextureAsh::new(
             &device,
             &TextureInfo::new()
