@@ -28,8 +28,8 @@ use vulkano::{
 
 use crate::buffer_vk::BufferView;
 use crate::{
-    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, ShaderVk, TextureViewVk,
-    TextureVk, VertexStateVk,
+    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, SamplerVk, ShaderVk,
+    TextureViewVk, TextureVk, VertexStateVk,
 };
 
 pub struct CommandBufferVk {
@@ -331,6 +331,7 @@ impl ICommandBuffer for CommandBufferVk {
     type BufferType = BufferVk;
     type ColorTargetViewType = ColorTargetViewVk;
     type DepthStencilViewType = DepthStencilViewVk;
+    type SamplerType = SamplerVk;
     type ShaderType = ShaderVk;
     type TextureType = TextureVk;
     type TextureViewType = TextureViewVk;
@@ -360,6 +361,14 @@ impl ICommandBuffer for CommandBufferVk {
 
     fn set_shader(&mut self, shader: &Self::ShaderType) {
         self.set_shader(shader);
+    }
+
+    fn set_sampler(&mut self, _index: i32, _sampler: &Self::SamplerType) {
+        todo!()
+    }
+
+    fn set_texture(&mut self, _index: i32, _texture: &Self::TextureViewType) {
+        todo!()
     }
 
     fn set_image(&mut self, _index: i32, _texture: &Self::TextureViewType) {

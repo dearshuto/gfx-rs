@@ -1,11 +1,11 @@
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, ImageFormat,
     IndexFormat, PrimitiveTopology, QueueInfo, SamplerInfo, ShaderInfo, SwapChainInfo, TextureInfo,
-    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+    TextureViewInfo, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, SamplerWgpu, ShaderWgpu, SwapChainWgpu,
-    TextureWgpu, VertexStateWgpu,
+    TextureViewWgpu, TextureWgpu, VertexStateWgpu,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -96,6 +96,11 @@ fn main() {
             .set_image_format(ImageFormat::R8G8B8Unorm),
         image.as_bytes(),
     );
+    let texture_view = TextureViewWgpu::new(
+        &device,
+        &TextureViewInfo::new().set_format(ImageFormat::R8G8B8Unorm),
+        &texture,
+    );
     let sampler = SamplerWgpu::new(&device, &SamplerInfo::new());
 
     let vertex_buffer = BufferWgpu::new(
@@ -160,7 +165,7 @@ fn main() {
                     command_buffer.begin();
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
                     command_buffer.set_shader(&shader);
-                    command_buffer.set_texture(0, &texture);
+                    command_buffer.set_texture(0, &texture_view);
                     command_buffer.set_sampler(1, &sampler);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);

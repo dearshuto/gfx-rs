@@ -128,7 +128,7 @@ impl CommandBufferWgpu {
         self.unordered_access_buffer[index as usize] = Some(buffer.close_buffer());
     }
 
-    pub fn set_texture(&mut self, index: i32, texture: &TextureWgpu) {
+    pub fn set_texture_direct(&mut self, index: i32, texture: &TextureWgpu) {
         self.textures[index as usize] = Some(Arc::new(
             texture
                 .get_texture()
@@ -138,6 +138,10 @@ impl CommandBufferWgpu {
 
     pub fn set_sampler(&mut self, index: i32, sampler: &SamplerWgpu) {
         self.samplers[index as usize] = Some(sampler.clone_sampler());
+    }
+
+    pub fn set_texture(&mut self, index: i32, texture: &TextureViewWgpu) {
+        self.textures[index as usize] = Some(texture.clone_texture_view());
     }
 
     pub fn set_vertex_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
@@ -471,6 +475,7 @@ impl ICommandBuffer for CommandBufferWgpu {
     type BufferType = BufferWgpu;
     type ColorTargetViewType = ColorTargetViewWgpu;
     type DepthStencilViewType = DepthStencilViewWgpu;
+    type SamplerType = SamplerWgpu;
     type ShaderType = ShaderWgpu;
     type TextureType = TextureWgpu;
     type TextureViewType = TextureViewWgpu;
@@ -500,6 +505,14 @@ impl ICommandBuffer for CommandBufferWgpu {
 
     fn set_shader(&mut self, shader: &Self::ShaderType) {
         self.set_shader(shader);
+    }
+
+    fn set_sampler(&mut self, index: i32, sampler: &Self::SamplerType) {
+        self.set_sampler(index, sampler);
+    }
+
+    fn set_texture(&mut self, index: i32, texture_view: &Self::TextureViewType) {
+        self.set_texture(index, texture_view);
     }
 
     fn set_image(&mut self, _index: i32, _texture: &Self::TextureViewType) {

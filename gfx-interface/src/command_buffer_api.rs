@@ -1,5 +1,5 @@
 use crate::{
-    shader_api::IShader, IBuffer, IColorTargetView, IDepthStencilView, IDevice, ITexture,
+    shader_api::IShader, IBuffer, IColorTargetView, IDepthStencilView, IDevice, ISampler, ITexture,
     ITextureView, IndexFormat, PrimitiveTopology,
 };
 
@@ -16,6 +16,7 @@ pub trait ICommandBuffer {
     type BufferType: IBuffer;
     type ColorTargetViewType: IColorTargetView;
     type DepthStencilViewType: IDepthStencilView;
+    type SamplerType: ISampler;
     type ShaderType: IShader;
     type TextureType: ITexture;
     type TextureViewType: ITextureView;
@@ -35,6 +36,10 @@ pub trait ICommandBuffer {
         TIterator: Iterator<Item = Self::ColorTargetViewType>;
 
     fn set_shader(&mut self, shader: &Self::ShaderType);
+
+    fn set_sampler(&mut self, index: i32, sampler: &Self::SamplerType);
+
+    fn set_texture(&mut self, index: i32, texture_view: &Self::TextureViewType);
 
     fn set_image(&mut self, index: i32, texture: &Self::TextureViewType);
 

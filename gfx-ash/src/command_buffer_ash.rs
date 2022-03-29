@@ -2,8 +2,8 @@ use ash::vk::{Extent2D, Framebuffer, Rect2D};
 use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology};
 
 use crate::{
-    BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, ShaderAsh, TextureAsh,
-    TextureViewAsh, VertexStateAsh,
+    BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, SamplerAsh, ShaderAsh,
+    TextureAsh, TextureViewAsh, VertexStateAsh,
 };
 
 struct DrawInfo {
@@ -793,6 +793,7 @@ impl ICommandBuffer for CommandBufferAsh {
     type BufferType = BufferAsh;
     type ColorTargetViewType = ColorTargetViewAsh;
     type DepthStencilViewType = DepthStencilViewAsh;
+    type SamplerType = SamplerAsh;
     type ShaderType = ShaderAsh;
     type TextureType = TextureAsh;
     type TextureViewType = TextureViewAsh;
@@ -822,6 +823,14 @@ impl ICommandBuffer for CommandBufferAsh {
 
     fn set_shader(&mut self, shader: &Self::ShaderType) {
         self.set_shader(shader);
+    }
+
+    fn set_sampler(&mut self, _index: i32, _sampler: &Self::SamplerType) {
+        todo!();
+    }
+
+    fn set_texture(&mut self, _index: i32, _texture_view: &Self::TextureViewType) {
+        todo!()
     }
 
     fn set_image(&mut self, index: i32, texture: &Self::TextureViewType) {
