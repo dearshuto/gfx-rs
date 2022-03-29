@@ -28,6 +28,7 @@ pub trait IApi {
         ShaderType = Self::Shader,
         BufferType = Self::Buffer,
         ColorTargetViewType = Self::ColorTargetView,
+        SamplerType = Self::Sampler,
         TextureType = Self::Texture,
         TextureViewType = Self::TextureView,
         VertexStateType = Self::VertexState,
