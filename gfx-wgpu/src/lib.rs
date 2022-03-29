@@ -10,8 +10,9 @@ mod sampler_wgpu;
 mod semaphore_wgpu;
 mod shader_wgpu;
 mod swap_chain_wgpu;
-mod texture_wgpu;
 mod texture_view_wgpu;
+mod texture_wgpu;
+mod util;
 mod vertex_state_wgpu;
 
 pub use buffer_wgpu::BufferWgpu;
@@ -26,6 +27,6 @@ pub use sampler_wgpu::SamplerWgpu;
 pub use semaphore_wgpu::SemaphoreWgpu;
 pub use shader_wgpu::ShaderWgpu;
 pub use swap_chain_wgpu::SwapChainWgpu;
-pub use texture_wgpu::TextureWgpu;
 pub use texture_view_wgpu::TextureViewWgpu;
+pub use texture_wgpu::TextureWgpu;
 pub use vertex_state_wgpu::VertexStateWgpu;

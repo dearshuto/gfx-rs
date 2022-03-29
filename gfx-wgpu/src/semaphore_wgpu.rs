@@ -8,6 +8,6 @@ impl ISemaphore for SemaphoreWgpu {
     type DeviceType = DeviceWgpu;
 
     fn new(_device: &Self::DeviceType, _info: &sjgfx_interface::SemaphoreInfo) -> Self {
-        Self{}
+        Self {}
     }
 }
