@@ -113,41 +113,49 @@ mod tests {
     use crate::{DeviceAsh, TextureAsh};
 
     #[test]
-    fn new_texture() {
-        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _image_texture = TextureAsh::new(
-            &device,
-            &TextureInfo::new()
-                .set_width(64)
-                .set_height(64)
-                .set_image_format(ImageFormat::R8Unorm)
-                .set_gpu_access_flags(GpuAccess::TEXTURE),
-        );
+    fn new_texture_r8_unorm() {
+        new_impl(ImageFormat::R8Unorm, GpuAccess::TEXTURE);
     }
 
     #[test]
-    fn new_image() {
-        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _image_texture = TextureAsh::new(
-            &device,
-            &TextureInfo::new()
-                .set_width(64)
-                .set_height(64)
-                .set_image_format(ImageFormat::R8Unorm)
-                .set_gpu_access_flags(GpuAccess::IMAGE),
-        );
+    fn new_texture_r8_sint() {
+        new_impl(ImageFormat::R8Sint, GpuAccess::TEXTURE);
     }
 
     #[test]
-    fn new_texture_and_image() {
+    fn new_texture_r8_uint() {
+        new_impl(ImageFormat::R8Uint, GpuAccess::TEXTURE);
+    }
+
+    #[test]
+    fn new_image_r8_unorm() {
+        new_impl(ImageFormat::R8Unorm, GpuAccess::IMAGE);
+    }
+
+    #[test]
+    fn new_image_r8_uint() {
+        new_impl(ImageFormat::R8Uint, GpuAccess::IMAGE);
+    }
+
+    #[test]
+    fn new_image_r8_sint() {
+        new_impl(ImageFormat::R8Sint, GpuAccess::IMAGE);
+    }
+
+    #[test]
+    fn new_texture_and_image_r8_unorm() {
+        new_impl(ImageFormat::R8Unorm, GpuAccess::TEXTURE | GpuAccess::IMAGE);
+    }
+
+    fn new_impl(image_format: ImageFormat, gpu_access: GpuAccess) {
         let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _image_texture = TextureAsh::new(
+        let _ = TextureAsh::new(
             &device,
             &TextureInfo::new()
                 .set_width(64)
                 .set_height(64)
-                .set_image_format(ImageFormat::R8Unorm)
-                .set_gpu_access_flags(GpuAccess::IMAGE | GpuAccess::TEXTURE),
+                .set_image_format(image_format)
+                .set_gpu_access_flags(gpu_access),
         );
     }
 }

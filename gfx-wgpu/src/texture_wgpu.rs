@@ -110,56 +110,51 @@ mod tests {
     use crate::{DeviceWgpu, TextureWgpu};
 
     #[test]
-    fn new_texture() {
-        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _ = TextureWgpu::new(
-            &device,
-            &TextureInfo::new()
-                .set_width(64)
-                .set_height(64)
-                .set_image_format(ImageFormat::R8Unorm)
-                .set_gpu_access_flags(GpuAccess::TEXTURE),
-        );
+    fn new_texture_r8_unorm() {
+        new_impl(ImageFormat::R8Unorm, GpuAccess::TEXTURE);
     }
 
     #[test]
-    fn new_image() {
-        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _ = TextureWgpu::new(
-            &device,
-            &TextureInfo::new()
-                .set_width(64)
-                .set_height(64)
-                .set_image_format(ImageFormat::R8G8B8A8Unorm)
-                .set_gpu_access_flags(GpuAccess::IMAGE),
-        );
+    fn new_texture_r8_uint() {
+        new_impl(ImageFormat::R8Uint, GpuAccess::TEXTURE);
     }
 
     #[test]
-    #[should_panic]
-    fn new_image_r8uint() {
-        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
-        let _ = TextureWgpu::new(
-            &device,
-            &TextureInfo::new()
-                .set_width(64)
-                .set_height(64)
-                .set_image_format(ImageFormat::R8Uint)
-                .set_gpu_access_flags(GpuAccess::IMAGE),
-        );
+    fn new_texture_r8_sint() {
+        new_impl(ImageFormat::R8Sint, GpuAccess::TEXTURE);
+    }
+
+    #[test]
+    fn new_texture_r8g8b8a8_unorm() {
+        new_impl(ImageFormat::R8G8B8A8Unorm, GpuAccess::TEXTURE);
+    }
+
+    #[test]
+    fn new_image_r8g8b8a8_unorm() {
+        new_impl(ImageFormat::R8G8B8A8Unorm, GpuAccess::IMAGE);
     }
 
     #[test]
     #[should_panic]
-    fn new_image_r8unorm() {
+    fn new_image_r8_uint() {
+        new_impl(ImageFormat::R8Uint, GpuAccess::IMAGE);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_image_r8_unorm() {
+        new_impl(ImageFormat::R8Unorm, GpuAccess::IMAGE);
+    }
+
+    fn new_impl(format: ImageFormat, gpu_access: GpuAccess) {
         let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _ = TextureWgpu::new(
             &device,
             &TextureInfo::new()
                 .set_width(64)
                 .set_height(64)
-                .set_image_format(ImageFormat::R8Unorm)
-                .set_gpu_access_flags(GpuAccess::IMAGE),
+                .set_image_format(format)
+                .set_gpu_access_flags(gpu_access),
         );
     }
 }
