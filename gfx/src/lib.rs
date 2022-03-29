@@ -3,8 +3,9 @@ mod buffer_builder;
 mod command_buffer_builder;
 mod device_builder;
 mod queue_builder;
-mod shader_builder;
 mod sampler_builder;
+mod semaphore_builder;
+mod shader_builder;
 mod swap_chain_builder;
 mod texture_builder;
 mod texture_view_builder;
@@ -15,6 +16,7 @@ pub use command_buffer_builder::TCommandBufferBuilder;
 pub use device_builder::TDeviceBuilder;
 pub use queue_builder::TQueueBuilder;
 pub use sampler_builder::TSamplerBuilder;
+pub use semaphore_builder::TSemaphoreBuilder;
 pub use shader_builder::TShaderBuilder;
 pub use swap_chain_builder::TSwapChainBuilder;
 pub use texture_builder::TTextureBuilder;
@@ -40,13 +42,6 @@ pub type VertexStateBuilder = TVertexStateBuilder<BackendApi>;
 
 pub struct FenceBuilder;
 impl FenceBuilder {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-pub struct SemaphoreBuilder;
-impl SemaphoreBuilder {
     pub fn new() -> Self {
         Self {}
     }
