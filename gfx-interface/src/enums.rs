@@ -25,6 +25,7 @@ pub enum DebugMode {
 #[derive(Clone)]
 pub enum ImageFormat {
     R8Unorm,
+    R8Snorm,
     R8Uint,
     R8Sint,
     R32Uint,

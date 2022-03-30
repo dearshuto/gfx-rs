@@ -52,6 +52,7 @@ impl Converter {
     pub fn convert_format(&self, image_format: ImageFormat) -> Format {
         match image_format {
             ImageFormat::R8Unorm => Format::R8_UNORM,
+            ImageFormat::R8Snorm => Format::R8_SNORM,
             ImageFormat::R8Sint => Format::R8_SINT,
             ImageFormat::R8Uint => Format::R8_UINT,
             ImageFormat::R32Sint => Format::R32_SINT,
