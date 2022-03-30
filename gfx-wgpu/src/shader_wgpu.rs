@@ -232,10 +232,16 @@ impl ShaderWgpu {
         }
     }
 
-    fn create_texture_bind_group_entry(info: &spirv_reflect::types::ReflectDescriptorBinding) -> wgpu::BindingType {
-        let sample_type = if Self::is_float_format(info.image.image_format.clone()) { wgpu::TextureSampleType::Float { filterable: true } }
-        else if Self::is_signed_int_format(info.image.image_format.clone()) { wgpu::TextureSampleType::Sint }
-        else { wgpu::TextureSampleType::Uint };
+    fn create_texture_bind_group_entry(
+        info: &spirv_reflect::types::ReflectDescriptorBinding,
+    ) -> wgpu::BindingType {
+        let sample_type = if Self::is_float_format(info.image.image_format.clone()) {
+            wgpu::TextureSampleType::Float { filterable: true }
+        } else if Self::is_signed_int_format(info.image.image_format.clone()) {
+            wgpu::TextureSampleType::Sint
+        } else {
+            wgpu::TextureSampleType::Uint
+        };
         wgpu::BindingType::Texture {
             sample_type,
             view_dimension: wgpu::TextureViewDimension::D2,
@@ -245,7 +251,7 @@ impl ShaderWgpu {
 
     fn is_float_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
         match format {
-            spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
+            spirv_reflect::types::ReflectImageFormat::Undefined => true,
             spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => true,
             spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => true,
             spirv_reflect::types::ReflectImageFormat::R32_FLOAT => true,
@@ -288,50 +294,50 @@ impl ShaderWgpu {
         }
     }
 
-        fn is_signed_int_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
-            match format {
-                spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::R32_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA8 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::R16_FLOAT => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA16 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RGB10A2 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
-                spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::RG16_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::RG8_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::R16_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::R8_SNORM => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA32_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RGBA16_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RGBA8_INT => true,
-                spirv_reflect::types::ReflectImageFormat::R32_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RG32_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RG16_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RG8_INT => true,
-                spirv_reflect::types::ReflectImageFormat::R16_INT => true,
-                spirv_reflect::types::ReflectImageFormat::R8_INT => true,
-                spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
-                spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
-            }
+    fn is_signed_int_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
+        match format {
+            spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::R32_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::R16_FLOAT => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGB10A2 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::RG16_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::RG8_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::R16_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::R8_SNORM => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA32_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RGBA16_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RGBA8_INT => true,
+            spirv_reflect::types::ReflectImageFormat::R32_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RG32_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RG16_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RG8_INT => true,
+            spirv_reflect::types::ReflectImageFormat::R16_INT => true,
+            spirv_reflect::types::ReflectImageFormat::R8_INT => true,
+            spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
+            spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
         }
+    }
 
     fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
         match format {
@@ -595,6 +601,53 @@ mod tests {
         let _ = ShaderWgpu::new(
             &device,
             &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
+        );
+    }
+
+    #[test]
+    fn new_texture_shader() {
+        let vertex_shader_source = "
+        		#version 450
+        		void main() {
+                gl_Position = vec4(1.0);
+        		}";
+        let pixel_shader_source = "
+        		#version 450
+
+            layout (location = 0) out vec4 o_Color;
+
+            layout (binding = 0) uniform texture2D u_Texture;
+            layout (binding = 1) uniform sampler u_Sampler;
+
+        		void main() {
+                float value = texture(sampler2D(u_Texture, u_Sampler), vec2(0.0)).r;
+                o_Color = vec4(float(value));
+        		}";
+        let mut compiler = shaderc::Compiler::new().unwrap();
+        let vertex_shader_binary = compiler
+            .compile_into_spirv(
+                &vertex_shader_source,
+                shaderc::ShaderKind::Vertex,
+                "test.vs",
+                "main",
+                None,
+            )
+            .unwrap();
+        let pixel_shader_binary = compiler
+            .compile_into_spirv(
+                &pixel_shader_source,
+                shaderc::ShaderKind::Fragment,
+                "test.fs",
+                "main",
+                None,
+            )
+            .unwrap();
+        let device = DeviceWgpu::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let _ = ShaderWgpu::new(
+            &device,
+            &ShaderInfo::new()
+                .set_vertex_shader_binary(vertex_shader_binary.as_binary_u8())
+                .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
         );
     }
 }
