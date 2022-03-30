@@ -266,7 +266,7 @@ impl ShaderWgpu {
             spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
             spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
             spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
-            spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R8 => true,
             spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => true,
             spirv_reflect::types::ReflectImageFormat::RG16_SNORM => true,
             spirv_reflect::types::ReflectImageFormat::RG8_SNORM => true,
@@ -311,7 +311,7 @@ impl ShaderWgpu {
             spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
             spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
             spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
-            spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R8 => false,
             spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => false,
             spirv_reflect::types::ReflectImageFormat::RG16_SNORM => false,
             spirv_reflect::types::ReflectImageFormat::RG8_SNORM => false,
@@ -386,7 +386,7 @@ impl ShaderWgpu {
             spirv_reflect::types::ReflectImageFormat::RG16 => todo!(),
             spirv_reflect::types::ReflectImageFormat::RG8 => todo!(),
             spirv_reflect::types::ReflectImageFormat::R16 => todo!(),
-            spirv_reflect::types::ReflectImageFormat::R8 => todo!(),
+            spirv_reflect::types::ReflectImageFormat::R8 => wgpu::TextureFormat::R8Unorm,
             spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => {
                 wgpu::TextureFormat::Rgba16Snorm
             }
