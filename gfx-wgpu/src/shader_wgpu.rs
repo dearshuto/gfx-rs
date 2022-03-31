@@ -409,7 +409,7 @@ impl ShaderWgpu {
             spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => {
                 wgpu::TextureFormat::Rgba16Uint
             }
-            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => wgpu::TextureFormat::Rgba16Uint,
+            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => wgpu::TextureFormat::Rgba8Uint,
             spirv_reflect::types::ReflectImageFormat::R32_UINT => wgpu::TextureFormat::R32Uint,
             spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => todo!(),
             spirv_reflect::types::ReflectImageFormat::RG32_UINT => wgpu::TextureFormat::Rg32Uint,
