@@ -49,4 +49,8 @@ impl ITexture for TextureVk {
     fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self {
         Self::new(device, info)
     }
+
+    fn new_with_data(_device: &Self::DeviceType, _info: &TextureInfo, _data: &[u8]) -> Self {
+        todo!()
+    }
 }

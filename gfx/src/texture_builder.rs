@@ -2,21 +2,27 @@ use sjgfx_interface::{GpuAccess, ITexture, ImageFormat, TextureInfo};
 
 use crate::api::IApi;
 
-pub struct TTextureBuilder<TApi: IApi> {
+pub struct TTextureBuilder<'a, TApi: IApi> {
     info: TextureInfo,
+    data: Option<&'a [u8]>,
     _marker: std::marker::PhantomData<TApi>,
 }
 
-impl<TApi: IApi> TTextureBuilder<TApi> {
+impl<'a, TApi: IApi> TTextureBuilder<'a, TApi> {
     pub fn new() -> Self {
         Self {
             info: TextureInfo::new(),
+            data: None,
             _marker: std::marker::PhantomData,
         }
     }
 
     pub fn build(&self, device: &TApi::Device) -> TApi::Texture {
-        TApi::Texture::new(device, &self.info)
+        if let Some(data) = self.data {
+            TApi::Texture::new_with_data(device, &self.info, data)
+        } else {
+            TApi::Texture::new(device, &self.info)
+        }
     }
 
     pub fn enable_sampler(self) -> Self {
@@ -30,6 +36,7 @@ impl<TApi: IApi> TTextureBuilder<TApi> {
     pub fn with_size(self, width: i32, height: i32) -> Self {
         Self {
             info: self.info.set_width(width).set_height(height),
+            data: None,
             _marker: std::marker::PhantomData,
         }
     }
@@ -37,6 +44,15 @@ impl<TApi: IApi> TTextureBuilder<TApi> {
     pub fn with_format(self, format: ImageFormat) -> Self {
         Self {
             info: self.info.set_image_format(format),
+            data: None,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    pub fn with_data(self, data: &'a [u8]) -> Self {
+        Self {
+            info: self.info,
+            data: Some(data),
             _marker: std::marker::PhantomData,
         }
     }
@@ -46,6 +62,7 @@ impl<TApi: IApi> TTextureBuilder<TApi> {
 
         Self {
             info: self.info.set_gpu_access_flags(gpu_access),
+            data: None,
             _marker: std::marker::PhantomData,
         }
     }

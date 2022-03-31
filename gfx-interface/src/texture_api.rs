@@ -358,4 +358,6 @@ pub trait ITexture {
     type DeviceType: IDevice;
 
     fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self;
+
+    fn new_with_data(device: &Self::DeviceType, info: &TextureInfo, data: &[u8]) -> Self;
 }
