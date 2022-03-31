@@ -97,6 +97,10 @@ impl ITexture for TextureAsh {
             device_memory,
         }
     }
+
+    fn new_with_data(_device: &Self::DeviceType, _info: &TextureInfo, _data: &[u8]) -> Self {
+        todo!()
+    }
 }
 
 impl Drop for TextureAsh {

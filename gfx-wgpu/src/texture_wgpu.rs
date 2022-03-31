@@ -88,6 +88,10 @@ impl ITexture for TextureWgpu {
     fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self {
         Self::new(device, info)
     }
+
+    fn new_with_data(device: &Self::DeviceType, info: &TextureInfo, data: &[u8]) -> Self {
+        Self::new_with_data(device, info, data)
+    }
 }
 
 #[cfg(test)]
