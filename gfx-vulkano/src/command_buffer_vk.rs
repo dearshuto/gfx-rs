@@ -2,8 +2,8 @@ use core::panic;
 use std::sync::Arc;
 
 use sjgfx_interface::{
-    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, VertexAttributeStateInfo,
-    VertexBufferStateInfo,
+    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange,
+    VertexAttributeStateInfo, VertexBufferStateInfo,
 };
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::Pipeline;
@@ -347,6 +347,18 @@ impl ICommandBuffer for CommandBufferVk {
 
     fn end(&mut self) {
         self.end();
+    }
+
+    fn clear_color(
+        &mut self,
+        _color_target_view: &mut Self::ColorTargetViewType,
+        _red: f32,
+        _green: f32,
+        _blue: f32,
+        _alpha: f32,
+        _texture_array_range: TextureArrayRange,
+    ) {
+        todo!()
     }
 
     fn set_render_targets<TIterator>(

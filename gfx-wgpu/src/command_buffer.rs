@@ -577,6 +577,25 @@ impl ICommandBuffer for CommandBufferWgpu {
         CommandBufferWgpu::end(&self);
     }
 
+    fn clear_color(
+        &mut self,
+        color_target_view: &mut Self::ColorTargetViewType,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+        texture_array_range: TextureArrayRange,
+    ) {
+        self.clear_color(
+            color_target_view,
+            red,
+            green,
+            blue,
+            alpha,
+            texture_array_range,
+        );
+    }
+
     fn set_render_targets<TIterator>(
         &mut self,
         color_target_views: TIterator,

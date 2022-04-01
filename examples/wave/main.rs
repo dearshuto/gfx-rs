@@ -4,8 +4,8 @@ use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DepthStencilStateInfo, DeviceInfo, GpuAccess,
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader,
     ISwapChain, ITexture, IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo,
-    ShaderInfo, SwapChainInfo, TextureInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
-    VertexStateInfo,
+    ShaderInfo, SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo,
+    VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
@@ -169,10 +169,18 @@ where
                     });
 
                     // queue.sync_semaphore(&mut semaphore);
-                    let next_scan_buffer_view =
+                    let mut next_scan_buffer_view =
                         swap_chain.acquire_next_scan_buffer_view(None, None);
 
                     command_buffer.begin();
+                    command_buffer.clear_color(
+                        &mut next_scan_buffer_view,
+                        0.0,
+                        0.0,
+                        0.1,
+                        1.0,
+                        TextureArrayRange::new(),
+                    );
                     command_buffer.set_render_targets(
                         [next_scan_buffer_view].into_iter(),
                         Some(&depth_stencil_view),
