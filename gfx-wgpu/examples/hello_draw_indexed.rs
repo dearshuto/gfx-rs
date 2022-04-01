@@ -1,7 +1,7 @@
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IndexFormat,
-    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo,
-    VertexBufferStateInfo, VertexStateInfo,
+    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange,
+    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
@@ -112,9 +112,18 @@ fn main() {
 
             match event {
                 Event::RedrawRequested(_) => {
-                    let color_target_view = swap_chain.acquire_next_scan_buffer_view(None, None);
+                    let mut color_target_view =
+                        swap_chain.acquire_next_scan_buffer_view(None, None);
 
                     command_buffer.begin();
+                    command_buffer.clear_color(
+                        &mut color_target_view,
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0,
+                        TextureArrayRange::new(),
+                    );
                     command_buffer.set_render_targets([color_target_view].into_iter(), None);
                     command_buffer.set_shader(&shader);
                     command_buffer.set_vertex_state(&vertex_state);

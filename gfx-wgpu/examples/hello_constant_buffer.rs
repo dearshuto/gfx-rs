@@ -2,8 +2,8 @@ use std::{thread::sleep, time::Duration};
 
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology,
-    QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
-    VertexStateInfo,
+    QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange, VertexAttributeStateInfo,
+    VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
@@ -123,9 +123,18 @@ pub fn main() {
 
             match event {
                 Event::RedrawRequested(_) => {
-                    let color_target_view = swap_chain.acquire_next_scan_buffer_view(None, None);
+                    let mut color_target_view =
+                        swap_chain.acquire_next_scan_buffer_view(None, None);
 
                     command_buffer.begin();
+                    command_buffer.clear_color(
+                        &mut color_target_view,
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0,
+                        TextureArrayRange::new(),
+                    );
                     command_buffer.set_render_targets([color_target_view].into_iter(), None);
                     command_buffer.set_shader(&shader);
                     command_buffer.set_constant_buffer(0, &constant_buffer);
