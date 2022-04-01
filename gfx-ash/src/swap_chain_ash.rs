@@ -6,6 +6,7 @@ pub struct SwapChainAsh {
     device: ash::Device,
     swap_chain: ash::extensions::khr::Swapchain,
     swap_chain_khr: ash::vk::SwapchainKHR,
+    images: Vec<ash::vk::Image>,
     image_views: Vec<ash::vk::ImageView>,
     current_view_index: u32,
     format: ash::vk::Format,
@@ -101,6 +102,7 @@ impl SwapChainAsh {
             device: device.clone(),
             swap_chain,
             swap_chain_khr,
+            images,
             image_views,
             current_view_index: 0,
             format: surface_format.format,
@@ -151,6 +153,10 @@ impl SwapChainAsh {
 
     pub fn get_format(&self) -> ash::vk::Format {
         self.format
+    }
+
+    pub fn get_image(&self, index: usize) -> ash::vk::Image {
+        self.images[index]
     }
 
     pub fn get_image_view(&self, index: usize) -> ash::vk::ImageView {

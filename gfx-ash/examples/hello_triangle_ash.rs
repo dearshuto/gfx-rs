@@ -2,8 +2,7 @@ use sjgfx_ash::{
     CommandBufferAsh, DeviceAsh, FenceAsh, QueueAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh,
 };
 use sjgfx_interface::{
-    CommandBufferInfo, DeviceInfo, FenceInfo, ICommandBuffer, IDevice, IFence, IQueue, ISemaphore,
-    IShader, ISwapChain, PrimitiveTopology, QueueInfo, SemaphoreInfo, ShaderInfo, SwapChainInfo,
+    CommandBufferInfo, DeviceInfo, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -13,33 +12,17 @@ use winit::{
 };
 
 fn main() {
-    run::<DeviceAsh, QueueAsh, CommandBufferAsh, ShaderAsh, SwapChainAsh, SemaphoreAsh, FenceAsh>();
+    run();
 }
 
-fn run<TDevice, TQueue, TCommandBuffer, TShader, TSwapChain, TSemaphore, TFence>()
-where
-    TDevice: IDevice,
-    TQueue: IQueue<
-        DeviceType = TDevice,
-        CommandBufferType = TCommandBuffer,
-        SwapChainType = TSwapChain,
-    >,
-    TCommandBuffer: ICommandBuffer<
-        DeviceType = TDevice,
-        ShaderType = TShader,
-        ColorTargetViewType = TSwapChain::ColorTargetViewType,
-    >,
-    TShader: IShader<DeviceType = TDevice>,
-    TSwapChain: ISwapChain<DeviceType = TDevice, SemaphoreType = TSemaphore>,
-    TSemaphore: ISemaphore<DeviceType = TDevice>,
-    TFence: IFence<DeviceType = TDevice>,
+fn run()
 {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-    let mut device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
-    let mut queue = TQueue::new(&device, &QueueInfo::new());
-    let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
+    let mut device = DeviceAsh::new_with_surface(&DeviceInfo::new(), &window);
+    let mut queue = QueueAsh::new(&device, &QueueInfo::new());
+    let mut command_buffer = CommandBufferAsh::new(&device, &CommandBufferInfo::new());
 
     let mut compiler = shaderc::Compiler::new().unwrap();
     let vertex_shader_binary = compiler
@@ -60,17 +43,17 @@ where
             None,
         )
         .unwrap();
-    let shader = TShader::new(
+    let shader = ShaderAsh::new(
         &device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(&vertex_shader_binary.as_binary_u8())
             .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
     );
 
-    let mut swap_chain = TSwapChain::new(&mut device, &SwapChainInfo::new());
+    let mut swap_chain = SwapChainAsh::new(&mut device, &SwapChainInfo::new());
 
-    let mut semaphore = TSemaphore::new(&device, &SemaphoreInfo::new());
-    let mut _fence = TFence::new(&device, &FenceInfo::new());
+    let mut semaphore = SemaphoreAsh::new(&device);
+    let mut _fence = FenceAsh::new(&device);
 
     let mut should_close = false;
     while !should_close {
@@ -79,8 +62,10 @@ where
 
             match event {
                 Event::RedrawRequested(_) => {
-                    let next_scan_buffer_view =
+                    let mut next_scan_buffer_view =
                         swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
+
+                    command_buffer.clear_color(&mut next_scan_buffer_view, 0.0, 0.0, 0.0, 0.0, TextureArrayRange::new());
 
                     command_buffer.begin();
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
