@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{
-    CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology, ScissorStateInfo,
-    ViewportStateInfo,
+    BufferTextureCopyRegion, CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology,
+    ScissorStateInfo, ViewportStateInfo,
 };
+use wgpu::Extent3d;
 
 use crate::{
     shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
@@ -36,6 +37,7 @@ enum DrawCommand {
 
 pub struct CommandBufferWgpu {
     device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
 
     // レンダーターゲット
     color_target_view: Option<ColorTargetViewWgpu>,
@@ -65,6 +67,8 @@ impl CommandBufferWgpu {
     pub fn new(device: &DeviceWgpu, _info: &CommandBufferInfo) -> Self {
         Self {
             device: device.close_device(),
+            queue: device.clone_queue(),
+
             color_target_view: None,
             depth_stencil_view: None,
 
@@ -246,6 +250,35 @@ impl CommandBufferWgpu {
             base_instance: base_instance as u32,
         };
         self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
+    }
+
+    pub fn copy_image_to_buffer(
+        &mut self,
+        buffer: &BufferWgpu,
+        texture: &TextureWgpu,
+        copy_region: BufferTextureCopyRegion,
+    ) {
+        let mut command_encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+
+        let copy_size = Extent3d {
+            width: copy_region.get_image_width() as u32,
+            height: copy_region.get_image_height() as u32,
+            depth_or_array_layers: 0,
+        };
+        let image = texture.close_texture();
+        let image_copy = image.as_image_copy();
+        let image_copy_buffer = wgpu::ImageCopyBuffer {
+            buffer: buffer.get_buffer(),
+            layout: wgpu::ImageDataLayout {
+                offset: copy_region.get_offset() as u64,
+                bytes_per_row: None,
+                rows_per_image: None,
+            },
+        };
+        command_encoder.copy_texture_to_buffer(image_copy, image_copy_buffer, copy_size);
+        self.queue.submit(Some(command_encoder.finish()));
     }
 
     pub(crate) fn build_command(&self) -> Option<wgpu::CommandBuffer> {
