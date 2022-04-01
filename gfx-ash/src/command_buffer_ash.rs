@@ -1,5 +1,5 @@
 use ash::vk::{Extent2D, Framebuffer, Rect2D};
-use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology};
+use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange};
 
 use crate::{
     BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, SamplerAsh, ShaderAsh,
@@ -809,6 +809,18 @@ impl ICommandBuffer for CommandBufferAsh {
 
     fn end(&mut self) {
         self.end();
+    }
+
+    fn clear_color(
+        &mut self,
+        _color_target_view: &mut Self::ColorTargetViewType,
+        _red: f32,
+        _green: f32,
+        _blue: f32,
+        _alpha: f32,
+        _texture_array_range: TextureArrayRange,
+    ) {
+        // todo!()
     }
 
     fn set_render_targets<TIterator>(

@@ -1,6 +1,6 @@
 use crate::{
     shader_api::IShader, IBuffer, IColorTargetView, IDepthStencilView, IDevice, ISampler, ITexture,
-    ITextureView, IndexFormat, PrimitiveTopology,
+    ITextureView, IndexFormat, PrimitiveTopology, TextureArrayRange,
 };
 
 pub struct CommandBufferInfo {}
@@ -27,6 +27,16 @@ pub trait ICommandBuffer {
     fn begin(&mut self);
 
     fn end(&mut self);
+
+    fn clear_color(
+        &mut self,
+        color_target_view: &mut Self::ColorTargetViewType,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+        texture_array_range: TextureArrayRange,
+    );
 
     fn set_render_targets<TIterator>(
         &mut self,
