@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use sjgfx_interface::{
     BufferTextureCopyRegion, CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology,
-    ScissorStateInfo, ViewportStateInfo,
+    ScissorStateInfo, TextureArrayRange, ViewportStateInfo,
 };
 use wgpu::Extent3d;
 
@@ -95,6 +95,40 @@ impl CommandBufferWgpu {
     pub fn begin(&self) {}
 
     pub fn end(&self) {}
+
+    pub fn clear_color(
+        &mut self,
+        color_target_view: &mut ColorTargetViewWgpu,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+        _texture_array_range: TextureArrayRange,
+    ) {
+        let mut command_encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        {
+            let _ = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: color_target_view.get_texture_view(),
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: red as f64,
+                            g: green as f64,
+                            b: blue as f64,
+                            a: alpha as f64,
+                        }),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+        }
+        self.queue.submit(Some(command_encoder.finish()));
+    }
 
     pub fn set_render_targets<TIterator>(
         &mut self,
@@ -360,7 +394,7 @@ impl CommandBufferWgpu {
                     view: color_target_view.get_texture_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLUE),
+                        load: wgpu::LoadOp::Load,
                         store: true,
                     },
                 }],
