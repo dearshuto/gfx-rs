@@ -315,6 +315,10 @@ impl CommandBufferWgpu {
         self.queue.submit(Some(command_encoder.finish()));
     }
 
+    pub(crate) fn get_color_target_view(&self) -> &wgpu::TextureView {
+        self.color_target_view.as_ref().unwrap().get_texture_view()
+    }
+
     pub(crate) fn build_command(&self) -> Option<wgpu::CommandBuffer> {
         if let Some(shader) = &self.shader {
             if shader.is_compute() {
