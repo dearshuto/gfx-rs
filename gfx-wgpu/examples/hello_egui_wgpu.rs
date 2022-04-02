@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use egui::mutex::Mutex;
+use epi::App;
 use sjgfx_interface::{CommandBufferInfo, DeviceInfo, QueueInfo, SwapChainInfo};
 use sjgfx_wgpu::{CommandBufferWgpu, DeviceWgpu, QueueWgpu, SwapChainWgpu};
 use winit::{
@@ -37,6 +41,7 @@ fn main() {
         .get_surface()
         .configure(&device.get_device(), &surface_config);
     let mut interopebility = sjgfx_wgpu::egui::Interopebility::new(&device, &event_loop);
+    let demo_app = Arc::new(Mutex::new(egui_demo_lib::WrapApp::default()));
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -48,7 +53,9 @@ fn main() {
 
                 command_buffer.begin();
                 command_buffer.set_render_targets([scan_buffer].into_iter(), None);
-                interopebility.push_draw_command(&mut command_buffer);
+                interopebility.push_draw_command(&mut command_buffer, |context, frame| {
+                    demo_app.lock().update(context, frame);
+                });
                 command_buffer.end();
 
                 queue.execute(&command_buffer);

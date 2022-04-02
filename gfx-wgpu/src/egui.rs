@@ -2,7 +2,6 @@ use std::{sync::Arc, time::Instant};
 
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
 use egui_winit_platform::{Platform, PlatformDescriptor};
-use epi::App;
 use winit::{event::Event, event_loop::EventLoop};
 
 use crate::{CommandBufferWgpu, DeviceWgpu};
@@ -12,9 +11,7 @@ pub struct Interopebility {
     queue: Arc<wgpu::Queue>,
     platform: Platform,
     egui_render_pass: RenderPass,
-    demo_app: egui_demo_lib::WrapApp,
     repaint_signal: Arc<ExampleRepaintSignal>,
-
     start_time: Instant,
 }
 
@@ -32,8 +29,6 @@ impl Interopebility {
         let device = device.close_device();
         let egui_render_pass = RenderPass::new(&device, wgpu::TextureFormat::Bgra8UnormSrgb, 1);
 
-        let demo_app = egui_demo_lib::WrapApp::default();
-
         let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal(std::sync::Mutex::new(
             event_loop.create_proxy(),
         )));
@@ -43,7 +38,6 @@ impl Interopebility {
             queue,
             platform,
             egui_render_pass,
-            demo_app,
             repaint_signal,
             start_time: Instant::now(),
         }
@@ -51,9 +45,11 @@ impl Interopebility {
 
     pub fn update(&mut self, event: &Event<()>) {
         self.platform.handle_event(event);
+
+
     }
 
-    pub fn push_draw_command(&mut self, command_buffer: &mut CommandBufferWgpu) {
+    pub fn push_draw_command<T: Fn(&mut egui::CtxRef, &epi::Frame)>(&mut self, command_buffer: &mut CommandBufferWgpu, func: T) {
         self.platform
             .update_time(self.start_time.elapsed().as_secs_f64());
         self.platform.begin_frame();
@@ -71,7 +67,8 @@ impl Interopebility {
             repaint_signal: self.repaint_signal.clone(),
         });
 
-        self.demo_app.update(&self.platform.context(), &mut frame);
+        func(&mut self.platform.context(), &mut frame);
+
         let (_output, paint_commands) = self.platform.end_frame(None);
         let paint_jobs = self.platform.context().tessellate(paint_commands);
 
