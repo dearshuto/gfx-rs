@@ -1,7 +1,7 @@
 use sjgfx_interface::{
-    AttributeFormat, CommandBufferInfo, DeviceInfo, IColorTargetView, ICommandBuffer, IDevice,
-    IQueue, IShader, ISwapChain, IVertexState, PrimitiveTopology, QueueInfo, ShaderInfo,
-    SwapChainInfo, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+    CommandBufferInfo, DeviceInfo, IColorTargetView, ICommandBuffer, IDevice, IQueue, IShader,
+    ISwapChain, IVertexState, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
+    TextureArrayRange,
 };
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
@@ -13,15 +13,6 @@ use winit::{
     platform::run_return::EventLoopExtRunReturn,
     window::WindowBuilder,
 };
-
-#[repr(C)]
-struct Vertex {
-    #[allow(dead_code)]
-    pub x: f32,
-
-    #[allow(dead_code)]
-    pub y: f32,
-}
 
 fn main() {
     run::<
@@ -102,20 +93,6 @@ where
             .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
     );
 
-    let attribute_state_info_array = [VertexAttributeStateInfo::new()
-        .set_buffer_index(0)
-        .set_format(AttributeFormat::Float32_32_32)
-        .set_offset(0)
-        .set_slot(0)];
-    let vertex_buffer_state_info_array =
-        [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex>() as i64)];
-    let vertex_state = TVertexState::new(
-        &device,
-        &VertexStateInfo::new()
-            .set_attribute_state_info_array(attribute_state_info_array.into_iter())
-            .set_buffer_state_info_array(vertex_buffer_state_info_array),
-    );
-
     let mut should_close = false;
     while !should_close {
         event_loop.run_return(|event, _, control_flow| {
@@ -124,7 +101,7 @@ where
             match event {
                 Event::RedrawRequested(_) => {
                     // スキャンバッファの取得
-                    let next_scan_buffer_view =
+                    let mut next_scan_buffer_view =
                         swap_chain.acquire_next_scan_buffer_view(None, None);
                     //let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(&mut semaphore, &mut display_fence);
 
@@ -133,9 +110,16 @@ where
 
                     // コマンドを作成
                     command_buffer.begin();
+                    command_buffer.clear_color(
+                        &mut next_scan_buffer_view,
+                        0.0,
+                        0.1,
+                        0.2,
+                        1.0,
+                        TextureArrayRange::new(),
+                    );
                     command_buffer.set_shader(&shader);
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
-                    command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
                     command_buffer.end();
 
