@@ -736,14 +736,16 @@ impl CommandBufferAsh {
                 }
             }
 
-            let write_descriptor_set = ash::vk::WriteDescriptorSet {
-                dst_set: descriptor_set,
-                descriptor_count: image_infos.len() as u32,
-                descriptor_type: ash::vk::DescriptorType::STORAGE_IMAGE,
-                p_image_info: image_infos.as_ptr(),
-                ..Default::default()
-            };
-            write_descriptor_sets.push(write_descriptor_set);
+            if !image_infos.is_empty() {
+                let write_descriptor_set = ash::vk::WriteDescriptorSet {
+                    dst_set: descriptor_set,
+                    descriptor_count: image_infos.len() as u32,
+                    descriptor_type: ash::vk::DescriptorType::STORAGE_IMAGE,
+                    p_image_info: image_infos.as_ptr(),
+                    ..Default::default()
+                };
+                write_descriptor_sets.push(write_descriptor_set);
+            }
         }
 
         unsafe {
