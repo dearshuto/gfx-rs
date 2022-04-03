@@ -21,6 +21,7 @@ impl BufferAsh {
 
         let buffer =
             unsafe { device.get_device().create_buffer(&buffer_create_info, None) }.unwrap();
+        let requirement = unsafe { device.get_device().get_buffer_memory_requirements(buffer) };
 
         // デバイスメモリ
         let instance = device.get_instance();
@@ -43,7 +44,7 @@ impl BufferAsh {
             .unwrap();
 
         let allocate_info = ash::vk::MemoryAllocateInfo::builder()
-            .allocation_size(info.get_size() as DeviceSize)
+            .allocation_size(requirement.size as DeviceSize)
             .memory_type_index(memory_type_index as u32);
         let device_memory =
             unsafe { device.get_device().allocate_memory(&allocate_info, None) }.unwrap();

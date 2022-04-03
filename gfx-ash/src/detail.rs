@@ -17,8 +17,7 @@ impl DeviceMemory {
         let instance = device.get_instance();
         let physical_device = device.get_physical_device();
         let properties = unsafe { instance.get_physical_device_memory_properties(physical_device) };
-        let memory_type_index = properties
-            .memory_types
+        let memory_type_index = properties.memory_types[..properties.memory_type_count as _]
             .iter()
             .enumerate()
             .find_map(|(index, memory_type)| {
@@ -27,9 +26,9 @@ impl DeviceMemory {
                 } else {
                     0
                 };
-                let memory_flags = ash::vk::MemoryPropertyFlags::HOST_VISIBLE;
+                let memory_flags = ash::vk::MemoryPropertyFlags::DEVICE_LOCAL;
                 let is_contains = ((memory_type_bits & (1 << index) as u32) != 0)
-                    && memory_type.property_flags.contains(memory_flags);
+                    && (memory_type.property_flags & memory_flags == memory_flags);
 
                 if is_contains {
                     Some(index)
