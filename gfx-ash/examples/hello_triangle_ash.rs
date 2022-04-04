@@ -6,6 +6,7 @@ use sjgfx_interface::{
     TextureArrayRange,
 };
 use winit::{
+    dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
@@ -18,7 +19,11 @@ fn main() {
 
 fn run() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_resizable(false)
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .build(&event_loop)
+        .unwrap();
 
     let mut device = DeviceAsh::new_with_surface(&DeviceInfo::new(), &window);
     let mut queue = QueueAsh::new(&device, &QueueInfo::new());
@@ -50,7 +55,10 @@ fn run() {
             .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
     );
 
-    let mut swap_chain = SwapChainAsh::new(&mut device, &SwapChainInfo::new());
+    let mut swap_chain = SwapChainAsh::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
 
     let mut semaphore = SemaphoreAsh::new(&device);
     let mut _fence = FenceAsh::new(&device);

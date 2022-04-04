@@ -10,10 +10,12 @@ pub struct SwapChainAsh {
     image_views: Vec<ash::vk::ImageView>,
     current_view_index: u32,
     format: ash::vk::Format,
+    width: u32,
+    height: u32,
 }
 
 impl SwapChainAsh {
-    pub fn new(device: &DeviceAsh, _info: &SwapChainInfo) -> Self {
+    pub fn new(device: &DeviceAsh, info: &SwapChainInfo) -> Self {
         let instance = device.get_instance();
         let surface = device.get_surface();
         let surface_loader = device.get_surface_loader();
@@ -29,8 +31,8 @@ impl SwapChainAsh {
                 .unwrap()[0];
         let surface_resolution = match surface_capabilities.current_extent.width {
             std::u32::MAX => ash::vk::Extent2D {
-                width: 640,
-                height: 480,
+                width: info.get_width(),
+                height: info.get_height(),
             },
             _ => surface_capabilities.current_extent,
         };
@@ -106,6 +108,8 @@ impl SwapChainAsh {
             image_views,
             current_view_index: 0,
             format: surface_format.format,
+            width: info.get_width(),
+            height: info.get_height(),
         }
     }
 
@@ -161,6 +165,14 @@ impl SwapChainAsh {
 
     pub fn get_image_view(&self, index: usize) -> ash::vk::ImageView {
         self.image_views[index]
+    }
+
+    pub fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn get_height(&self) -> u32 {
+        self.height
     }
 }
 
