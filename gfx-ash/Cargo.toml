@@ -5,8 +5,8 @@ version = "0.1.0"
 
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
-ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.36.0", default-features = false, features = ["linked", "debug"] }
-ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.36.0" }
+ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.0", default-features = false, features = ["linked", "debug"] }
+ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.0" }
 raw-window-handle = "0.4.0"
 winit = "0.26"
 spirv-reflect = "0.2.3"
