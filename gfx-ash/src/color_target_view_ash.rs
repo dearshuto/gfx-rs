@@ -6,6 +6,8 @@ pub struct ColorTargetViewAsh {
     format: Option<ash::vk::Format>,
     image: Option<ash::vk::Image>,
     image_view: Option<ash::vk::ImageView>,
+    width: u32,
+    height: u32,
 }
 
 impl ColorTargetViewAsh {
@@ -18,6 +20,8 @@ impl ColorTargetViewAsh {
             format: Some(swap_chain.get_format()),
             image: Some(image),
             image_view: Some(image_view),
+            width: swap_chain.get_width(),
+            height: swap_chain.get_height(),
         }
     }
 
@@ -31,6 +35,14 @@ impl ColorTargetViewAsh {
 
     pub fn get_image_view(&self) -> ash::vk::ImageView {
         self.image_view.unwrap()
+    }
+
+    pub fn get_width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn get_height(&self) -> u32 {
+        self.height
     }
 }
 

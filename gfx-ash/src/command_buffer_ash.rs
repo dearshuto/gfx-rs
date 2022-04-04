@@ -35,6 +35,8 @@ pub struct CommandBufferAsh {
     image_view: Option<ash::vk::ImageView>,
     format: Option<ash::vk::Format>,
     render_pass: Option<ash::vk::RenderPass>,
+    width: Option<u32>,
+    height: Option<u32>,
     #[allow(dead_code)]
     framebuffer: Option<Framebuffer>,
     clear_color: [f32; 4],
@@ -106,6 +108,8 @@ impl CommandBufferAsh {
             format: None,
             render_pass: None,
             framebuffer: None,
+            width: None,
+            height: None,
             clear_color: [0.0, 0.0, 0.0, 0.0],
 
             // シェーダ
@@ -187,6 +191,8 @@ impl CommandBufferAsh {
         if let Some(color_target) = color_targets.next() {
             self.image_view = Some(color_target.get_image_view());
             self.format = Some(color_target.get_format());
+            self.width = Some(color_target.get_width());
+            self.height = Some(color_target.get_height());
         }
     }
 
@@ -304,8 +310,15 @@ impl CommandBufferAsh {
             self.update_descriptor_set();
         }
 
+        let width = self.width.unwrap();
+        let height = self.height.unwrap();
         let render_area = ash::vk::Rect2D::builder()
-            .extent(ash::vk::Extent2D::builder().width(640).height(480).build())
+            .extent(
+                ash::vk::Extent2D::builder()
+                    .width(width)
+                    .height(height)
+                    .build(),
+            )
             .build();
 
         // レンダーパス
@@ -353,8 +366,8 @@ impl CommandBufferAsh {
         let frame_buffer_create_info = ash::vk::FramebufferCreateInfo::builder()
             .render_pass(renderpass)
             .attachments(&frame_buffer_attachment)
-            .width(640)
-            .height(480)
+            .width(width)
+            .height(height)
             .layers(1);
         let frame_buffer = unsafe {
             self.device
@@ -397,8 +410,8 @@ impl CommandBufferAsh {
         let viewports = [ash::vk::Viewport {
             x: 0.0,
             y: 0.0,
-            width: 640.0,
-            height: 480.0,
+            width: width as f32,
+            height: height as f32,
             min_depth: 0.0,
             max_depth: 1.0,
         }];
@@ -526,6 +539,8 @@ impl CommandBufferAsh {
     }
 
     fn create_graphics_pipeline(&self) -> ash::vk::Pipeline {
+        let width = self.width.unwrap();
+        let height = self.height.unwrap();
         let shader_entry_name = unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"main\0") };
         let shader_stage_create_infos = [
             ash::vk::PipelineShaderStageCreateInfo {
@@ -549,8 +564,8 @@ impl CommandBufferAsh {
         let viewports = [ash::vk::Viewport {
             x: 0.0,
             y: 0.0,
-            width: 640.0,
-            height: 480.0,
+            width: width as f32,
+            height: height as f32,
             min_depth: 0.0,
             max_depth: 1.0,
         }];
@@ -602,12 +617,7 @@ impl CommandBufferAsh {
         let dynamic_state_info =
             ash::vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&dynamic_state);
 
-        let scissors = [Rect2D::builder()
-            .extent(Extent2D {
-                width: 640,
-                height: 480,
-            })
-            .build()];
+        let scissors = [Rect2D::builder().extent(Extent2D { width, height }).build()];
         let vertex_input_state_info =
             if let Some(vertex_inpute_state_create_info) = self.vertex_inpute_state_create_info {
                 vertex_inpute_state_create_info
