@@ -830,14 +830,21 @@ impl ICommandBuffer for CommandBufferAsh {
 
     fn clear_color(
         &mut self,
-        _color_target_view: &mut Self::ColorTargetViewType,
-        _red: f32,
-        _green: f32,
-        _blue: f32,
-        _alpha: f32,
-        _texture_array_range: TextureArrayRange,
+        color_target_view: &mut Self::ColorTargetViewType,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+        texture_array_range: TextureArrayRange,
     ) {
-        // todo!()
+        self.clear_color(
+            color_target_view,
+            red,
+            green,
+            blue,
+            alpha,
+            texture_array_range,
+        );
     }
 
     fn set_render_targets<TIterator>(
