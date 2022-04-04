@@ -164,7 +164,7 @@ impl DeviceAsh {
         self.surface.unwrap()
     }
 
-    fn create_instance(entry: &ash::Entry, additional_extensions: &[&CStr]) -> ash::Instance {
+    fn create_instance(entry: &ash::Entry, additional_extensions: &[*const i8]) -> ash::Instance {
         let app_name = std::ffi::CString::new("VulkanTriangle").unwrap();
         let appinfo = ash::vk::ApplicationInfo::builder()
             .application_name(&app_name)
@@ -186,7 +186,7 @@ impl DeviceAsh {
             // }.as_ptr(),
         ];
         for additional_extension in additional_extensions {
-            extension_names_raw.push(additional_extension.as_ptr());
+            extension_names_raw.push(*additional_extension);
         }
 
         let create_info = ash::vk::InstanceCreateInfo::builder()
