@@ -26,7 +26,6 @@ enum DrawCommand {
 
 pub struct CommandBufferAsh {
     device: ash::Device,
-    queue: ash::vk::Queue,
 
     #[allow(dead_code)]
     command_pool: ash::vk::CommandPool,
@@ -38,6 +37,7 @@ pub struct CommandBufferAsh {
     render_pass: Option<ash::vk::RenderPass>,
     #[allow(dead_code)]
     framebuffer: Option<Framebuffer>,
+    clear_color: [f32; 4],
 
     // シェーダ
     previous_shader_id: Option<uuid::Uuid>,
@@ -77,7 +77,6 @@ pub struct CommandBufferAsh {
 
 impl CommandBufferAsh {
     pub fn new(device: &DeviceAsh, _info: &CommandBufferInfo) -> Self {
-        let queue = device.get_queue_handle();
         let queue_family_index = device.get_queue_family_index();
         let device = device.get_device();
 
@@ -98,7 +97,6 @@ impl CommandBufferAsh {
 
         Self {
             device,
-            queue,
 
             command_pool,
             command_buffer: command_buffers[0],
@@ -108,6 +106,7 @@ impl CommandBufferAsh {
             format: None,
             render_pass: None,
             framebuffer: None,
+            clear_color: [0.0, 0.0, 0.0, 0.0],
 
             // シェーダ
             previous_shader_id: None,
@@ -171,51 +170,14 @@ impl CommandBufferAsh {
 
     pub fn clear_color(
         &mut self,
-        color_target_view: &mut ColorTargetViewAsh,
+        _color_target_view: &mut ColorTargetViewAsh,
         red: f32,
         green: f32,
         blue: f32,
         alpha: f32,
         _texture_array_range: TextureArrayRange,
     ) {
-        let image = color_target_view.get_image();
-
-        let begin_info = ash::vk::CommandBufferBeginInfo::builder()
-            .flags(ash::vk::CommandBufferUsageFlags::empty())
-            .build();
-        unsafe {
-            self.device
-                .begin_command_buffer(self.command_buffer, &begin_info)
-        }
-        .unwrap();
-        unsafe {
-            self.device.cmd_clear_color_image(
-                self.command_buffer,
-                image,
-                ash::vk::ImageLayout::GENERAL,
-                &ash::vk::ClearColorValue {
-                    float32: [red, green, blue, alpha],
-                },
-                &[ash::vk::ImageSubresourceRange {
-                    aspect_mask: ash::vk::ImageAspectFlags::COLOR,
-                    base_mip_level: 0,
-                    level_count: 1,
-                    base_array_layer: 0,
-                    layer_count: 1,
-                }],
-            )
-        };
-        unsafe { self.device.end_command_buffer(self.command_buffer) }.unwrap();
-
-        let submit_info = ash::vk::SubmitInfo::builder()
-            .command_buffers(&[self.command_buffer])
-            .build();
-        unsafe {
-            self.device
-                .queue_submit(self.queue, &[submit_info], ash::vk::Fence::null())
-        }
-        .unwrap();
-        unsafe { self.device.queue_wait_idle(self.queue) }.unwrap();
+        self.clear_color = [red, green, blue, alpha];
     }
 
     pub fn set_render_targets<T>(&mut self, mut color_targets: T, _depth_stencil_view: Option<()>)
@@ -401,11 +363,18 @@ impl CommandBufferAsh {
         .unwrap();
         self.framebuffer = Some(frame_buffer);
 
+        let clear_values = [ash::vk::ClearValue {
+            color: ash::vk::ClearColorValue {
+                float32: self.clear_color,
+            },
+        }];
+
         // レンダーパス
         let render_pass_begin_info = ash::vk::RenderPassBeginInfo::builder()
             .render_pass(renderpass)
             .framebuffer(frame_buffer)
-            .render_area(render_area.clone());
+            .render_area(render_area.clone())
+            .clear_values(&clear_values);
         unsafe {
             self.device.cmd_begin_render_pass(
                 self.command_buffer,

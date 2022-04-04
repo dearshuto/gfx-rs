@@ -2,7 +2,8 @@ use sjgfx_ash::{
     CommandBufferAsh, DeviceAsh, FenceAsh, QueueAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh,
 };
 use sjgfx_interface::{
-    CommandBufferInfo, DeviceInfo, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange,
+    CommandBufferInfo, DeviceInfo, PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo,
+    TextureArrayRange,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -15,8 +16,7 @@ fn main() {
     run();
 }
 
-fn run()
-{
+fn run() {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
@@ -65,9 +65,15 @@ fn run()
                     let mut next_scan_buffer_view =
                         swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
-                    command_buffer.clear_color(&mut next_scan_buffer_view, 0.0, 0.0, 0.0, 0.0, TextureArrayRange::new());
-
                     command_buffer.begin();
+                    command_buffer.clear_color(
+                        &mut next_scan_buffer_view,
+                        0.4,
+                        0.1,
+                        0.1,
+                        0.0,
+                        TextureArrayRange::new(),
+                    );
                     command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
                     command_buffer.set_shader(&shader);
                     command_buffer.draw(
