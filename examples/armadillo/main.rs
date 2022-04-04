@@ -9,6 +9,7 @@ use sjgfx_interface::{
     VertexBufferStateInfo, VertexStateInfo,
 };
 use winit::{
+    dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
@@ -32,7 +33,11 @@ fn main() {
 
 fn run<TApi: IApi>() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .with_resizable(false)
+        .build(&event_loop)
+        .unwrap();
 
     let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut queue = TApi::Queue::new(&device, &QueueInfo::new());

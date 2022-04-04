@@ -1,12 +1,13 @@
 use sjgfx::api::IApi;
 
 use sjgfx_interface::{
-    AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IBuffer,
-    ICommandBuffer, IDevice, IQueue, ISemaphore, IShader, ISwapChain,
-    IVertexState, PrimitiveTopology, QueueInfo, SemaphoreInfo, ShaderInfo, SwapChainInfo,
-    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+    AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IBuffer, ICommandBuffer,
+    IDevice, IQueue, ISemaphore, IShader, ISwapChain, IVertexState, PrimitiveTopology, QueueInfo,
+    SemaphoreInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
 
+use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::event_loop::EventLoop;
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -16,19 +17,20 @@ use winit::{event::Event, event_loop::ControlFlow};
 fn main() {
     if cfg!(feature = "backend-wgpu") {
         run::<sjgfx::api::Wgpu>();
-    }
-    else if cfg!(feature = "backend-ash") {
+    } else if cfg!(feature = "backend-ash") {
         run::<sjgfx::api::Ash>();
-    }
-    else {
+    } else {
         println!("help: cargon run --release --bin mandelbrot --features backend-<ash/wgpu>")
     }
 }
 
-fn run<TApi: IApi>()
-{
+fn run<TApi: IApi>() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .with_resizable(false)
+        .build(&event_loop)
+        .unwrap();
 
     let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
     let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
