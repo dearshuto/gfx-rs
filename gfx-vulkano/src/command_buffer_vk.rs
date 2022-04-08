@@ -4,6 +4,7 @@ use sjgfx_interface::{
     CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange,
     VertexAttributeStateInfo, VertexBufferStateInfo,
 };
+use vulkano::format::ClearValue;
 use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
 use vulkano::pipeline::Pipeline;
 use vulkano::shader::ShaderModule;
@@ -44,6 +45,7 @@ pub struct CommandBufferVk {
     render_targets: Option<Vec<Arc<dyn ImageViewAbstract>>>,
     render_target_format: Option<Format>,
     depth_stencil_view: Option<()>,
+    clear_color: [f32; 4],
 
     // Buffers
     constant_buffers: [Option<BufferView>; 8],
@@ -75,6 +77,7 @@ impl CommandBufferVk {
             depth_stencil_view: None,
             render_targets: None,
             render_target_format: None,
+            clear_color: [0.0, 0.0, 0.0, 0.0],
 
             // バッファ
             constant_buffers: [None, None, None, None, None, None, None, None],
@@ -96,6 +99,10 @@ impl CommandBufferVk {
     pub fn begin(&mut self) {}
 
     pub fn end(&mut self) {}
+
+    pub fn clear_color(&mut self, _color_target: &mut ColorTargetViewVk, red: f32, green: f32, blue: f32, alpha: f32, _texture_array_range: TextureArrayRange) {
+        self.clear_color = [red, green, blue, alpha];
+    }
 
     pub fn set_render_targets_ref<'a, TIterator>(
         &mut self,
@@ -325,7 +332,7 @@ impl CommandBufferVk {
             builder.build().unwrap()
         };
 
-        let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
+        let clear_values = vec![ClearValue::Float(self.clear_color)];
         let viewport = Viewport {
             origin: [0.0, 0.0],
             dimensions: [640.0, 480.0],
@@ -376,14 +383,14 @@ impl ICommandBuffer for CommandBufferVk {
 
     fn clear_color(
         &mut self,
-        _color_target_view: &mut Self::ColorTargetViewType,
-        _red: f32,
-        _green: f32,
-        _blue: f32,
-        _alpha: f32,
-        _texture_array_range: TextureArrayRange,
+        color_target_view: &mut Self::ColorTargetViewType,
+        red: f32,
+        green: f32,
+        blue: f32,
+        alpha: f32,
+        texture_array_range: TextureArrayRange,
     ) {
-        todo!()
+        self.clear_color(color_target_view, red, green, blue, alpha, texture_array_range);
     }
 
     fn set_render_targets<TIterator>(
