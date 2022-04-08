@@ -1,9 +1,0 @@
-[package]
-name = "clear_color"
-version = "0.1.0"
-edition = "2021"
-publish = false
-
-[dependencies]
-sj = { path = "../../sj" }
-wgpu = "0.12.0"
