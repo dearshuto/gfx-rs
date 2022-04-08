@@ -2,7 +2,8 @@ use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
-    DeviceSize, pipeline::graphics::vertex_input::VertexBuffersCollection,
+    pipeline::graphics::vertex_input::VertexBuffersCollection,
+    DeviceSize,
 };
 
 use crate::DeviceVk;
@@ -21,16 +22,15 @@ impl BufferVk {
                 Self::convert_usage(&info.get_gpu_access_flags()),
                 true, /*host_cached*/
             )
-                .unwrap()
+            .unwrap()
         };
 
-        Self {
-            buffer
-        }
+        Self { buffer }
     }
 
     pub fn map<T: 'static, F: Fn(&T)>(&self, func: F) {
-        let mapped_data = self.buffer
+        let mapped_data = self
+            .buffer
             .read()
             .map(|x| {
                 let ptr = x.as_ptr();
@@ -42,7 +42,8 @@ impl BufferVk {
     }
 
     pub fn map_mut<T: 'static, F: Fn(&mut T)>(&mut self, func: F) {
-        let mapped_data = self.buffer
+        let mapped_data = self
+            .buffer
             .write()
             .map(|mut x| {
                 let ptr = x.as_mut_ptr();
@@ -54,11 +55,12 @@ impl BufferVk {
     }
 
     pub fn map_as_array<T: 'static, F: Fn(&[T])>(&self, func: F) {
-        let mapped_data = self.buffer
+        let mapped_data = self
+            .buffer
             .read()
             .map(|x| {
                 let ptr = x.as_ptr() as *const T;
-                let size = x.len();
+                let size = x.len() / std::mem::size_of::<T>();
                 let slice = unsafe { std::slice::from_raw_parts::<T>(ptr, size) };
                 slice
             })
@@ -67,11 +69,12 @@ impl BufferVk {
     }
 
     pub fn map_as_array_mut<T: 'static, F: Fn(&mut [T])>(&self, func: F) {
-        let mapped_data = self.buffer
+        let mapped_data = self
+            .buffer
             .write()
             .map(|mut x| {
                 let ptr = x.as_mut_ptr() as *mut T;
-                let size = x.len();
+                let size = x.len() / std::mem::size_of::<T>();
                 let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
                 slice
             })
@@ -146,14 +149,13 @@ pub struct BufferView {
 impl BufferView {
     fn new(buffer: &BufferVk) -> Self {
         Self {
-            buffer: buffer.clone_buffer()
+            buffer: buffer.clone_buffer(),
         }
     }
 
     pub fn clone_buffer(&self) -> Arc<dyn BufferAccess> {
         self.buffer.clone()
     }
-
 
     pub fn clone_buffer_as<T: Send + Sync + 'static>(&self) -> Arc<CpuAccessibleBuffer<T>> {
         todo!()
@@ -170,7 +172,8 @@ impl BufferView {
     }
 
     pub fn clone(&self) -> Self {
-        Self {buffer: self.buffer.clone()
+        Self {
+            buffer: self.buffer.clone(),
         }
     }
 }
@@ -183,9 +186,9 @@ unsafe impl VertexBuffersCollection for BufferView {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{IDevice, DeviceInfo, BufferInfo, GpuAccess};
+    use sjgfx_interface::{BufferInfo, DeviceInfo, GpuAccess};
 
-    use crate::{DeviceVk, BufferVk};
+    use crate::{BufferVk, DeviceVk};
 
     #[test]
     fn new_as_constant_buffer() {
@@ -209,14 +212,24 @@ mod tests {
 
     fn new_impl(gpu_access: GpuAccess) {
         let device = DeviceVk::new(&DeviceInfo::new());
-        let _ = BufferVk::new(&device, &BufferInfo::new().set_size(64).set_gpu_access_flags(gpu_access));
+        let _ = BufferVk::new(
+            &device,
+            &BufferInfo::new()
+                .set_size(64)
+                .set_gpu_access_flags(gpu_access),
+        );
     }
 
     #[test]
     fn map_as_slice() {
         let device = DeviceVk::new(&DeviceInfo::new());
-        let buffer = BufferVk::new(&device, &BufferInfo::new().set_size(std::mem::size_of::<f32>() * 4).set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER));
-        buffer.map_as_array_mut(|x: &mut [f32]|{
+        let buffer = BufferVk::new(
+            &device,
+            &BufferInfo::new()
+                .set_size(std::mem::size_of::<f32>() * 4)
+                .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER),
+        );
+        buffer.map_as_array_mut(|x: &mut [f32]| {
             x[0] = 10.0;
             x[1] = 20.0;
             x[2] = 30.0;

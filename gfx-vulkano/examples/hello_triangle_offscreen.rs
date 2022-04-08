@@ -1,5 +1,5 @@
 use sjgfx_interface::{
-    BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice,
+    BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess,
     ImageFormat, PrimitiveTopology, ShaderInfo, TextureInfo, VertexStateInfo,
 };
 use sjgfx_vulkano::{
