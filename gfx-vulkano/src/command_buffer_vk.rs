@@ -286,10 +286,7 @@ impl CommandBufferVk {
             .build(self.device.clone())
             .unwrap();
 
-        let vertex_buffer = self.vertex_buffers[0]
-            .as_ref()
-            .unwrap()
-            .clone_vertex_buffer_as::<Float32_32>();
+        let vertex_buffer = self.vertex_buffers[0].as_ref().unwrap().clone();
 
         let framebuffer = {
             let mut builder = Framebuffer::start(render_pass.clone());
