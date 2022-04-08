@@ -6,6 +6,7 @@ use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
     ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState, ISampler,
 };
+use sjgfx_vulkano::{BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, QueueVk, CommandBufferVk, FenceVk, ShaderVk, TextureVk, TextureViewVk, SamplerVk, SemaphoreVk, SwapChainVk, VertexStateVk};
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
     FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu, TextureWgpu,
@@ -81,4 +82,22 @@ impl IApi for Wgpu {
     type Texture = TextureWgpu;
     type TextureView = TextureViewWgpu;
     type VertexState = VertexStateWgpu;
+}
+
+pub struct Vulkano;
+impl IApi for Vulkano {
+    type Buffer = BufferVk;
+    type ColorTargetView = ColorTargetViewVk;
+    type DepthStencilView = DepthStencilViewVk;
+    type Device = DeviceVk;
+    type Queue = QueueVk;
+    type CommandBuffer = CommandBufferVk;
+    type Fence = FenceVk;
+    type Shader = ShaderVk;
+    type Texture = TextureVk;
+    type TextureView = TextureViewVk;
+    type Sampler = SamplerVk;
+    type Semaphore = SemaphoreVk;
+    type SwapChain = SwapChainVk;
+    type VertexState = VertexStateVk;
 }

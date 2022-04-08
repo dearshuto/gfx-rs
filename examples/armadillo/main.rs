@@ -26,8 +26,10 @@ fn main() {
         run::<sjgfx::api::Ash>();
     } else if cfg!(feature = "backend-wgpu") {
         run::<sjgfx::api::Wgpu>();
+    } else if cfg!(feature = "backend-vulkano") {
+        run::<sjgfx::api::Vulkano>();
     } else {
-        println!("");
+        println!("help: cargon run --release --bin armadillo --features backend-<ash/wgpu/vulkano>")
     }
 }
 
