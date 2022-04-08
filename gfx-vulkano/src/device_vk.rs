@@ -11,7 +11,7 @@ use vulkano::{
 use vulkano_win::VkSurfaceBuild;
 use winit::{
     event_loop::EventLoop,
-    window::{Window, WindowBuilder}
+    window::{Window, WindowBuilder},
 };
 
 pub struct DeviceVk {

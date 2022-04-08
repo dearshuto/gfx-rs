@@ -179,19 +179,3 @@ impl IQueue for QueueVk {
         self.sync();
     }
 }
-
-#[repr(C)]
-#[derive(Default, Debug, Clone)]
-#[allow(non_snake_case)]
-struct Float32 {
-    i_Position: f32,
-}
-vulkano::impl_vertex!(Float32, i_Position);
-
-#[repr(C)]
-#[derive(Default, Debug, Clone)]
-#[allow(non_snake_case)]
-pub struct Float32_32 {
-    pub i_Position: [f32; 2],
-}
-vulkano::impl_vertex!(Float32_32, i_Position);
