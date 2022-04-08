@@ -56,7 +56,7 @@ pub struct CommandBufferVk {
 
     dispatch_count: Option<(u32, u32, u32)>,
     primitive_topology: Option<PrimitiveTopology>,
-    vertex_count: Option<i32>,
+    vertex_count: Option<u32>,
     vertex_offset: Option<i32>,
     render_pass: Option<Arc<RenderPass>>,
 }
@@ -162,11 +162,11 @@ impl CommandBufferVk {
         vertex_offset: i32,
     ) {
         self.primitive_topology = Some(primitive_topology);
-        self.vertex_count = Some(vertex_count);
+        self.vertex_count = Some(vertex_count as u32);
         self.vertex_offset = Some(vertex_offset)
     }
 
-    pub fn get_draw_vertex_count(&self) -> i32 {
+    pub fn get_draw_vertex_count(&self) -> u32 {
         *self.vertex_count.as_ref().unwrap()
     }
 
@@ -343,7 +343,7 @@ impl CommandBufferVk {
             .set_viewport(0, [viewport])
             .bind_pipeline_graphics(pipeline)
             .bind_vertex_buffers(0, vertex_buffer)
-            .draw(3 /*vertex buffers*/, 1, 0, 0)
+            .draw(self.vertex_count.unwrap() /*vertex buffers*/, 1, 0, 0)
             .unwrap()
             .end_render_pass()
             .unwrap();
