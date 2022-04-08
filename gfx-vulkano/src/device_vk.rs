@@ -3,10 +3,11 @@ use std::sync::Arc;
 use vulkano::{
     device::{
         physical::{PhysicalDevice, PhysicalDeviceType},
-        Device, Features, Queue,
+        Device, DeviceCreateInfo, Features, Queue, QueueCreateInfo,
     },
-    instance::Instance,
+    instance::{Instance, InstanceCreateInfo},
     swapchain::Surface,
+    Version,
 };
 use vulkano_win::VkSurfaceBuild;
 use winit::{
@@ -66,12 +67,11 @@ impl DeviceVk {
 
     fn create_device() -> (Arc<Instance>, Arc<Device>, Arc<Queue>) {
         let required_extensions = vulkano_win::required_extensions();
-        let instance = vulkano::instance::Instance::new(
-            None,
-            vulkano::Version::V1_0,
-            &required_extensions,
-            None,
-        )
+        let instance = Instance::new(InstanceCreateInfo {
+            enabled_extensions: required_extensions,
+            engine_version: Version::V1_2,
+            ..Default::default()
+        })
         .unwrap();
 
         // 物理デバイスの取得
@@ -96,11 +96,14 @@ impl DeviceVk {
             })
             .unwrap();
 
-        let (device, mut queues) = vulkano::device::Device::new(
+        let (device, mut queues) = Device::new(
             physical_device,
-            &Features::none(),
-            &physical_device.required_extensions().union(&device_ext),
-            [(queue_family, 0.5)].iter().cloned(),
+            DeviceCreateInfo {
+                enabled_extensions: physical_device.required_extensions().union(&device_ext),
+                enabled_features: Features::none(),
+                queue_create_infos: vec![QueueCreateInfo::family(queue_family)],
+                ..Default::default()
+            },
         )
         .unwrap();
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
-    swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture},
+    swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo},
 };
 use winit::window::Window;
 
@@ -21,24 +21,32 @@ impl SwapChainVk {
         let surface = device.clone_surface();
         let physical_device = device.get_physical_device();
 
-        let capabilities = surface.capabilities(physical_device).unwrap();
+        let capabilities = physical_device
+            .surface_capabilities(&surface, Default::default())
+            .unwrap();
         let composite_alpha = capabilities
             .supported_composite_alpha
             .iter()
             .next()
             .unwrap();
-        let format = capabilities.supported_formats[0].0;
-        let dimensions: [u32; 2] = surface.window().inner_size().into();
+        let image_format = physical_device
+            .surface_formats(&surface, Default::default())
+            .unwrap()[0]
+            .0;
 
-        let (swap_chain, images) = Swapchain::start(device.clone_device(), surface.clone())
-            .num_images(capabilities.min_image_count)
-            .format(format)
-            .dimensions(dimensions)
-            .usage(ImageUsage::color_attachment())
-            .sharing_mode(&device.clone_queue())
-            .composite_alpha(composite_alpha)
-            .build()
-            .unwrap();
+        let (swap_chain, images) = Swapchain::new(
+            device.clone_device(),
+            surface.clone(),
+            SwapchainCreateInfo {
+                min_image_count: capabilities.min_image_count,
+                image_format: Some(image_format),
+                image_extent: surface.window().inner_size().into(),
+                image_usage: ImageUsage::color_attachment(),
+                composite_alpha,
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
         Self {
             swap_chain,
@@ -97,7 +105,7 @@ impl SwapChainVk {
 
     pub(crate) fn clone_current_image_view(&self) -> Arc<dyn ImageViewAbstract> {
         let index = self.index as usize;
-        ImageView::new(self.images[index].clone()).unwrap()
+        ImageView::new_default(self.images[index].clone()).unwrap()
     }
 
     pub fn unwrap_feature(&mut self) -> SwapchainAcquireFuture<Window> {

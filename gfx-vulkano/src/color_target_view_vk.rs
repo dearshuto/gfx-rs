@@ -28,7 +28,7 @@ impl ColorTargetViewVk {
         Self {
             texture: None,
             scan_buffer_image_view: Some(image_view),
-            format: swap_chain.get_swap_chain().format(),
+            format: swap_chain.get_swap_chain().image_format(),
         }
     }
 
