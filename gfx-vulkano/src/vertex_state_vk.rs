@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo};
+use sjgfx_interface::{
+    IVertexState, VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
+};
 
 use crate::DeviceVk;
 
@@ -27,5 +29,13 @@ impl VertexStateVk {
 
     pub fn clone_buffer_state_infos(&self) -> Arc<Vec<VertexBufferStateInfo>> {
         self.buffer_state_infos.clone()
+    }
+}
+
+impl IVertexState for VertexStateVk {
+    type DeviceType = DeviceVk;
+
+    fn new(device: &Self::DeviceType, info: &VertexStateInfo) -> Self {
+        Self::new(device, info)
     }
 }
