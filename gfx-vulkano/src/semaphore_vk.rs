@@ -7,7 +7,7 @@ pub struct SemaphoreVk;
 impl ISemaphore for SemaphoreVk {
     type DeviceType = DeviceVk;
 
-    fn new(device: &Self::DeviceType, _info: &sjgfx_interface::SemaphoreInfo) -> Self {
+    fn new(_device: &Self::DeviceType, _info: &sjgfx_interface::SemaphoreInfo) -> Self {
         Self {}
     }
 }
