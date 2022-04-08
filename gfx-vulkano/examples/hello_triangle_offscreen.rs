@@ -3,8 +3,7 @@ use sjgfx_interface::{
     ImageFormat, PrimitiveTopology, ShaderInfo, TextureInfo, VertexStateInfo,
 };
 use sjgfx_vulkano::{
-    BufferVk, ColorTargetViewVk, CommandBufferVk, DeviceVk, Float32_32, ShaderVk, TextureVk,
-    VertexStateVk,
+    BufferVk, ColorTargetViewVk, CommandBufferVk, DeviceVk, ShaderVk, TextureVk, VertexStateVk,
 };
 
 fn main() {
@@ -37,7 +36,7 @@ fn main() {
             .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
     );
     let vertex_state = VertexStateVk::new(&device, &VertexStateInfo::new());
-    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(&device, &BufferInfo::new());
+    let vertex_buffer = BufferVk::new(&device, &BufferInfo::new());
 
     let texture = TextureVk::new(
         &device,

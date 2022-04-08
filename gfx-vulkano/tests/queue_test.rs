@@ -2,10 +2,10 @@ use sjgfx_interface::{
     BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice,
     ImageFormat, PrimitiveTopology, QueueInfo, ShaderInfo, TextureInfo, VertexStateInfo,
 };
+use sjgfx_vulkano::CommandBufferVk;
 use sjgfx_vulkano::{
     BufferVk, ColorTargetViewVk, DeviceVk, QueueVk, ShaderVk, TextureVk, VertexStateVk,
 };
-use sjgfx_vulkano::{CommandBufferVk, Float32_32};
 
 #[test]
 pub fn new_test() {
@@ -35,7 +35,7 @@ pub fn execute_test() {
         &device,
         &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
     );
-    let buffer = BufferVk::new::<[u32; 64]>(
+    let buffer = BufferVk::new(
         &device,
         &BufferInfo::new()
             .set_size(1024)
@@ -85,7 +85,7 @@ pub fn execute_array_test() {
         &device,
         &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
     );
-    let buffer = BufferVk::new_as_array::<u32>(
+    let buffer = BufferVk::new(
         &device,
         &BufferInfo::new()
             .set_size(1024)
@@ -168,7 +168,7 @@ pub fn execute_hello_triangle() {
             .set_buffer_state_info_array([].into_iter()),
     );
 
-    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(
+    let vertex_buffer = BufferVk::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)

@@ -2,95 +2,81 @@ use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
-    DeviceSize,
+    DeviceSize, pipeline::graphics::vertex_input::VertexBuffersCollection,
 };
-
-use std::any::Any;
 
 use crate::DeviceVk;
 
 pub struct BufferVk {
-    buffer_data: BufferData,
+    buffer: Arc<CpuAccessibleBuffer<[u8]>>,
 }
 
 impl BufferVk {
-    pub fn new<T: 'static>(device: &DeviceVk, info: &BufferInfo) -> Self
-    where
-        CpuAccessibleBuffer<T>: BufferAccess,
-    {
+    pub fn new(device: &DeviceVk, info: &BufferInfo) -> Self {
+        let length = info.get_size() / std::mem::size_of::<u8>();
         let buffer = unsafe {
-            CpuAccessibleBuffer::<T>::uninitialized(
-                device.clone_device(),
-                Self::convert_usage(&info.get_gpu_access_flags()),
-                true, /*host_cached*/
-            )
-            .unwrap()
-        };
-        Self {
-            buffer_data: BufferData {
-                buffer: buffer.clone(),
-                any: buffer.clone(),
-            },
-        }
-    }
-
-    pub fn new_as_array<T: Send + Sync + 'static>(device: &DeviceVk, info: &BufferInfo) -> Self {
-        let length = info.get_size() / std::mem::size_of::<T>();
-        let buffer = unsafe {
-            CpuAccessibleBuffer::<[T]>::uninitialized_array(
+            CpuAccessibleBuffer::<[u8]>::uninitialized_array(
                 device.clone_device(),
                 length as DeviceSize,
                 Self::convert_usage(&info.get_gpu_access_flags()),
                 true, /*host_cached*/
             )
-            .unwrap()
+                .unwrap()
         };
+
         Self {
-            buffer_data: BufferData {
-                buffer: buffer.clone(),
-                any: buffer.clone(),
-            },
+            buffer
         }
     }
 
     pub fn map<T: 'static, F: Fn(&T)>(&self, func: F) {
-        let buffer = self
-            .buffer_data
-            .any
-            .downcast_ref::<CpuAccessibleBuffer<T>>()
+        let mapped_data = self.buffer
+            .read()
+            .map(|x| {
+                let ptr = x.as_ptr();
+                let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
+                casted
+            })
             .unwrap();
-        let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
     }
 
-    pub fn map_mut<T: 'static, F: Fn(&mut T)>(&self, func: F) {
-        let buffer = self
-            .buffer_data
-            .any
-            .downcast_ref::<CpuAccessibleBuffer<T>>()
+    pub fn map_mut<T: 'static, F: Fn(&mut T)>(&mut self, func: F) {
+        let mapped_data = self.buffer
+            .write()
+            .map(|mut x| {
+                let ptr = x.as_mut_ptr();
+                let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
+                casted
+            })
             .unwrap();
-        let mut mapped_data = buffer.write().unwrap();
-        func(&mut mapped_data);
+        func(mapped_data);
     }
 
     pub fn map_as_array<T: 'static, F: Fn(&[T])>(&self, func: F) {
-        let buffer = self
-            .buffer_data
-            .any
-            .downcast_ref::<CpuAccessibleBuffer<[T]>>()
+        let mapped_data = self.buffer
+            .read()
+            .map(|x| {
+                let ptr = x.as_ptr() as *const T;
+                let size = x.len();
+                let slice = unsafe { std::slice::from_raw_parts::<T>(ptr, size) };
+                slice
+            })
             .unwrap();
-        let mapped_data = buffer.read().unwrap();
         func(&mapped_data);
     }
 
     pub fn map_as_array_mut<T: 'static, F: Fn(&mut [T])>(&self, func: F) {
-        let buffer = self
-            .buffer_data
-            .any
-            .downcast_ref::<CpuAccessibleBuffer<[T]>>()
+        let mapped_data = self.buffer
+            .write()
+            .map(|mut x| {
+                let ptr = x.as_mut_ptr() as *mut T;
+                let size = x.len();
+                let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
+                slice
+            })
             .unwrap();
-        let mut mapped_data = buffer.write().unwrap();
-        func(&mut mapped_data);
+        func(mapped_data);
     }
 
     pub fn view(&self) -> BufferView {
@@ -120,8 +106,8 @@ impl BufferVk {
         result
     }
 
-    fn clone_buffer_data(&self) -> BufferData {
-        self.buffer_data.clone()
+    fn clone_buffer(&self) -> Arc<CpuAccessibleBuffer<[u8]>> {
+        self.buffer.clone()
     }
 }
 
@@ -154,45 +140,93 @@ impl IBuffer for BufferVk {
 }
 
 pub struct BufferView {
-    buffer_data: BufferData,
+    buffer: Arc<CpuAccessibleBuffer<[u8]>>,
 }
 
 impl BufferView {
     fn new(buffer: &BufferVk) -> Self {
         Self {
-            buffer_data: buffer.clone_buffer_data(),
+            buffer: buffer.clone_buffer()
         }
     }
 
     pub fn clone_buffer(&self) -> Arc<dyn BufferAccess> {
-        self.buffer_data.buffer.clone()
+        self.buffer.clone()
     }
 
+
     pub fn clone_buffer_as<T: Send + Sync + 'static>(&self) -> Arc<CpuAccessibleBuffer<T>> {
-        let concrete_buffer = self
-            .buffer_data
-            .any
-            .clone()
-            .downcast::<CpuAccessibleBuffer<T>>()
-            .unwrap();
-        concrete_buffer
+        todo!()
+    }
+
+    pub fn clone_buffer_view(&self) -> Arc<dyn BufferAccess> {
+        self.buffer.clone()
     }
 
     pub fn clone_vertex_buffer_as<T: Send + Sync + 'static>(
         &self,
     ) -> Arc<CpuAccessibleBuffer<[T]>> {
-        let concrete_buffer = self
-            .buffer_data
-            .any
-            .clone()
-            .downcast::<CpuAccessibleBuffer<[T]>>()
-            .unwrap();
-        concrete_buffer
+        todo!()
+    }
+
+    pub fn clone(&self) -> Self {
+        Self {buffer: self.buffer.clone()
+        }
     }
 }
 
-#[derive(Clone)]
-struct BufferData {
-    pub buffer: Arc<dyn BufferAccess>,
-    pub any: Arc<dyn Any + Send + Sync>,
+unsafe impl VertexBuffersCollection for BufferView {
+    fn into_vec(self) -> Vec<Arc<dyn BufferAccess>> {
+        vec![self.buffer.clone()]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use sjgfx_interface::{IDevice, DeviceInfo, BufferInfo, GpuAccess};
+
+    use crate::{DeviceVk, BufferVk};
+
+    #[test]
+    fn new_as_constant_buffer() {
+        new_impl(GpuAccess::CONSTANT_BUFFER);
+    }
+
+    #[test]
+    fn new_as_vertex_buffer() {
+        new_impl(GpuAccess::VERTEX_BUFFER);
+    }
+
+    #[test]
+    fn new_as_index_buffer() {
+        new_impl(GpuAccess::INDEX_BUFFER);
+    }
+
+    #[test]
+    fn new_as_unordered_access_buffer() {
+        new_impl(GpuAccess::UNORDERED_ACCESS_BUFFER);
+    }
+
+    fn new_impl(gpu_access: GpuAccess) {
+        let device = DeviceVk::new(&DeviceInfo::new());
+        let _ = BufferVk::new(&device, &BufferInfo::new().set_size(64).set_gpu_access_flags(gpu_access));
+    }
+
+    #[test]
+    fn map_as_slice() {
+        let device = DeviceVk::new(&DeviceInfo::new());
+        let buffer = BufferVk::new(&device, &BufferInfo::new().set_size(std::mem::size_of::<f32>() * 4).set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER));
+        buffer.map_as_array_mut(|x: &mut [f32]|{
+            x[0] = 10.0;
+            x[1] = 20.0;
+            x[2] = 30.0;
+            x[3] = 40.0;
+        });
+        buffer.map_as_array(|x: &[f32]| {
+            assert!(x[0] == 10.0);
+            assert!(x[1] == 20.0);
+            assert!(x[2] == 30.0);
+            assert!(x[3] == 40.0);
+        });
+    }
 }

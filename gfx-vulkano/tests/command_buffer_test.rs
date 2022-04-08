@@ -10,7 +10,7 @@ fn new() {
 #[test]
 fn set() {
     let device = DeviceVk::new(&DeviceInfo::new());
-    let buffer = BufferVk::new::<i32>(
+    let buffer = BufferVk::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)

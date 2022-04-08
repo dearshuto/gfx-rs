@@ -50,7 +50,7 @@ fn main() {
     );
 
     // 頂点バッファ
-    let vertex_buffer = BufferVk::new_as_array::<Float32_32>(
+    let vertex_buffer = BufferVk::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
