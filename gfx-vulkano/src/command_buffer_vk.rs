@@ -1,4 +1,3 @@
-use core::panic;
 use std::sync::Arc;
 
 use sjgfx_interface::{
@@ -49,6 +48,7 @@ pub struct CommandBufferVk {
     // Buffers
     constant_buffers: [Option<BufferView>; 8],
     vertex_buffers: [Option<BufferView>; 8],
+    unordered_access_buffer: [Option<BufferView>; 8],
 
     // RenderState
     attribute_state_infos: Option<Vec<VertexAttributeStateInfo>>,
@@ -75,8 +75,11 @@ impl CommandBufferVk {
             depth_stencil_view: None,
             render_targets: None,
             render_target_format: None,
+
+            // バッファ
             constant_buffers: [None, None, None, None, None, None, None, None],
             vertex_buffers: [None, None, None, None, None, None, None, None],
+            unordered_access_buffer: std::default::Default::default(),
 
             // RenderState
             attribute_state_infos: None,
@@ -142,6 +145,11 @@ impl CommandBufferVk {
         self.constant_buffers[slot as usize] = Some(buffer.view());
     }
 
+    pub fn set_unordered_access_buffer(&mut self, slot: i32, buffer: &BufferVk) {
+        let index = slot as usize;
+        self.unordered_access_buffer[index] = Some(buffer.view());
+    }
+
     pub fn set_vertex_state(&mut self, vertex_state: &VertexStateVk) {
         self.attribute_state_infos = Some(vertex_state.clone_attribute_state_infos().to_vec());
         self.buffer_state_infos = Some(vertex_state.clone_buffer_state_infos().to_vec());
@@ -190,7 +198,12 @@ impl CommandBufferVk {
         } else if self.vertex_shader_module.is_some() {
             self.build_graphics_command()
         } else {
-            panic!()
+            AutoCommandBufferBuilder::primary(
+                self.device.clone(),
+                self.queue.as_ref().family(),
+                vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
+            )
+            .unwrap()
         }
     }
 
@@ -208,16 +221,31 @@ impl CommandBufferVk {
         let layout = pipeline.layout().clone();
         let descriptor_set_layout = layout.descriptor_set_layouts().get(0).unwrap();
 
-        let constant_buffer = self.constant_buffers[0].as_ref().unwrap().clone();
-        let set = PersistentDescriptorSet::new(
-            descriptor_set_layout.clone(),
-            [WriteDescriptorSet::buffer(
-                0, /*binding*/
-                constant_buffer.clone_buffer(),
-            )],
-        )
-        .unwrap();
+        let mut write_descriptor_sets = Vec::new();
 
+        // 定数バッファ
+        for index in 0..self.constant_buffers.len() {
+            if let Some(buffer) = &self.constant_buffers[index] {
+                write_descriptor_sets.push(WriteDescriptorSet::buffer(
+                    index as u32,
+                    buffer.clone_buffer(),
+                ));
+            }
+        }
+
+        // Unordered Access Buffer
+        for index in 0..self.unordered_access_buffer.len() {
+            if let Some(buffer) = &self.unordered_access_buffer[index] {
+                write_descriptor_sets.push(WriteDescriptorSet::buffer(
+                    index as u32,
+                    buffer.clone_buffer(),
+                ));
+            }
+        }
+
+        let set =
+            PersistentDescriptorSet::new(descriptor_set_layout.clone(), write_descriptor_sets)
+                .unwrap();
         let mut builder = AutoCommandBufferBuilder::primary(
             self.device.clone(),
             self.queue.as_ref().family(),
@@ -232,7 +260,7 @@ impl CommandBufferVk {
                 PipelineBindPoint::Compute,
                 layout.clone(),
                 0, /*first set*/
-                set.clone(),
+                set,
             )
             .dispatch([x, y, z])
             .unwrap();
@@ -388,8 +416,8 @@ impl ICommandBuffer for CommandBufferVk {
         self.set_constant_buffer(index, buffer);
     }
 
-    fn set_unordered_access_buffer(&mut self, _index: i32, _buffer: &Self::BufferType) {
-        todo!()
+    fn set_unordered_access_buffer(&mut self, index: i32, buffer: &Self::BufferType) {
+        self.set_unordered_access_buffer(index, buffer)
     }
 
     fn set_vertex_buffer(&mut self, index: i32, buffer: &Self::BufferType) {

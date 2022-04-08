@@ -1,4 +1,4 @@
-use sjgfx_interface::{BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice};
+use sjgfx_interface::{BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess};
 use sjgfx_vulkano::{BufferVk, CommandBufferVk, DeviceVk};
 
 #[test]

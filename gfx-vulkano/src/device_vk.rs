@@ -11,7 +11,7 @@ use vulkano::{
 use vulkano_win::VkSurfaceBuild;
 use winit::{
     event_loop::EventLoop,
-    window::{Window, WindowBuilder},
+    window::{Window, WindowBuilder}
 };
 
 pub struct DeviceVk {
@@ -21,6 +21,15 @@ pub struct DeviceVk {
 }
 
 impl DeviceVk {
+    pub fn new(_info: &DeviceInfo) -> Self {
+        let (_instance, device, queue) = Self::create_device();
+        Self {
+            device,
+            queue,
+            surface: None,
+        }
+    }
+
     pub fn new_as_graphics(_info: &DeviceInfo, event_loop: &EventLoop<()>) -> Self {
         let (instance, device, queue) = Self::create_device();
 
@@ -122,7 +131,7 @@ impl IDevice for DeviceVk {
 
 #[cfg(test)]
 mod tests {
-    use sjgfx_interface::{DeviceInfo, IDevice};
+    use sjgfx_interface::DeviceInfo;
 
     use crate::DeviceVk;
 

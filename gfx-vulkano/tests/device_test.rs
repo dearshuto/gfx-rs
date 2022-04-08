@@ -1,5 +1,5 @@
 
-use sjgfx_interface::{IDevice, DeviceInfo};
+use sjgfx_interface::DeviceInfo;
 use sjgfx_vulkano::DeviceVk;
 
 #[test]
