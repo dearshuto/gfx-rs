@@ -19,8 +19,12 @@ fn main() {
         run::<sjgfx::api::Wgpu>();
     } else if cfg!(feature = "backend-ash") {
         run::<sjgfx::api::Ash>();
+    } else if cfg!(feature = "backend-vulkano") {
+        run::<sjgfx::api::Vulkano>();
     } else {
-        println!("help: cargon run --release --bin mandelbrot --features backend-<ash/wgpu>")
+        println!(
+            "help: cargon run --release --bin mandelbrot --features backend-<ash/wgpu/vulkano>"
+        )
     }
 }
 
