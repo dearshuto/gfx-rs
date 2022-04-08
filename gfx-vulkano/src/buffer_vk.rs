@@ -28,7 +28,7 @@ impl BufferVk {
         Self { buffer }
     }
 
-    pub fn map<T: 'static, F: Fn(&T)>(&self, func: F) {
+    pub fn map<T, F: Fn(&T)>(&self, func: F) {
         let mapped_data = self
             .buffer
             .read()
@@ -41,7 +41,7 @@ impl BufferVk {
         func(&mapped_data);
     }
 
-    pub fn map_mut<T: 'static, F: Fn(&mut T)>(&mut self, func: F) {
+    pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
         let mapped_data = self
             .buffer
             .write()
@@ -54,7 +54,7 @@ impl BufferVk {
         func(mapped_data);
     }
 
-    pub fn map_as_array<T: 'static, F: Fn(&[T])>(&self, func: F) {
+    pub fn map_as_array<T, F: Fn(&[T])>(&self, func: F) {
         let mapped_data = self
             .buffer
             .read()
@@ -68,7 +68,7 @@ impl BufferVk {
         func(&mapped_data);
     }
 
-    pub fn map_as_array_mut<T: 'static, F: Fn(&mut [T])>(&self, func: F) {
+    pub fn map_as_array_mut<T, F: Fn(&mut [T])>(&self, func: F) {
         let mapped_data = self
             .buffer
             .write()
@@ -117,24 +117,24 @@ impl BufferVk {
 impl IBuffer for BufferVk {
     type DeviceType = DeviceVk;
 
-    fn new(_device: &Self::DeviceType, _info: &BufferInfo) -> Self {
-        todo!()
+    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+        Self::new(device, info)
     }
 
-    fn map<T, F: Fn(&T)>(&self, _func: F) {
-        todo!()
+    fn map<T, F: Fn(&T)>(&self, func: F) {
+        self.map(func);
     }
 
-    fn map_mut<T, F: Fn(&mut T)>(&self, _func: F) {
-        todo!()
+    fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
+        self.map_mut(func);
     }
 
-    fn map_as_slice<T, F: Fn(&[T])>(&self, _func: F) {
-        todo!()
+    fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
+        self.map_as_array(func);
     }
 
-    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
-        todo!()
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
+        self.map_as_array_mut(func);
     }
 
     fn flush_mapped_range(&self, _offset: isize, _size: usize) {}
