@@ -1,10 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{
-    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange,
-    VertexAttributeStateInfo, VertexBufferStateInfo,
-};
-use vulkano::pipeline::graphics::vertex_input::BuffersDefinition;
+use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange};
 use vulkano::pipeline::Pipeline;
 use vulkano::shader::ShaderModule;
 use vulkano::{
@@ -26,10 +22,32 @@ use vulkano::{
 };
 
 use crate::buffer_vk::BufferView;
+use crate::vertex_state_vk::VertexStateView;
 use crate::{
-    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, Float32_32, SamplerVk, ShaderVk,
-    TextureViewVk, TextureVk, VertexStateVk,
+    BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, SamplerVk, ShaderVk, TextureViewVk,
+    TextureVk, VertexStateVk,
 };
+
+struct DrawInfo {
+    #[allow(dead_code)]
+    pub primitive_topology: PrimitiveTopology,
+    pub vertex_count: u32,
+    #[allow(dead_code)]
+    pub vertex_offset: u32,
+}
+
+struct DrawIndexedInfo {
+    pub index_count: u32,
+    pub instance_count: u32,
+    pub vertex_offset: i32,
+    pub index_buffer: Arc<BufferView>,
+}
+
+enum DrawCommand {
+    Draw(DrawInfo),
+    #[allow(dead_code)]
+    DrawIndexed(DrawIndexedInfo),
+}
 
 pub struct CommandBufferVk {
     device: Arc<Device>,
@@ -51,13 +69,12 @@ pub struct CommandBufferVk {
     unordered_access_buffer: [Option<BufferView>; 8],
 
     // RenderState
-    attribute_state_infos: Option<Vec<VertexAttributeStateInfo>>,
-    buffer_state_infos: Option<Vec<VertexBufferStateInfo>>,
+    vertex_state: Option<VertexStateView>,
 
     dispatch_count: Option<(u32, u32, u32)>,
-    primitive_topology: Option<PrimitiveTopology>,
-    vertex_count: Option<u32>,
-    vertex_offset: Option<i32>,
+
+    // 描画
+    draw_command: Option<DrawCommand>,
     render_pass: Option<Arc<RenderPass>>,
 }
 
@@ -82,14 +99,11 @@ impl CommandBufferVk {
             unordered_access_buffer: std::default::Default::default(),
 
             // RenderState
-            attribute_state_infos: None,
-            buffer_state_infos: None,
+            vertex_state: None,
 
             dispatch_count: None,
             render_pass: None,
-            primitive_topology: None,
-            vertex_count: None,
-            vertex_offset: None,
+            draw_command: None,
         }
     }
 
@@ -151,8 +165,7 @@ impl CommandBufferVk {
     }
 
     pub fn set_vertex_state(&mut self, vertex_state: &VertexStateVk) {
-        self.attribute_state_infos = Some(vertex_state.clone_attribute_state_infos().to_vec());
-        self.buffer_state_infos = Some(vertex_state.clone_buffer_state_infos().to_vec());
+        self.vertex_state = Some(vertex_state.view());
     }
 
     pub fn draw(
@@ -161,17 +174,31 @@ impl CommandBufferVk {
         vertex_count: i32,
         vertex_offset: i32,
     ) {
-        self.primitive_topology = Some(primitive_topology);
-        self.vertex_count = Some(vertex_count as u32);
-        self.vertex_offset = Some(vertex_offset)
+        let draw_info = DrawInfo {
+            primitive_topology,
+            vertex_count: vertex_count as u32,
+            vertex_offset: vertex_offset as u32,
+        };
+        let draw_command = DrawCommand::Draw(draw_info);
+        self.draw_command = Some(draw_command);
     }
 
-    pub fn get_draw_vertex_count(&self) -> u32 {
-        *self.vertex_count.as_ref().unwrap()
-    }
-
-    pub fn get_draw_vertex_offset(&self) -> i32 {
-        *self.vertex_offset.as_ref().unwrap()
+    fn draw_indexed(
+        &mut self,
+        _primitive_topology: PrimitiveTopology,
+        _index_format: sjgfx_interface::IndexFormat,
+        index_buffer: &BufferVk,
+        index_count: i32,
+        base_vertex: i32,
+    ) {
+        let draw_info = DrawIndexedInfo {
+            index_count: index_count as u32,
+            instance_count: 1,
+            vertex_offset: base_vertex,
+            index_buffer: Arc::new(index_buffer.view()),
+        };
+        let draw_command = DrawCommand::DrawIndexed(draw_info);
+        self.draw_command = Some(draw_command);
     }
 
     pub fn dispatch(&mut self, x: u32, y: u32, z: u32) {
@@ -218,34 +245,6 @@ impl CommandBufferVk {
         )
         .unwrap();
 
-        let layout = pipeline.layout().clone();
-        let descriptor_set_layout = layout.descriptor_set_layouts().get(0).unwrap();
-
-        let mut write_descriptor_sets = Vec::new();
-
-        // 定数バッファ
-        for index in 0..self.constant_buffers.len() {
-            if let Some(buffer) = &self.constant_buffers[index] {
-                write_descriptor_sets.push(WriteDescriptorSet::buffer(
-                    index as u32,
-                    buffer.clone_buffer(),
-                ));
-            }
-        }
-
-        // Unordered Access Buffer
-        for index in 0..self.unordered_access_buffer.len() {
-            if let Some(buffer) = &self.unordered_access_buffer[index] {
-                write_descriptor_sets.push(WriteDescriptorSet::buffer(
-                    index as u32,
-                    buffer.clone_buffer(),
-                ));
-            }
-        }
-
-        let set =
-            PersistentDescriptorSet::new(descriptor_set_layout.clone(), write_descriptor_sets)
-                .unwrap();
         let mut builder = AutoCommandBufferBuilder::primary(
             self.device.clone(),
             self.queue.as_ref().family(),
@@ -253,15 +252,11 @@ impl CommandBufferVk {
         )
         .unwrap();
 
+        self.push_descriptors(&mut builder, PipelineBindPoint::Compute, pipeline.as_ref());
+
         let (x, y, z) = self.get_dispatch_count();
         builder
             .bind_pipeline_compute(pipeline)
-            .bind_descriptor_sets(
-                PipelineBindPoint::Compute,
-                layout.clone(),
-                0, /*first set*/
-                set,
-            )
             .dispatch([x, y, z])
             .unwrap();
 
@@ -300,7 +295,7 @@ impl CommandBufferVk {
             .unwrap();
 
         let pipeline = GraphicsPipeline::start()
-            .vertex_input_state(BuffersDefinition::new().vertex::<Float32_32>())
+            .vertex_input_state(self.vertex_state.as_ref().unwrap().clone())
             .vertex_shader(vertex_shader, ())
             .fragment_shader(pixel_shader, ())
             .rasterization_state(
@@ -331,23 +326,105 @@ impl CommandBufferVk {
             dimensions: [640.0, 480.0],
             depth_range: 0.0..1.0,
         };
+
         let mut builder = AutoCommandBufferBuilder::primary(
             self.device.clone(),
             self.queue.as_ref().family(),
             vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
         )
         .unwrap();
+
+        self.push_descriptors(&mut builder, PipelineBindPoint::Graphics, pipeline.as_ref());
+
         builder
             .begin_render_pass(framebuffer.clone(), SubpassContents::Inline, clear_values)
             .unwrap()
             .set_viewport(0, [viewport])
             .bind_pipeline_graphics(pipeline)
-            .bind_vertex_buffers(0, vertex_buffer)
-            .draw(self.vertex_count.unwrap() /*vertex buffers*/, 1, 0, 0)
-            .unwrap()
-            .end_render_pass()
-            .unwrap();
+            .bind_vertex_buffers(0, vertex_buffer);
+
+        // 描画コマンドを積む順番大事
+        // パイプラインが設定されてないとコマンド追加に失敗する
+        self.push_draw_command(&mut builder);
+        builder.end_render_pass().unwrap();
         builder
+    }
+
+    fn push_descriptors<TPipeline: Pipeline>(
+        &self,
+        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
+        pipeline_bind_point: PipelineBindPoint,
+        pipeline: &TPipeline,
+    ) {
+        if let Some(descriptor_sets) = self.create_descriptor_sets(pipeline) {
+            let pipeline_layout = pipeline.layout().clone();
+            command_builder.bind_descriptor_sets(
+                pipeline_bind_point,
+                pipeline_layout,
+                0, /*first_set*/
+                descriptor_sets,
+            );
+        }
+    }
+
+    fn push_draw_command(
+        &self,
+        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
+    ) {
+        if let Some(draw_command) = &self.draw_command {
+            match draw_command {
+                DrawCommand::Draw(ref info) => {
+                    command_builder.draw(info.vertex_count, 1, 0, 0).unwrap();
+                }
+                DrawCommand::DrawIndexed(ref info) => {
+                    command_builder
+                        .bind_index_buffer(info.index_buffer.clone())
+                        .draw_indexed(
+                            info.index_count,
+                            info.instance_count,
+                            0, /*first_index*/
+                            info.vertex_offset,
+                            0, /*first_instance*/
+                        )
+                        .unwrap();
+                }
+            }
+        }
+    }
+
+    fn create_descriptor_sets<T: Pipeline>(
+        &self,
+        pipeline: &T,
+    ) -> Option<Arc<PersistentDescriptorSet>> {
+        let layout = pipeline.layout().clone();
+        let descriptor_set_layout = layout.descriptor_set_layouts().get(0)?;
+
+        let mut write_descriptor_sets = Vec::new();
+
+        // 定数バッファ
+        for index in 0..self.constant_buffers.len() {
+            if let Some(buffer) = &self.constant_buffers[index] {
+                write_descriptor_sets.push(WriteDescriptorSet::buffer(
+                    index as u32,
+                    buffer.clone_buffer(),
+                ));
+            }
+        }
+
+        // Unordered Access Buffer
+        for index in 0..self.unordered_access_buffer.len() {
+            if let Some(buffer) = &self.unordered_access_buffer[index] {
+                write_descriptor_sets.push(WriteDescriptorSet::buffer(
+                    index as u32,
+                    buffer.clone_buffer(),
+                ));
+            }
+        }
+
+        let set =
+            PersistentDescriptorSet::new(descriptor_set_layout.clone(), write_descriptor_sets)
+                .unwrap();
+        Some(set)
     }
 }
 
@@ -454,13 +531,19 @@ impl ICommandBuffer for CommandBufferVk {
 
     fn draw_indexed(
         &mut self,
-        _primitive_topology: PrimitiveTopology,
-        _index_format: sjgfx_interface::IndexFormat,
-        _index_buffer: &Self::BufferType,
-        _index_count: i32,
-        _base_vertex: i32,
+        primitive_topology: PrimitiveTopology,
+        index_format: sjgfx_interface::IndexFormat,
+        index_buffer: &Self::BufferType,
+        index_count: i32,
+        base_vertex: i32,
     ) {
-        todo!()
+        self.draw_indexed(
+            primitive_topology,
+            index_format,
+            index_buffer,
+            index_count,
+            base_vertex,
+        );
     }
 
     fn draw_indexed_instanced(

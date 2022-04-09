@@ -1,10 +1,10 @@
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, GpuAccess, PrimitiveTopology, QueueInfo,
-    ShaderInfo, SwapChainInfo, VertexStateInfo,
+    AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, GpuAccess,
+    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo,
+    VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_vulkano::{
-    BufferVk, CommandBufferVk, DeviceVk, FenceVk, Float32_32, QueueVk, ShaderVk, SwapChainVk,
-    VertexStateVk,
+    BufferVk, CommandBufferVk, DeviceVk, FenceVk, QueueVk, ShaderVk, SwapChainVk, VertexStateVk,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -54,24 +54,28 @@ fn main() {
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
-            .set_size(std::mem::size_of::<Float32_32>() * 3),
+            .set_size(std::mem::size_of::<f32>() * 2 * 3),
     );
-    vertex_buffer.map_as_array_mut(|x| {
-        x[0] = Float32_32 {
-            i_Position: [0.0, 0.0],
-        };
-        x[1] = Float32_32 {
-            i_Position: [-0.5, -0.5],
-        };
-        x[2] = Float32_32 {
-            i_Position: [0.5, -0.5],
-        };
+    vertex_buffer.map_as_array_mut(|x: &mut [f32]| {
+        x[0] = 0.0;
+        x[1] = 0.0;
+
+        x[2] = -0.5;
+        x[3] = -0.5;
+
+        x[4] = 0.5;
+        x[5] = -0.5;
     });
 
     // 頂点ステート
     let vertex_state = {
-        let attribute_state_infos = Vec::new(); // TODO
-        let buffer_state_infos = Vec::new(); // TODO
+        let attribute_state_infos = [VertexAttributeStateInfo::new()
+            .set_format(AttributeFormat::Float32_32)
+            .set_buffer_index(0)
+            .set_offset(0)
+            .set_slot(0)];
+        let buffer_state_infos =
+            [VertexBufferStateInfo::new().set_stride((std::mem::size_of::<f32>() * 2) as i64)];
         VertexStateVk::new(
             &device,
             &VertexStateInfo::new()

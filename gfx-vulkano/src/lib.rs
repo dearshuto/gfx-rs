@@ -21,7 +21,7 @@ pub use command_buffer_vk::CommandBufferVk;
 pub use depth_stencil_view_vk::DepthStencilViewVk;
 pub use device_vk::DeviceVk;
 pub use fence_vk::FenceVk;
-pub use queue_vk::{Float32_32, QueueVk};
+pub use queue_vk::QueueVk;
 pub use sampler_vk::SamplerVk;
 pub use semaphore_vk::SemaphoreVk;
 pub use shader_vk::ShaderVk;
