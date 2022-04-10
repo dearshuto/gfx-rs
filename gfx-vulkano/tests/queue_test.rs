@@ -1,6 +1,7 @@
 use sjgfx_interface::{
-    BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess,
-    ImageFormat, PrimitiveTopology, QueueInfo, ShaderInfo, TextureInfo, VertexStateInfo,
+    AttributeFormat, BufferInfo, ColorTargetViewInfo, CommandBufferInfo, DeviceInfo, GpuAccess,
+    ImageFormat, PrimitiveTopology, QueueInfo, ShaderInfo, TextureInfo, VertexAttributeStateInfo,
+    VertexBufferStateInfo, VertexStateInfo,
 };
 use sjgfx_vulkano::CommandBufferVk;
 use sjgfx_vulkano::{
@@ -161,12 +162,25 @@ pub fn execute_hello_triangle() {
             .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
     );
 
-    let vertex_state = VertexStateVk::new(
-        &device,
-        &VertexStateInfo::new()
-            .set_attribute_state_info_array([].into_iter())
-            .set_buffer_state_info_array([].into_iter()),
-    );
+    let vertex_state =
+        VertexStateVk::new(
+            &device,
+            &VertexStateInfo::new()
+                .set_attribute_state_info_array(
+                    [VertexAttributeStateInfo::new()
+                        .set_buffer_index(0)
+                        .set_format(AttributeFormat::Float32_32)
+                        .set_offset(0)
+                        .set_slot(0)
+                        .set_slot(0)]
+                    .into_iter(),
+                )
+                .set_buffer_state_info_array(
+                    [VertexBufferStateInfo::new()
+                        .set_stride((std::mem::size_of::<f32>() * 2) as i64)]
+                    .into_iter(),
+                ),
+        );
 
     let vertex_buffer = BufferVk::new(
         &device,
