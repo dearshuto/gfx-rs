@@ -322,8 +322,8 @@ impl CommandBufferVk {
 
         let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
         let viewport = Viewport {
-            origin: [0.0, 0.0],
-            dimensions: [640.0, 480.0],
+            origin: [0.0, 480.0],
+            dimensions: [640.0, -480.0],
             depth_range: 0.0..1.0,
         };
 
