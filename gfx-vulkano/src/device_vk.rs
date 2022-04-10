@@ -77,6 +77,7 @@ impl DeviceVk {
         // 物理デバイスの取得
         let device_ext = vulkano::device::DeviceExtensions {
             khr_swapchain: true,
+            khr_maintenance1: true,
             ..vulkano::device::DeviceExtensions::none()
         };
         let (physical_device, queue_family) = PhysicalDevice::enumerate(&instance)
