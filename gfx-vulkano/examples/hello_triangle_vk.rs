@@ -111,8 +111,7 @@ fn main() {
 
                     {
                         command_buffer.begin();
-                        command_buffer
-                            .set_render_targets([next_scan_buffer_view].into_iter(), None);
+                        command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
                         command_buffer.set_shader(&shader);
                         command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
                         command_buffer.set_vertex_state(&vertex_state);

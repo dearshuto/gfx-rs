@@ -128,7 +128,7 @@ fn main() {
                     0.0,
                     TextureArrayRange::new(),
                 );
-                command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
+                command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
                 command_buffer.set_shader(&shader);
                 command_buffer.set_constant_buffer(0, &positions_buffer);
                 command_buffer.set_vertex_state(&vertex_state);

@@ -184,15 +184,16 @@ impl CommandBufferAsh {
         self.clear_color = [red, green, blue, alpha];
     }
 
-    pub fn set_render_targets<T>(&mut self, mut color_targets: T, _depth_stencil_view: Option<()>)
-    where
-        T: Iterator<Item = ColorTargetViewAsh>,
-    {
-        if let Some(color_target) = color_targets.next() {
-            self.image_view = Some(color_target.get_image_view());
-            self.format = Some(color_target.get_format());
-            self.width = Some(color_target.get_width());
-            self.height = Some(color_target.get_height());
+    pub fn set_render_targets(
+        &mut self,
+        color_targets: &[&ColorTargetViewAsh],
+        _depth_stencil_view: Option<()>,
+    ) {
+        if !color_targets.is_empty() {
+            self.image_view = Some(color_targets[0].get_image_view());
+            self.format = Some(color_targets[0].get_format());
+            self.width = Some(color_targets[0].get_width());
+            self.height = Some(color_targets[0].get_height());
         }
     }
 
@@ -857,13 +858,11 @@ impl ICommandBuffer for CommandBufferAsh {
         );
     }
 
-    fn set_render_targets<TIterator>(
+    fn set_render_targets(
         &mut self,
-        color_target_views: TIterator,
+        color_target_views: &[&Self::ColorTargetViewType],
         _depth_stencil_view: Option<&Self::DepthStencilViewType>,
-    ) where
-        TIterator: Iterator<Item = Self::ColorTargetViewType>,
-    {
+    ) {
         self.set_render_targets(color_target_views, None);
     }
 

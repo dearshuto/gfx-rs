@@ -103,7 +103,7 @@ fn run<TApi: IApi>() {
                         swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
                     command_buffer.begin();
-                    command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
+                    command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
                     command_buffer.set_shader(&shader);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);

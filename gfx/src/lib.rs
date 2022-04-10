@@ -1,5 +1,6 @@
 pub mod api;
 mod buffer_builder;
+mod color_target_view_builder;
 mod command_buffer_builder;
 mod device_builder;
 mod queue_builder;
@@ -12,6 +13,7 @@ mod texture_view_builder;
 mod vertex_state_builder;
 
 pub use buffer_builder::TBufferBuilder;
+pub use color_target_view_builder::TColorTargetViewBuilder;
 pub use command_buffer_builder::TCommandBufferBuilder;
 pub use device_builder::TDeviceBuilder;
 pub use queue_builder::TQueueBuilder;

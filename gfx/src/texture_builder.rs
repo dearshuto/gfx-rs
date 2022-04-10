@@ -33,6 +33,14 @@ impl<'a, TApi: IApi> TTextureBuilder<'a, TApi> {
         self.enable_bit(GpuAccess::IMAGE)
     }
 
+    pub fn enable_color_buffer(self) -> Self {
+        self.enable_bit(GpuAccess::COLOR_BUFFER)
+    }
+
+    pub fn enable_depth_buffer(self) -> Self {
+        self.enable_bit(GpuAccess::DEPTH_STENCIL)
+    }
+
     pub fn with_size(self, width: i32, height: i32) -> Self {
         Self {
             info: self.info.set_width(width).set_height(height),

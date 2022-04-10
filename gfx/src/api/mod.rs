@@ -1,21 +1,25 @@
 use sjgfx_ash::{
     BufferAsh, ColorTargetViewAsh, CommandBufferAsh, DepthStencilViewAsh, DeviceAsh, FenceAsh,
-    QueueAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh, VertexStateAsh, SamplerAsh,
+    QueueAsh, SamplerAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh,
+    VertexStateAsh,
 };
 use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
-    ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState, ISampler,
+    ISampler, ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState,
 };
-use sjgfx_vulkano::{BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, QueueVk, CommandBufferVk, FenceVk, ShaderVk, TextureVk, TextureViewVk, SamplerVk, SemaphoreVk, SwapChainVk, VertexStateVk};
+use sjgfx_vulkano::{
+    BufferVk, ColorTargetViewVk, CommandBufferVk, DepthStencilViewVk, DeviceVk, FenceVk, QueueVk,
+    SamplerVk, SemaphoreVk, ShaderVk, SwapChainVk, TextureViewVk, TextureVk, VertexStateVk,
+};
 use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
-    FenceWgpu, QueueWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu, TextureWgpu,
-    VertexStateWgpu, SamplerWgpu,
+    FenceWgpu, QueueWgpu, SamplerWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu,
+    TextureWgpu, VertexStateWgpu,
 };
 
 pub trait IApi {
     type Buffer: IBuffer<DeviceType = Self::Device>;
-    type ColorTargetView: IColorTargetView<DeviceType = Self::Device>;
+    type ColorTargetView: IColorTargetView<DeviceType = Self::Device, TextureType = Self::Texture>;
     type DepthStencilView: IDepthStencilView<DeviceType = Self::Device, TextureType = Self::Texture>;
     type Device: IDevice;
     type Queue: IQueue<

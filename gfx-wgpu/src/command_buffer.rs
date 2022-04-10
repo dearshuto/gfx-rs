@@ -130,15 +130,13 @@ impl CommandBufferWgpu {
         self.queue.submit(Some(command_encoder.finish()));
     }
 
-    pub fn set_render_targets<TIterator>(
+    pub fn set_render_targets(
         &mut self,
-        mut color_target_views: TIterator,
+        color_target_views: &[&ColorTargetViewWgpu],
         depth_stencil_view: Option<&DepthStencilViewWgpu>,
-    ) where
-        TIterator: Iterator<Item = ColorTargetViewWgpu>,
-    {
-        if let Some(color_target_view) = color_target_views.next() {
-            self.color_target_view = Some(color_target_view);
+    ) {
+        if !color_target_views.is_empty() {
+            self.color_target_view = Some(color_target_views[0].clone());
         }
 
         if let Some(depth_stencil_view) = depth_stencil_view {
@@ -596,13 +594,11 @@ impl ICommandBuffer for CommandBufferWgpu {
         );
     }
 
-    fn set_render_targets<TIterator>(
+    fn set_render_targets(
         &mut self,
-        color_target_views: TIterator,
+        color_target_views: &[&Self::ColorTargetViewType],
         depth_stencil_view: Option<&Self::DepthStencilViewType>,
-    ) where
-        TIterator: Iterator<Item = Self::ColorTargetViewType>,
-    {
+    ) {
         self.set_render_targets(color_target_views, depth_stencil_view)
     }
 

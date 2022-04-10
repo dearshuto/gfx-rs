@@ -82,7 +82,7 @@ fn run() {
                         0.0,
                         TextureArrayRange::new(),
                     );
-                    command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
+                    command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
                     command_buffer.set_shader(&shader);
                     command_buffer.draw(
                         PrimitiveTopology::TriangleList,
