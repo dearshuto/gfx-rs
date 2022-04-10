@@ -40,7 +40,7 @@ pub struct CommandBufferWgpu {
     queue: Arc<wgpu::Queue>,
 
     // レンダーターゲット
-    color_target_view: Option<ColorTargetViewWgpu>,
+    color_target_view: [Option<ColorTargetViewWgpu>; 8],
     depth_stencil_view: Option<Arc<wgpu::TextureView>>,
 
     // ビューポートシザー
@@ -69,7 +69,7 @@ impl CommandBufferWgpu {
             device: device.close_device(),
             queue: device.clone_queue(),
 
-            color_target_view: None,
+            color_target_view: Default::default(),
             depth_stencil_view: None,
 
             // ビューポートシザー
@@ -136,7 +136,10 @@ impl CommandBufferWgpu {
         depth_stencil_view: Option<&DepthStencilViewWgpu>,
     ) {
         if !color_target_views.is_empty() {
-            self.color_target_view = Some(color_target_views[0].clone());
+            self.color_target_view = Default::default();
+            for (index, view) in color_target_views.iter().enumerate() {
+                self.color_target_view[index] = Some((*view).clone());
+            }
         }
 
         if let Some(depth_stencil_view) = depth_stencil_view {
@@ -349,7 +352,14 @@ impl CommandBufferWgpu {
 
     fn build_graphics_command(&self) -> wgpu::CommandBuffer {
         // レンダーターゲット
-        let color_target_view = self.color_target_view.as_ref().unwrap();
+        let formats = self.color_target_view.iter().filter_map(|x|
+                                                      {
+                                                          if let Some(view) = x {
+                                                              Some(view.get_texture_format().into())
+                                                          } else {
+                                                              None
+                                                          }
+                                                      }).collect::<Vec<_>>();
 
         let vertex_shader_module = self.shader.as_ref().unwrap().get_vertex_shader_module();
         let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
@@ -374,7 +384,7 @@ impl CommandBufferWgpu {
                 fragment: Some(wgpu::FragmentState {
                     module: &pixel_shader_module,
                     entry_point: "main",
-                    targets: &[color_target_view.get_texture_format().into()],
+                    targets: &formats,
                 }),
                 primitive: wgpu::PrimitiveState::default(),
                 depth_stencil: self.create_depth_stencil_state(),
@@ -386,16 +396,26 @@ impl CommandBufferWgpu {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
+            let color_attachments = self.color_target_view
+                .iter()
+                .filter_map(|x| {
+                    if let Some(view) = x {
+                        Some(wgpu::RenderPassColorAttachment {
+                            view: view.get_texture_view(),
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: true,
+                            },
+                        })
+                    }
+                    else {
+                        None
+                    }
+                }).collect::<Vec<_>>();
             let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
-                color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: color_target_view.get_texture_view(),
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: true,
-                    },
-                }],
+                color_attachments: &color_attachments,
                 depth_stencil_attachment: self.create_render_pass_depth_stencil_attachment(),
             });
 

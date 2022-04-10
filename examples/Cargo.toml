@@ -8,9 +8,12 @@ name = "armadillo"
 path = "armadillo/main.rs"
 
 [[bin]]
+name = "deffered"
+path = "deffered/main.rs"
+
+[[bin]]
 name = "mandelbrot"
 path = "mandelbrot/main.rs"
-
 
 [[bin]]
 name = "wave"
