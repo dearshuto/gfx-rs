@@ -125,7 +125,7 @@ pub fn execute_hello_triangle() {
         &TextureInfo::new()
             .set_width(640)
             .set_height(480)
-            .set_gpu_access_flags(GpuAccess::TEXTURE)
+            .set_gpu_access_flags(GpuAccess::TEXTURE | GpuAccess::COLOR_BUFFER)
             .set_image_format(ImageFormat::R8G8B8A8Unorm),
     );
     let color_target = ColorTargetViewVk::new(

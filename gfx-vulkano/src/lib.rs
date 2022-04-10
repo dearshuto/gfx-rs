@@ -12,6 +12,7 @@ mod surface_vk;
 mod swap_chain_vk;
 mod texture_view_vk;
 mod texture_vk;
+mod util;
 mod vertex_state_vk;
 mod viewport_scissor_state_vk;
 

@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{ITexture, TextureInfo};
-use vulkano::{
-    format::Format,
-    image::{view::ImageView, AttachmentImage, ImageAccess, ImmutableImage},
-};
+use vulkano::image::{view::ImageView, AttachmentImage, ImageAccess, ImmutableImage};
 
-use crate::DeviceVk;
+use crate::{util, DeviceVk};
 
 pub struct TextureVk {
     image: Arc<dyn ImageAccess>,
@@ -17,9 +14,9 @@ pub struct TextureVk {
 impl TextureVk {
     pub fn new(device: &DeviceVk, info: &TextureInfo) -> Self {
         let dimensions = [info.get_width() as u32, info.get_height() as u32];
-        let image =
-            AttachmentImage::transient(device.clone_device(), dimensions, Format::D32_SFLOAT)
-                .unwrap();
+        let format = util::convert_format(info.get_image_format().clone());
+
+        let image = AttachmentImage::new(device.clone_device(), dimensions, format).unwrap();
         let image_view = ImageView::new_default(image.clone()).unwrap();
 
         Self {
