@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange};
+use sjgfx_interface::{
+    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, ScissorStateInfo, TextureArrayRange,
+    ViewportScissorStateInfo, ViewportStateInfo,
+};
 use vulkano::pipeline::Pipeline;
 use vulkano::shader::ShaderModule;
 use vulkano::{
@@ -14,7 +17,7 @@ use vulkano::{
             input_assembly::InputAssemblyState,
             rasterization::{CullMode, FrontFace, RasterizationState},
             //vertex_input::BuffersDefinition,
-            viewport::{Viewport, ViewportState},
+            viewport::ViewportState,
         },
         ComputePipeline, GraphicsPipeline, PipelineBindPoint,
     },
@@ -23,9 +26,10 @@ use vulkano::{
 
 use crate::buffer_vk::BufferView;
 use crate::vertex_state_vk::VertexStateView;
+use crate::viewport_scissor_state_vk::ViewportScissorStateView;
 use crate::{
     BufferVk, ColorTargetViewVk, DepthStencilViewVk, DeviceVk, SamplerVk, ShaderVk, TextureViewVk,
-    TextureVk, VertexStateVk,
+    TextureVk, VertexStateVk, ViewportScissorStateVk,
 };
 
 struct DrawInfo {
@@ -69,6 +73,7 @@ pub struct CommandBufferVk {
     unordered_access_buffer: [Option<BufferView>; 8],
 
     // RenderState
+    viewport_scissor_state: Option<ViewportScissorStateView>,
     vertex_state: Option<VertexStateView>,
 
     dispatch_count: Option<(u32, u32, u32)>,
@@ -80,6 +85,17 @@ pub struct CommandBufferVk {
 
 impl CommandBufferVk {
     pub fn new(device: &DeviceVk, _info: &CommandBufferInfo) -> Self {
+        let viewport_scissor_state = ViewportScissorStateVk::new(
+            device,
+            &ViewportScissorStateInfo::new()
+                .set_viewport_state_info_array(&[ViewportStateInfo::new()
+                    .set_width(640.0)
+                    .set_height(480.0)])
+                .set_scissor_state_info_array(&[ScissorStateInfo::new()
+                    .set_width(640)
+                    .set_height(480)]),
+        );
+
         Self {
             device: device.clone_device(),
             queue: device.clone_queue(),
@@ -99,6 +115,7 @@ impl CommandBufferVk {
             unordered_access_buffer: std::default::Default::default(),
 
             // RenderState
+            viewport_scissor_state: Some(viewport_scissor_state.view()),
             vertex_state: None,
 
             dispatch_count: None,
@@ -147,6 +164,10 @@ impl CommandBufferVk {
 
         // TODO: 深度ステンシル
         self.depth_stencil_view = None;
+    }
+
+    pub fn set_viewport_scissor_state(&mut self, viewport_scissor_state: &ViewportScissorStateVk) {
+        self.viewport_scissor_state = Some(viewport_scissor_state.view());
     }
 
     pub fn set_shader(&mut self, shader: &ShaderVk) {
@@ -321,12 +342,6 @@ impl CommandBufferVk {
         };
 
         let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
-        let viewport = Viewport {
-            origin: [0.0, 480.0],
-            dimensions: [640.0, -480.0],
-            depth_range: 0.0..1.0,
-        };
-
         let mut builder = AutoCommandBufferBuilder::primary(
             self.device.clone(),
             self.queue.as_ref().family(),
@@ -335,11 +350,11 @@ impl CommandBufferVk {
         .unwrap();
 
         self.push_descriptors(&mut builder, PipelineBindPoint::Graphics, pipeline.as_ref());
+        self.push_viewports_and_scissors(&mut builder);
 
         builder
             .begin_render_pass(framebuffer.clone(), SubpassContents::Inline, clear_values)
             .unwrap()
-            .set_viewport(0, [viewport])
             .bind_pipeline_graphics(pipeline)
             .bind_vertex_buffers(0, vertex_buffer);
 
@@ -364,6 +379,16 @@ impl CommandBufferVk {
                 0, /*first_set*/
                 descriptor_sets,
             );
+        }
+    }
+
+    fn push_viewports_and_scissors(
+        &self,
+        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
+    ) {
+        if let Some(viewport_scissor_state) = &self.viewport_scissor_state {
+            command_builder.set_viewport(0, viewport_scissor_state.viewports.to_vec());
+            command_builder.set_scissor(0, viewport_scissor_state.scissors.to_vec());
         }
     }
 

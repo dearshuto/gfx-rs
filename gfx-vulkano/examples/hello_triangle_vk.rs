@@ -1,10 +1,12 @@
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, FenceInfo, GpuAccess,
-    PrimitiveTopology, QueueInfo, ShaderInfo, SwapChainInfo, VertexAttributeStateInfo,
-    VertexBufferStateInfo, VertexStateInfo,
+    PrimitiveTopology, QueueInfo, ScissorStateInfo, ShaderInfo, SwapChainInfo,
+    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo, ViewportScissorStateInfo,
+    ViewportStateInfo,
 };
 use sjgfx_vulkano::{
     BufferVk, CommandBufferVk, DeviceVk, FenceVk, QueueVk, ShaderVk, SwapChainVk, VertexStateVk,
+    ViewportScissorStateVk,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -19,6 +21,17 @@ fn main() {
     let mut command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
     let mut queue = QueueVk::new(&device, &QueueInfo::new());
     let mut fence = FenceVk::new(&device, &FenceInfo::new());
+
+    let viewport_scissor_state = ViewportScissorStateVk::new(
+        &device,
+        &ViewportScissorStateInfo::new()
+            .set_viewport_state_info_array(&[ViewportStateInfo::new()
+                .set_width(1280.0)
+                .set_height(960.0)])
+            .set_scissor_state_info_array(&[ScissorStateInfo::new()
+                .set_width(1280)
+                .set_height(960)]),
+    );
 
     // シェーダ
     let vertex_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.vs");
@@ -101,6 +114,7 @@ fn main() {
                         command_buffer
                             .set_render_targets([next_scan_buffer_view].into_iter(), None);
                         command_buffer.set_shader(&shader);
+                        command_buffer.set_viewport_scissor_state(&viewport_scissor_state);
                         command_buffer.set_vertex_state(&vertex_state);
                         command_buffer.set_vertex_buffer(0, &vertex_buffer);
                         command_buffer.draw(
