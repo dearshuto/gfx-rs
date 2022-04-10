@@ -209,10 +209,8 @@ where
                     let color_target_view = swap_chain.acquire_next_scan_buffer_view(None, None);
 
                     command_buffer.begin();
-                    command_buffer.set_render_targets(
-                        [color_target_view].into_iter(),
-                        Some(&depth_stencil_view),
-                    );
+                    command_buffer
+                        .set_render_targets(&[&color_target_view], Some(&depth_stencil_view));
                     command_buffer.set_shader(&shader);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);

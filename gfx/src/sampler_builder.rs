@@ -1,9 +1,9 @@
-use sjgfx_interface::{SamplerInfo, ISampler};
+use sjgfx_interface::{ISampler, SamplerInfo};
 
 use crate::api::IApi;
 
 pub struct TSamplerBuilder<TApi: IApi> {
-     info: SamplerInfo,
+    info: SamplerInfo,
     _marker: std::marker::PhantomData<TApi>,
 }
 

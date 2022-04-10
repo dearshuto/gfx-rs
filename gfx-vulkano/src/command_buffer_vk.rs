@@ -148,13 +148,11 @@ impl CommandBufferVk {
         self.depth_stencil_view = None;
     }
 
-    pub fn set_render_targets<TIterator>(
+    pub fn set_render_targets(
         &mut self,
-        color_target_views: TIterator,
+        color_target_views: &[&ColorTargetViewVk],
         _depth_stencil_view: Option<&DepthStencilViewVk>,
-    ) where
-        TIterator: Iterator<Item = ColorTargetViewVk>,
-    {
+    ) {
         // カラーターゲットをセット
         let mut render_targets = Vec::new();
         for color_target_view in color_target_views {
@@ -490,13 +488,11 @@ impl ICommandBuffer for CommandBufferVk {
         todo!()
     }
 
-    fn set_render_targets<TIterator>(
+    fn set_render_targets(
         &mut self,
-        color_target_views: TIterator,
+        color_target_views: &[&ColorTargetViewVk],
         depth_stencil_view: Option<&Self::DepthStencilViewType>,
-    ) where
-        TIterator: Iterator<Item = Self::ColorTargetViewType>,
-    {
+    ) {
         self.set_render_targets(color_target_views, depth_stencil_view)
     }
 

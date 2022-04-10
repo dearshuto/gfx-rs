@@ -38,12 +38,11 @@ pub trait ICommandBuffer {
         texture_array_range: TextureArrayRange,
     );
 
-    fn set_render_targets<TIterator>(
+    fn set_render_targets(
         &mut self,
-        color_target_views: TIterator,
+        color_target_views: &[&Self::ColorTargetViewType],
         depth_stencil_view: Option<&Self::DepthStencilViewType>,
-    ) where
-        TIterator: Iterator<Item = Self::ColorTargetViewType>;
+    );
 
     fn set_shader(&mut self, shader: &Self::ShaderType);
 

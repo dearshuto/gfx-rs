@@ -10,15 +10,16 @@ use crate::{DeviceVk, SwapChainVk, TextureVk};
 
 pub struct ColorTargetViewVk {
     texture: Option<Arc<ImageView<AttachmentImage>>>,
-    scan_buffer_image_view: Option<Arc<dyn ImageViewAbstract>>,
+    image_view: Option<Arc<dyn ImageViewAbstract>>,
     format: Format,
 }
 
 impl ColorTargetViewVk {
     pub fn new(_device: &DeviceVk, info: &ColorTargetViewInfo, texture: &TextureVk) -> Self {
+        let image_view = ImageView::new_default(texture.clone_image()).unwrap();
         Self {
             texture: Some(texture.clone_attachment_image()),
-            scan_buffer_image_view: None,
+            image_view: Some(image_view),
             format: Converter.convert_format(info.get_image_format()),
         }
     }
@@ -27,7 +28,7 @@ impl ColorTargetViewVk {
         let image_view = swap_chain.clone_current_image_view();
         Self {
             texture: None,
-            scan_buffer_image_view: Some(image_view),
+            image_view: Some(image_view),
             format: swap_chain.get_swap_chain().image_format(),
         }
     }
@@ -35,7 +36,7 @@ impl ColorTargetViewVk {
     pub fn clone_image_view(&self) -> Arc<dyn ImageViewAbstract> {
         if let Some(texture) = &self.texture {
             texture.clone()
-        } else if let Some(scan_buffer) = &self.scan_buffer_image_view {
+        } else if let Some(scan_buffer) = &self.image_view {
             scan_buffer.clone()
         } else {
             todo!()
@@ -68,8 +69,13 @@ impl Converter {
 
 impl IColorTargetView for ColorTargetViewVk {
     type DeviceType = DeviceVk;
+    type TextureType = TextureVk;
 
-    fn new(_device: &Self::DeviceType, _info: &ColorTargetViewInfo) -> Self {
-        todo!()
+    fn new(
+        device: &Self::DeviceType,
+        info: &ColorTargetViewInfo,
+        texture: &Self::TextureType,
+    ) -> Self {
+        Self::new(device, info, texture)
     }
 }

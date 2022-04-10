@@ -93,7 +93,7 @@ fn main() {
                     // コマンドを作成
                     command_buffer.begin();
                     command_buffer.set_shader(&shader);
-                    command_buffer.set_render_targets([next_scan_buffer_view].into_iter(), None);
+                    command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
                     command_buffer.set_vertex_state(&vertex_state);
                     command_buffer.set_vertex_buffer(0, &vertex_buffer);
                     command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);

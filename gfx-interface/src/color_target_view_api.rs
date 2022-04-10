@@ -1,4 +1,4 @@
-use crate::{IDevice, ImageFormat};
+use crate::{IDevice, ITexture, ImageFormat};
 
 pub struct ColorTargetViewInfo {
     image_format: ImageFormat,
@@ -23,6 +23,11 @@ impl ColorTargetViewInfo {
 
 pub trait IColorTargetView {
     type DeviceType: IDevice;
+    type TextureType: ITexture;
 
-    fn new(device: &Self::DeviceType, info: &ColorTargetViewInfo) -> Self;
+    fn new(
+        device: &Self::DeviceType,
+        info: &ColorTargetViewInfo,
+        texture: &Self::TextureType,
+    ) -> Self;
 }

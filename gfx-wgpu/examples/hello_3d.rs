@@ -171,7 +171,7 @@ fn main() {
                         1.0,
                         TextureArrayRange::new(),
                     );
-                    command_buffer.set_render_targets([color_target_view].into_iter(), None);
+                    command_buffer.set_render_targets(&[&color_target_view], None);
                     command_buffer.set_shader(&shader);
                     command_buffer.set_constant_buffer(0, &constant_buffer);
                     command_buffer.set_vertex_state(&vertex_state);
