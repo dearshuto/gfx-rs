@@ -3,7 +3,7 @@ use std::sync::Arc;
 use sjgfx_interface::{ITexture, TextureInfo};
 use vulkano::{
     format::Format,
-    image::{view::ImageView, AttachmentImage, ImageUsage, ImmutableImage},
+    image::{view::ImageView, AttachmentImage, ImmutableImage},
 };
 
 use crate::DeviceVk;
@@ -15,20 +15,10 @@ pub struct TextureVk {
 
 impl TextureVk {
     pub fn new(device: &DeviceVk, info: &TextureInfo) -> Self {
-        let attach_usage = ImageUsage {
-            transient_attachment: true,
-            input_attachment: true,
-            ..ImageUsage::none()
-        };
         let dimensions = [info.get_width() as u32, info.get_height() as u32];
-        let image_view = ImageView::new(
-            AttachmentImage::with_usage(
-                device.clone_device(),
-                dimensions,
-                Format::R8G8B8A8_UNORM,
-                attach_usage,
-            )
-            .unwrap(),
+        let image_view = ImageView::new_default(
+            AttachmentImage::transient(device.clone_device(), dimensions, Format::D32_SFLOAT)
+                .unwrap(),
         )
         .unwrap();
 

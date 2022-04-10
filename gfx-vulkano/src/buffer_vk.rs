@@ -109,6 +109,7 @@ impl BufferVk {
             vertex_buffer: is_vertex_buffer,
             indirect_buffer: is_indirect_buffer,
             device_address: true,
+            ..Default::default()
         };
 
         result
@@ -164,18 +165,8 @@ impl BufferView {
         self.buffer.clone()
     }
 
-    pub fn clone_buffer_as<T: Send + Sync + 'static>(&self) -> Arc<CpuAccessibleBuffer<T>> {
-        todo!()
-    }
-
     pub fn clone_buffer_view(&self) -> Arc<dyn BufferAccess> {
         self.buffer.clone()
-    }
-
-    pub fn clone_vertex_buffer_as<T: Send + Sync + 'static>(
-        &self,
-    ) -> Arc<CpuAccessibleBuffer<[T]>> {
-        todo!()
     }
 
     pub fn clone_index_buffer(&self) -> Arc<CpuAccessibleBuffer<[u32]>> {
@@ -190,7 +181,7 @@ impl BufferView {
     }
 }
 
-unsafe impl VertexBuffersCollection for BufferView {
+impl VertexBuffersCollection for BufferView {
     fn into_vec(self) -> Vec<Arc<dyn BufferAccess>> {
         vec![self.buffer.clone()]
     }

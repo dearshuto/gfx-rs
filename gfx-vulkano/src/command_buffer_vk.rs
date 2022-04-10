@@ -5,6 +5,7 @@ use sjgfx_interface::{
     ViewportScissorStateInfo, ViewportStateInfo,
 };
 use vulkano::pipeline::Pipeline;
+use vulkano::render_pass::FramebufferCreateInfo;
 use vulkano::shader::ShaderModule;
 use vulkano::{
     command_buffer::{AutoCommandBufferBuilder, PrimaryAutoCommandBuffer, SubpassContents},
@@ -332,14 +333,15 @@ impl CommandBufferVk {
 
         let vertex_buffer = self.vertex_buffers[0].as_ref().unwrap().clone();
 
-        let framebuffer = {
-            let mut builder = Framebuffer::start(render_pass.clone());
-
-            for view in self.render_targets.as_ref().unwrap() {
-                builder = builder.add(view.clone()).unwrap();
-            }
-            builder.build().unwrap()
-        };
+        let views = self.render_targets.as_ref().unwrap();
+        let framebuffer = Framebuffer::new(
+            render_pass,
+            FramebufferCreateInfo {
+                attachments: views.to_vec(),
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
         let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
         let mut builder = AutoCommandBufferBuilder::primary(
@@ -422,7 +424,7 @@ impl CommandBufferVk {
         pipeline: &T,
     ) -> Option<Arc<PersistentDescriptorSet>> {
         let layout = pipeline.layout().clone();
-        let descriptor_set_layout = layout.descriptor_set_layouts().get(0)?;
+        let descriptor_set_layout = layout.set_layouts().get(0)?;
 
         let mut write_descriptor_sets = Vec::new();
 
