@@ -9,6 +9,16 @@ fn main() {
         &"resources/shaders/armadillo.fs",
     );
 
+    // デファード
+    compiler.build_graphics_shader(
+        &"resources/shaders/geometry_output.vs",
+        &"resources/shaders/geometry_output.fs",
+    );
+    compiler.build_graphics_shader(
+        &"resources/shaders/deffered_shading.vs",
+        &"resources/shaders/deffered_shading.fs",
+    );
+
     // マンデルブロ集合
     compiler.build_graphics_shader(
         &"resources/shaders/mandelbrot.vs",
@@ -41,7 +51,7 @@ impl Compiler {
             .compile_into_spirv(
                 &vertex_shader_source,
                 shaderc::ShaderKind::Vertex,
-                "test.glsl",
+                "test.vs",
                 "main",
                 None,
             )
@@ -51,7 +61,7 @@ impl Compiler {
             .compile_into_spirv(
                 &pixel_shader_source,
                 shaderc::ShaderKind::Fragment,
-                "test.glsl",
+                "test.fs",
                 "main",
                 None,
             )
