@@ -28,6 +28,7 @@ backend-vulkano = [ ]
 [dependencies]
 sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
+sjgfx-util = { path = "../gfx-util" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx = { path = "../gfx" }
 winit = "0.26.0"
