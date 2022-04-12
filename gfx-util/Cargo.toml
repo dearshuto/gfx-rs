@@ -1,0 +1,8 @@
+[package]
+name = "sjgfx-util"
+edition = "2021"
+version = "0.1.0"
+
+[dependencies]
+sjgfx-interface = { path = "../gfx-interface" }
+tobj = "3.2.1"
