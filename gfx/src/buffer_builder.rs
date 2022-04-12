@@ -38,6 +38,10 @@ impl<T: IApi> TBufferBuilder<T> {
         self.enable_flag(GpuAccess::CONSTANT_BUFFER)
     }
 
+    pub fn enable_unordered_access_buffer(self) -> Self {
+        self.enable_flag(GpuAccess::UNORDERED_ACCESS_BUFFER)
+    }
+
     fn enable_flag(self, flag: GpuAccess) -> Self {
         let gpu_access = self.info.get_gpu_access_flags() | flag;
         Self {
