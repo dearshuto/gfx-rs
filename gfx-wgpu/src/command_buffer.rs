@@ -352,14 +352,17 @@ impl CommandBufferWgpu {
 
     fn build_graphics_command(&self) -> wgpu::CommandBuffer {
         // レンダーターゲット
-        let formats = self.color_target_view.iter().filter_map(|x|
-                                                      {
-                                                          if let Some(view) = x {
-                                                              Some(view.get_texture_format().into())
-                                                          } else {
-                                                              None
-                                                          }
-                                                      }).collect::<Vec<_>>();
+        let formats = self
+            .color_target_view
+            .iter()
+            .filter_map(|x| {
+                if let Some(view) = x {
+                    Some(view.get_texture_format().into())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
 
         let vertex_shader_module = self.shader.as_ref().unwrap().get_vertex_shader_module();
         let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
@@ -396,7 +399,8 @@ impl CommandBufferWgpu {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
-            let color_attachments = self.color_target_view
+            let color_attachments = self
+                .color_target_view
                 .iter()
                 .filter_map(|x| {
                     if let Some(view) = x {
@@ -408,11 +412,11 @@ impl CommandBufferWgpu {
                                 store: true,
                             },
                         })
-                    }
-                    else {
+                    } else {
                         None
                     }
-                }).collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
             let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &color_attachments,
@@ -448,6 +452,13 @@ impl CommandBufferWgpu {
             }
 
             // 頂点バッファ
+            for (index, vertex_buffer_opt) in self.vertex_buffer.iter().enumerate() {
+                if let Some(vertex_buffer) = vertex_buffer_opt {
+                    let index = index as u32;
+                    render_pass.set_vertex_buffer(index, vertex_buffer.slice(..));
+                }
+            }
+
             if let Some(vertex_buffer) = &self.vertex_buffer[0] {
                 render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
             }
