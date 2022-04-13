@@ -68,9 +68,14 @@ impl VertexStateView {
             .vertex_buffer_state_infos
             .iter()
             .map(|x| {
+                let step_mode = if x.get_divisor() == 0 {
+                    VertexStepMode::Vertex
+                } else {
+                    VertexStepMode::Instance
+                };
                 let vertex_buffer_layout = VertexBufferLayout {
                     array_stride: x.get_stride() as u64,
-                    step_mode: VertexStepMode::Vertex,
+                    step_mode,
                     attributes: &self.vertex_attributes,
                 };
                 vertex_buffer_layout

@@ -65,7 +65,7 @@ impl VertexBufferStateInfo {
     pub fn new() -> Self {
         Self {
             _stride: 0,
-            _divisor: 1,
+            _divisor: 0,
         }
     }
 
