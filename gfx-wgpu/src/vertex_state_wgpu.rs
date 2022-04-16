@@ -1,31 +1,36 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use sjgfx_interface::{AttributeFormat, IVertexState, VertexBufferStateInfo, VertexStateInfo};
-use wgpu::{VertexBufferLayout, VertexStepMode};
+use wgpu::{VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 use crate::DeviceWgpu;
 
 pub struct VertexStateWgpu {
-    vertex_attribute: Arc<Vec<wgpu::VertexAttribute>>,
+    vertex_attribute_map: Arc<HashMap<i32, Vec<wgpu::VertexAttribute>>>,
     verex_buffer_state_infos: Arc<Vec<VertexBufferStateInfo>>,
 }
 
 impl VertexStateWgpu {
     pub fn new(_device: &DeviceWgpu, info: &VertexStateInfo) -> Self {
-        let vertex_attributes = info
-            .get_attribute_state_info_array()
-            .iter()
-            .map(|x| wgpu::VertexAttribute {
-                format: Self::convert_format_to_wgpu(x.get_format()),
-                offset: x.get_offset() as u64,
-                shader_location: x.get_slot() as u32,
-            })
-            .collect::<Vec<wgpu::VertexAttribute>>()
-            .to_vec();
-        let vertex_attributes = Arc::new(vertex_attributes);
+        let mut map = HashMap::<i32, Vec<VertexAttribute>>::new();
+
+        for attribute_info in info.get_attribute_state_info_array() {
+            let buffer_index = attribute_info.get_buffer_index();
+            if !map.contains_key(&buffer_index) {
+                map.insert(buffer_index, Vec::new());
+            }
+
+            map.get_mut(&buffer_index)
+                .unwrap()
+                .push(wgpu::VertexAttribute {
+                    format: Self::convert_format_to_wgpu(attribute_info.get_format()),
+                    offset: attribute_info.get_offset() as u64,
+                    shader_location: attribute_info.get_slot() as u32,
+                });
+        }
 
         Self {
-            vertex_attribute: vertex_attributes,
+            vertex_attribute_map: Arc::new(map),
             verex_buffer_state_infos: Arc::new(info.get_buffer_state_info_array().to_vec()),
         }
     }
@@ -34,8 +39,8 @@ impl VertexStateWgpu {
         VertexStateView::new(self)
     }
 
-    fn clone_vertex_attributes(&self) -> Arc<Vec<wgpu::VertexAttribute>> {
-        self.vertex_attribute.clone()
+    fn clone_vertex_attributes(&self) -> Arc<HashMap<i32, Vec<wgpu::VertexAttribute>>> {
+        self.vertex_attribute_map.clone()
     }
 
     fn clone_vertex_buffer_state_infos(&self) -> Arc<Vec<VertexBufferStateInfo>> {
@@ -51,7 +56,7 @@ impl VertexStateWgpu {
 }
 
 pub struct VertexStateView {
-    vertex_attributes: Arc<Vec<wgpu::VertexAttribute>>,
+    vertex_attributes: Arc<HashMap<i32, Vec<wgpu::VertexAttribute>>>,
     vertex_buffer_state_infos: Arc<Vec<VertexBufferStateInfo>>,
 }
 
@@ -67,16 +72,19 @@ impl VertexStateView {
         let vertex_buffer_layouts = self
             .vertex_buffer_state_infos
             .iter()
-            .map(|x| {
+            .enumerate()
+            .map(|(index, x)| {
                 let step_mode = if x.get_divisor() == 0 {
                     VertexStepMode::Vertex
                 } else {
                     VertexStepMode::Instance
                 };
+
+                let vertex_attributes = self.vertex_attributes.get(&(index as i32)).unwrap();
                 let vertex_buffer_layout = VertexBufferLayout {
                     array_stride: x.get_stride() as u64,
                     step_mode,
-                    attributes: &self.vertex_attributes,
+                    attributes: &vertex_attributes,
                 };
                 vertex_buffer_layout
             })
