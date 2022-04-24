@@ -34,32 +34,18 @@ fn main() {
     );
 
     // シェーダ
+    let mut compiler = sjgfx_util::ShaderCompiler::new();
     let vertex_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.vs");
     let pixel_shader_source = include_str!("../../resources/examples/shaders/hello_triangle.fs");
-    let mut compiler = shaderc::Compiler::new().unwrap();
-    let vertex_shader_binary = compiler
-        .compile_into_spirv(
-            &vertex_shader_source,
-            shaderc::ShaderKind::Vertex,
-            "test.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
-    let pixel_shader_binary = compiler
-        .compile_into_spirv(
-            &pixel_shader_source,
-            shaderc::ShaderKind::Fragment,
-            "test.fs",
-            "main",
-            None,
-        )
-        .unwrap();
+    let vertex_shader_binary =
+        compiler.create_binary(vertex_shader_source, sjgfx_util::ShaderStage::Vertex);
+    let pixel_shader_binary =
+        compiler.create_binary(pixel_shader_source, sjgfx_util::ShaderStage::Pixel);
     let shader = ShaderVk::new(
         &device,
         &ShaderInfo::new()
-            .set_vertex_shader_binary(vertex_shader_binary.as_binary_u8())
-            .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
+            .set_vertex_shader_binary(&vertex_shader_binary)
+            .set_pixel_shader_binary(&pixel_shader_binary),
     );
 
     // 頂点バッファ

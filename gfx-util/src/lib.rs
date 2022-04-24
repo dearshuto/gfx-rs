@@ -1,3 +1,6 @@
+mod shader_compiler;
+pub use shader_compiler::{ShaderCompiler, ShaderStage};
+
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer, IDevice};
 
 pub struct ObjData<TBuffer: IBuffer> {

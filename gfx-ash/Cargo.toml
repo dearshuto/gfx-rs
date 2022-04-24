@@ -13,4 +13,4 @@ spirv-reflect = "0.2.3"
 uuid = { version = "0.8.0", features = ["v4"] }
 
 [dev-dependencies]
-shaderc = "0.7"
+sjgfx-util = { path = "../gfx-util" }
