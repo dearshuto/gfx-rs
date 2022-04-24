@@ -67,30 +67,20 @@ where
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
-    let mut compiler = shaderc::Compiler::new().unwrap();
-    let vertex_shader_binary = compiler
-        .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_bufferless_triangle.vs"),
-            shaderc::ShaderKind::Vertex,
-            "test.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
-    let pixel_shader_binary = compiler
-        .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_triangle.fs"),
-            shaderc::ShaderKind::Fragment,
-            "test.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
+    let mut compiler = sjgfx_util::ShaderCompiler::new();
+    let vertex_shader_binary = compiler.create_binary(
+        &include_str!("../../resources/examples/shaders/hello_bufferless_triangle.vs"),
+        sjgfx_util::ShaderStage::Vertex,
+    );
+    let pixel_shader_binary = compiler.create_binary(
+        &include_str!("../../resources/examples/shaders/hello_triangle.fs"),
+        sjgfx_util::ShaderStage::Pixel,
+    );
     let shader = TShader::new(
         &device,
         &ShaderInfo::new()
-            .set_vertex_shader_binary(&vertex_shader_binary.as_binary_u8())
-            .set_pixel_shader_binary(&pixel_shader_binary.as_binary_u8()),
+            .set_vertex_shader_binary(&vertex_shader_binary)
+            .set_pixel_shader_binary(&pixel_shader_binary),
     );
 
     let mut should_close = false;

@@ -12,7 +12,7 @@ spirv-reflect = "0.2.3"
 winit = "0.26.0"
 
 [dev-dependencies]
-shaderc = "0.7"
+sjgfx-util = { path = "../gfx-util" }
 winit = "0.26.0"
 nalgebra-glm = "0.3"
 image = "0.24.0"

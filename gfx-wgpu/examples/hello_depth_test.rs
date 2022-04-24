@@ -86,30 +86,20 @@ where
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
-    let mut compiler = shaderc::Compiler::new().unwrap();
-    let vertex_shader_binary = compiler
-        .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_depth_test.vs"),
-            shaderc::ShaderKind::Vertex,
-            "vs.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
-    let pixel_shader_binary = compiler
-        .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_depth_test.fs"),
-            shaderc::ShaderKind::Fragment,
-            "fs.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
+    let mut compiler = sjgfx_util::ShaderCompiler::new();
+    let vertex_shader_binary = compiler.create_binary(
+        &include_str!("../../resources/examples/shaders/hello_depth_test.vs"),
+        sjgfx_util::ShaderStage::Vertex,
+    );
+    let pixel_shader_binary = compiler.create_binary(
+        &include_str!("../../resources/examples/shaders/hello_depth_test.fs"),
+        sjgfx_util::ShaderStage::Pixel,
+    );
     let shader = TShader::new(
         &device,
         &ShaderInfo::new()
-            .set_vertex_shader_binary(vertex_shader_binary.as_binary_u8())
-            .set_pixel_shader_binary(pixel_shader_binary.as_binary_u8()),
+            .set_vertex_shader_binary(&vertex_shader_binary)
+            .set_pixel_shader_binary(&pixel_shader_binary),
     );
 
     let attribute_state_info_array = [VertexAttributeStateInfo::new()
