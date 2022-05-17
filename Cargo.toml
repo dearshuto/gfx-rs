@@ -4,6 +4,7 @@ members = [
         "gfx",
 #        "sj",
         "gfx-ash",
+        "gfx-egui",
         "gfx-interface",
         "gfx-vulkano",
         "gfx-wgpu",
