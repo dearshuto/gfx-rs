@@ -528,6 +528,10 @@ impl ICommandBuffer for CommandBufferVk {
         self.set_vertex_state(vertex_state);
     }
 
+    fn set_scissor(&mut self, _scissor_state_info: &ScissorStateInfo) {
+        todo!()
+    }
+
     fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
         self.dispatch(count_x as u32, count_y as u32, count_z as u32);
     }

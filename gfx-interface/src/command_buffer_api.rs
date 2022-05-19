@@ -1,6 +1,6 @@
 use crate::{
     shader_api::IShader, IBuffer, IColorTargetView, IDepthStencilView, IDevice, ISampler, ITexture,
-    ITextureView, IndexFormat, PrimitiveTopology, TextureArrayRange,
+    ITextureView, IndexFormat, PrimitiveTopology, TextureArrayRange, ScissorStateInfo,
 };
 
 pub struct CommandBufferInfo {}
@@ -59,6 +59,8 @@ pub trait ICommandBuffer {
     fn set_vertex_buffer(&mut self, index: i32, buffer: &Self::BufferType);
 
     fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType);
+
+    fn set_scissor(&mut self, scissor_state_info: &ScissorStateInfo);
 
     fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32);
 
