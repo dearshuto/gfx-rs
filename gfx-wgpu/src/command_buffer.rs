@@ -357,7 +357,22 @@ impl CommandBufferWgpu {
             .iter()
             .filter_map(|x| {
                 if let Some(view) = x {
-                    Some(view.get_texture_format().into())
+                    Some( wgpu::ColorTargetState {
+                        format: view.get_texture_format().into(),
+                        blend: Some(wgpu::BlendState {
+                            color: wgpu::BlendComponent {
+                                src_factor: wgpu::BlendFactor::One,
+                                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                                operation: wgpu::BlendOperation::Add,
+                            },
+                            alpha: wgpu::BlendComponent {
+                                src_factor: wgpu::BlendFactor::OneMinusDstAlpha,
+                                dst_factor: wgpu::BlendFactor::One,
+                                operation: wgpu::BlendOperation::Add,
+                            },
+                        }),
+                        write_mask: wgpu::ColorWrites::ALL
+                    })
                 } else {
                     None
                 }
@@ -389,9 +404,21 @@ impl CommandBufferWgpu {
                     entry_point: "main",
                     targets: &formats,
                 }),
-                primitive: wgpu::PrimitiveState::default(),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    unclipped_depth: false,
+                    conservative: false,
+                    cull_mode: None,
+                    front_face: wgpu::FrontFace::default(),
+                    polygon_mode: wgpu::PolygonMode::default(),
+                    strip_index_format: None,
+                },
                 depth_stencil: self.create_depth_stencil_state(),
-                multisample: wgpu::MultisampleState::default(),
+                multisample: wgpu::MultisampleState {
+                    alpha_to_coverage_enabled: false,
+                    count: 1,
+                    mask: !0,
+                },
                 multiview: None,
             });
         let bind_group = self.create_bind_group();
