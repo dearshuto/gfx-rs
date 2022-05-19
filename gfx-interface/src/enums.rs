@@ -45,6 +45,7 @@ pub enum PrimitiveTopology {
 
 #[derive(Clone)]
 pub enum AttributeFormat {
+    Uint32,
     Float32_32,
     Float32_32_32,
 }
