@@ -1,0 +1,19 @@
+[package]
+name = "gfx-egui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+egui = { version = "0.16", features = [ "convert_bytemuck" ] }
+bytemuck = "1.7"
+sjgfx-util = { path = "../gfx-util" }
+sjgfx-interface = { path = "../gfx-interface" }
+sjgfx = { path = "../gfx" }
+
+[dev-dependencies]
+epi = "0.16"
+egui_winit_platform = "0.13"
+egui_demo_lib = "0.16"
+winit = "0.26"
