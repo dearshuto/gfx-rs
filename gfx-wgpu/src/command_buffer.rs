@@ -665,6 +665,10 @@ impl ICommandBuffer for CommandBufferWgpu {
         self.set_vertex_state(vertex_state);
     }
 
+    fn set_scissor(&mut self, scissor_state_info: &ScissorStateInfo) {
+        self.set_scissor(scissor_state_info);
+    }
+
     fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
         self.dispatch(count_x, count_y, count_z);
     }

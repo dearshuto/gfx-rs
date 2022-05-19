@@ -1,5 +1,5 @@
 use ash::vk::{Extent2D, Framebuffer, Rect2D};
-use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange};
+use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange, ScissorStateInfo};
 
 use crate::{
     BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, SamplerAsh, ShaderAsh,
@@ -898,6 +898,10 @@ impl ICommandBuffer for CommandBufferAsh {
     fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType) {
         self.vertex_inpute_state_create_info =
             Some(vertex_state.clone_vertex_input_state_create_info());
+    }
+
+    fn set_scissor(&mut self, _scissor_state_info: &ScissorStateInfo) {
+        todo!()
     }
 
     fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
