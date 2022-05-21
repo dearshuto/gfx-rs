@@ -8,13 +8,7 @@ use sjgfx_interface::{
     ShaderInfo, SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo,
     VertexBufferStateInfo, VertexStateInfo,
 };
-use winit::{
-    dpi::PhysicalSize,
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
-    window::WindowBuilder,
-};
+use winit::event_loop::EventLoop;
 
 #[repr(C)]
 struct ConstantBuffer {
@@ -34,14 +28,11 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_inner_size(PhysicalSize::new(1280, 960))
-        .with_resizable(false)
-        .build(&event_loop)
-        .unwrap();
+    let event_loop = EventLoop::new();
+    let mut display = sjvi::create_display(event_loop);
 
-    let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
+    let mut device =
+        TApi::Device::new_with_surface(&DeviceInfo::new(), &display.window, &display.event_loop);
     let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
     let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TApi::SwapChain::new(
@@ -117,57 +108,38 @@ fn run<TApi: IApi>() {
 
     let mut semaphore = TApi::Semaphore::new(&device, &SemaphoreInfo::new());
 
-    let mut should_close = false;
-    while !should_close {
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+    while !display.should_close() {
+        display.update(|| {
+            let mut next_scan_buffer_view =
+                swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
-            match event {
-                Event::RedrawRequested(_) => {
-                    // queue.sync_semaphore(&mut semaphore);
+            command_buffer.begin();
+            command_buffer.clear_color(
+                &mut next_scan_buffer_view,
+                0.0,
+                0.0,
+                0.1,
+                1.0,
+                TextureArrayRange::new(),
+            );
+            command_buffer.set_render_targets(&[&next_scan_buffer_view], Some(&depth_stencil_view));
+            command_buffer.set_shader(&shader);
+            command_buffer.set_constant_buffer(0, &constant_buffer);
+            command_buffer.set_vertex_state(&vertex_state);
+            command_buffer.set_vertex_buffer(0, &obj_data.vertex_buffer);
+            command_buffer.draw_indexed(
+                PrimitiveTopology::TriangleList,
+                IndexFormat::Uint32,
+                &obj_data.index_buffer,
+                obj_data.index_count,
+                0, /*base_vertex*/
+            );
+            command_buffer.end();
 
-                    let mut next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
-
-                    command_buffer.begin();
-                    command_buffer.clear_color(
-                        &mut next_scan_buffer_view,
-                        0.0,
-                        0.0,
-                        0.1,
-                        1.0,
-                        TextureArrayRange::new(),
-                    );
-                    command_buffer
-                        .set_render_targets(&[&next_scan_buffer_view], Some(&depth_stencil_view));
-                    command_buffer.set_shader(&shader);
-                    command_buffer.set_constant_buffer(0, &constant_buffer);
-                    command_buffer.set_vertex_state(&vertex_state);
-                    command_buffer.set_vertex_buffer(0, &obj_data.vertex_buffer);
-                    command_buffer.draw_indexed(
-                        PrimitiveTopology::TriangleList,
-                        IndexFormat::Uint32,
-                        &obj_data.index_buffer,
-                        obj_data.index_count,
-                        0, /*base_vertex*/
-                    );
-                    command_buffer.end();
-
-                    queue.execute(&command_buffer);
-                    queue.present(&mut swap_chain);
-                    queue.flush();
-                    queue.sync();
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    should_close = true;
-                    *control_flow = ControlFlow::Exit;
-                }
-                _ => {}
-            }
+            queue.execute(&command_buffer);
+            queue.present(&mut swap_chain);
+            queue.flush();
+            queue.sync();
         });
-        std::thread::sleep(std::time::Duration::from_millis(32));
     }
 }
