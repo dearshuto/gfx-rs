@@ -109,10 +109,11 @@ impl CommandBufferWgpu {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
+            let scan_buffer_view = color_target_view.get_texture_view();
             let _ = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: color_target_view.get_texture_view(),
+                    view: &scan_buffer_view.as_ref().unwrap().texture_view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -357,7 +358,7 @@ impl CommandBufferWgpu {
             .iter()
             .filter_map(|x| {
                 if let Some(view) = x {
-                    Some( wgpu::ColorTargetState {
+                    Some(wgpu::ColorTargetState {
                         format: view.get_texture_format().into(),
                         blend: Some(wgpu::BlendState {
                             color: wgpu::BlendComponent {
@@ -371,7 +372,7 @@ impl CommandBufferWgpu {
                                 operation: wgpu::BlendOperation::Add,
                             },
                         }),
-                        write_mask: wgpu::ColorWrites::ALL
+                        write_mask: wgpu::ColorWrites::ALL,
                     })
                 } else {
                     None
@@ -426,13 +427,24 @@ impl CommandBufferWgpu {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
-            let color_attachments = self
+            let available_views = self
                 .color_target_view
                 .iter()
                 .filter_map(|x| {
                     if let Some(view) = x {
+                        Some(view.get_texture_view())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            let color_attachments = available_views
+                .iter()
+                .filter_map(|x| {
+                    if let Some(view) = x.as_ref() {
                         Some(wgpu::RenderPassColorAttachment {
-                            view: view.get_texture_view(),
+                            view: &view.texture_view,
                             resolve_target: None,
                             ops: wgpu::Operations {
                                 load: wgpu::LoadOp::Load,

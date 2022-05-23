@@ -1,14 +1,19 @@
 use std::sync::{Arc, Mutex};
 
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use wgpu::{SurfaceTexture, TextureFormat};
+use wgpu::{SurfaceTexture, TextureFormat, TextureView, TextureViewDescriptor};
 
 use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
+
+pub struct ScanBufferView {
+    pub surface_texture: SurfaceTexture,
+    pub texture_view: TextureView,
+}
 
 pub struct SwapChainWgpu {
     surface: Arc<wgpu::Surface>,
     texture_format: TextureFormat,
-    next_surface_texture: Option<Arc<Mutex<Option<SurfaceTexture>>>>,
+    next_scan_buffer_view: Option<Arc<Mutex<Option<ScanBufferView>>>>,
 }
 
 impl SwapChainWgpu {
@@ -20,7 +25,7 @@ impl SwapChainWgpu {
         Self {
             surface: device.clone_surface(),
             texture_format,
-            next_surface_texture: None,
+            next_scan_buffer_view: None,
         }
     }
 
@@ -30,25 +35,33 @@ impl SwapChainWgpu {
         _fence: Option<&mut FenceWgpu>,
     ) -> ColorTargetViewWgpu {
         let surface_texture = self.surface.get_current_texture().unwrap();
-        self.next_surface_texture = Some(Arc::new(Mutex::new(Some(surface_texture))));
-        ColorTargetViewWgpu::new_from_swap_chain(self)
+        let texture_view = surface_texture
+            .texture
+            .create_view(&TextureViewDescriptor::default());
+        let next_scan_buffer_view = ScanBufferView {
+            surface_texture,
+            texture_view,
+        };
+        let next_scan_buffer_view = Arc::new(Mutex::new(Some(next_scan_buffer_view)));
+        self.next_scan_buffer_view = Some(next_scan_buffer_view.clone());
+        ColorTargetViewWgpu::new_from_scan_buffer_view(next_scan_buffer_view, self.texture_format)
     }
 
     pub fn present(&mut self) {
         let mut temp = None;
-        std::mem::swap(&mut temp, &mut self.next_surface_texture);
+        std::mem::swap(&mut temp, &mut self.next_scan_buffer_view);
 
         let mut aa = None;
         std::mem::swap(&mut aa, &mut temp.unwrap().lock().unwrap());
-        aa.unwrap().present();
+        aa.unwrap().surface_texture.present();
     }
 
     pub fn get_texture_format(&self) -> TextureFormat {
         self.texture_format
     }
 
-    pub fn clone_next_scan_buffer_surface_texture(&self) -> Arc<Mutex<Option<SurfaceTexture>>> {
-        self.next_surface_texture.as_ref().unwrap().clone()
+    pub fn clone_next_scan_buffer_view(&self) -> Arc<Mutex<Option<ScanBufferView>>> {
+        self.next_scan_buffer_view.as_ref().unwrap().clone()
     }
 }
 
