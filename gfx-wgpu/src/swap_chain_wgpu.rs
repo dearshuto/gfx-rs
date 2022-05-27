@@ -11,9 +11,12 @@ pub struct ScanBufferView {
 }
 
 pub struct SwapChainWgpu {
+    device: Arc<wgpu::Device>,
     surface: Arc<wgpu::Surface>,
+    adapter: Arc<wgpu::Adapter>,
     texture_format: TextureFormat,
     next_scan_buffer_view: Option<Arc<Mutex<Option<ScanBufferView>>>>,
+    is: bool,
 }
 
 impl SwapChainWgpu {
@@ -23,9 +26,12 @@ impl SwapChainWgpu {
 
         device.update_surface_size(info.get_width(), info.get_height());
         Self {
+            device: device.close_device(),
             surface: device.clone_surface(),
+            adapter: device.clone_adapter(),
             texture_format,
             next_scan_buffer_view: None,
+            is: false
         }
     }
 
@@ -34,6 +40,20 @@ impl SwapChainWgpu {
         _semaphore: Option<&mut SemaphoreWgpu>,
         _fence: Option<&mut FenceWgpu>,
     ) -> ColorTargetViewWgpu {
+
+        if !self.is {
+            let config = wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: self.surface.get_preferred_format(&self.adapter).unwrap(),
+                width: 1280,
+                height: 960,
+                present_mode: wgpu::PresentMode::Mailbox,
+            };
+            self.surface.configure(&self.device, &config);
+
+            self.is = true;
+        }
+
         let surface_texture = self.surface.get_current_texture().unwrap();
         let texture_view = surface_texture
             .texture

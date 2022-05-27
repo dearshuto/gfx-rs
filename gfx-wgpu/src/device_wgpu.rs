@@ -10,8 +10,7 @@ pub struct DeviceWgpu {
     device: Arc<wgpu::Device>,
     queue_impl: Arc<wgpu::Queue>,
 
-    #[allow(dead_code)]
-    adapter: Adapter,
+    adapter: Arc<Adapter>,
 
     #[allow(dead_code)]
     surface_opt: Option<Arc<Surface>>,
@@ -45,8 +44,8 @@ impl DeviceWgpu {
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_preferred_format(&adapter).unwrap(),
-            width: 1600,
-            height: 1200,
+            width: 1280,
+            height: 960,
             present_mode: wgpu::PresentMode::Mailbox,
         };
         surface.configure(&device, &config);
@@ -54,7 +53,7 @@ impl DeviceWgpu {
         DeviceWgpu {
             device: Arc::new(device),
             queue_impl: Arc::new(queue),
-            adapter,
+            adapter: Arc::new(adapter),
             surface_opt: Some(Arc::new(surface)),
         }
     }
@@ -77,6 +76,10 @@ impl DeviceWgpu {
 
     pub fn get_adapter(&self) -> &wgpu::Adapter {
         &self.adapter
+    }
+
+    pub fn clone_adapter(&self) -> Arc<Adapter> {
+        self.adapter.clone()
     }
 
     pub fn get_surface(&self) -> &wgpu::Surface {
@@ -132,7 +135,7 @@ impl IDevice for DeviceWgpu {
         DeviceWgpu {
             device: Arc::new(device),
             queue_impl: Arc::new(queue),
-            adapter,
+            adapter: Arc::new(adapter),
             surface_opt: None, //surface_opt,
         }
     }
