@@ -1,4 +1,5 @@
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
+use sjvi::IDisplayEventListener;
 
 use crate::{ColorTargetViewAsh, DeviceAsh, FenceAsh, SemaphoreAsh};
 
@@ -206,6 +207,8 @@ impl Drop for SwapChainAsh {
         }
     }
 }
+
+impl IDisplayEventListener for SwapChainAsh {}
 
 #[cfg(test)]
 mod tests {

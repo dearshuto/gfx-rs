@@ -4,6 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
+sjvi = { path = "../vi" }
 sjgfx-interface = { path = "../gfx-interface" }
 vulkano = "0.29.0"
 vulkano-win = "0.29.0"

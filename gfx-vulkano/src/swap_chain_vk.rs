@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
+use sjvi::IDisplayEventListener;
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo},
@@ -151,3 +152,5 @@ impl ISwapChain for SwapChainVk {
         self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }
+
+impl IDisplayEventListener for SwapChainVk {}

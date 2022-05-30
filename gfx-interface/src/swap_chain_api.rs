@@ -1,3 +1,5 @@
+use sjvi::IDisplayEventListener;
+
 pub struct SwapChainInfo {
     width: u32,
     height: u32,
@@ -30,7 +32,7 @@ impl SwapChainInfo {
     }
 }
 
-pub trait ISwapChain {
+pub trait ISwapChain: IDisplayEventListener {
     type ColorTargetViewType;
     type DeviceType;
     type SemaphoreType;

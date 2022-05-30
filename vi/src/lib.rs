@@ -9,7 +9,7 @@ use winit::{
 };
 
 pub trait IDisplayEventListener {
-    fn on_resized(&mut self, width: u32, height: u32);
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
 }
 
 pub struct Display<T: 'static> {
