@@ -8,6 +8,10 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+pub trait IDisplayEventListener {
+    fn on_resized(&mut self, width: u32, height: u32);
+}
+
 pub struct Display<T: 'static> {
     pub window: Window,
     pub event_loop: EventLoop<T>,
@@ -19,7 +23,19 @@ impl<T> Display<T> {
         self.is_close_requested
     }
 
-    pub fn update<TFunc: FnMut()>(&mut self, mut updater: TFunc) {
+    pub fn update<TFunc: FnMut()>(&mut self, updater: TFunc) {
+        let mut dummy_listener = DummyListener {};
+        self.update_with_listener(updater, &mut dummy_listener);
+    }
+
+    pub fn update_with_listener<TFunc, TListener>(
+        &mut self,
+        mut updater: TFunc,
+        listener: &mut TListener,
+    ) where
+        TFunc: FnMut(),
+        TListener: IDisplayEventListener,
+    {
         self.event_loop.run_return(|event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -29,7 +45,9 @@ impl<T> Display<T> {
                     *control_flow = ControlFlow::Exit;
                 }
                 WindowEvent { event, .. } => match event {
-                    Resized(_size) => {}
+                    Resized(size) => {
+                        listener.on_resized(size.width, size.height);
+                    }
                     winit::event::WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
                         self.is_close_requested = true;
@@ -53,6 +71,11 @@ pub fn create_display<T>(event_loop: EventLoop<T>) -> Display<T> {
         event_loop,
         is_close_requested: false,
     }
+}
+
+struct DummyListener;
+impl IDisplayEventListener for DummyListener {
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
 }
 
 #[cfg(test)]
