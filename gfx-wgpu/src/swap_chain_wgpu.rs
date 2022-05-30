@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
+use sjvi::IDisplayEventListener;
 use wgpu::{SurfaceTexture, TextureFormat};
 
 use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
@@ -69,4 +70,8 @@ impl ISwapChain for SwapChainWgpu {
     ) -> Self::ColorTargetViewType {
         self.acquire_next_scan_buffer_view(semaphore, fence)
     }
+}
+
+impl IDisplayEventListener for SwapChainWgpu {
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
 }

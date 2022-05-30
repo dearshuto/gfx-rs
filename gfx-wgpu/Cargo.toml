@@ -4,6 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
+sjvi = { path = "../vi" }
 sjgfx-interface = { path = "../gfx-interface" }
 wgpu = {version = "0.12.0", features = ["spirv"]}
 futures = "0.3.1"
