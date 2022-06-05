@@ -44,5 +44,5 @@ pub trait ISwapChain: IDisplayEventListener {
         &mut self,
         semaphore: Option<&mut Self::SemaphoreType>,
         fence: Option<&mut Self::FenceType>,
-    ) -> Self::ColorTargetViewType;
+    ) -> &mut Self::ColorTargetViewType;
 }
