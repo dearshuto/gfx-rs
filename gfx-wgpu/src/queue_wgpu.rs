@@ -23,6 +23,10 @@ impl QueueWgpu {
         self.device.poll(wgpu::Maintain::Wait);
     }
 
+    pub fn submit_command_buffer_direct(&self, command_buffer: wgpu::CommandBuffer) {
+        self.queue.submit(Some(command_buffer));
+    }
+
     pub fn execute_with_fence(
         &mut self,
         _command_buffer: &CommandBufferWgpu,
@@ -31,8 +35,8 @@ impl QueueWgpu {
         todo!()
     }
 
-    pub fn present(&self, swap_chain: &mut SwapChainWgpu) {
-        swap_chain.present();
+    pub fn present(&mut self, swap_chain: &mut SwapChainWgpu) {
+        swap_chain.present(self);
     }
 
     pub fn flush(&self) {}
@@ -63,7 +67,7 @@ impl IQueue for QueueWgpu {
     }
 
     fn present(&mut self, swap_chain: &mut Self::SwapChainType) {
-        QueueWgpu::present(&self, swap_chain);
+        QueueWgpu::present(self, swap_chain);
     }
 
     fn flush(&mut self) {

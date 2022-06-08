@@ -11,7 +11,9 @@ use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
     VertexStateWgpu,
 };
+use sjvi::IDisplayEventListener;
 use winit::{
+    dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
@@ -37,7 +39,10 @@ struct ConstantBuffer {
 
 fn main() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .build(&event_loop)
+        .unwrap();
 
     let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
@@ -149,8 +154,7 @@ fn main() {
 
             match event {
                 Event::RedrawRequested(_) => {
-                    let mut color_target_view =
-                        swap_chain.acquire_next_scan_buffer_view(None, None);
+                    let mut color_target_view = swap_chain.get_scan_buffer_view_mut();
 
                     command_buffer.begin();
                     command_buffer.clear_color(
@@ -185,6 +189,13 @@ fn main() {
                 } => {
                     should_close = true;
                     *control_flow = ControlFlow::Exit;
+                }
+                Event::WindowEvent {
+                    event: WindowEvent::Resized(size),
+                    ..
+                } => {
+                    swap_chain.on_resized(size.width, size.height);
+                    window.request_redraw();
                 }
                 _ => {}
             }

@@ -32,6 +32,7 @@ impl ColorTargetViewAsh {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn new_from_swap_chain(swap_chain: &SwapChainAsh) -> Self {
         let index = swap_chain.get_current_view_index() as usize;
         let image_view = swap_chain.get_image_view(index);

@@ -83,25 +83,26 @@ impl SwapChainVk {
     pub fn acquire_next_scan_buffer_view(
         &mut self,
         _semaphore: Option<&mut SemaphoreVk>,
-        fence: Option<&mut FenceVk>,
-    ) -> ColorTargetViewVk {
-        if let Some(fence) = fence {
-            fence.cleanup_finished();
-        }
+        _fence: Option<&mut FenceVk>,
+    ) -> &mut ColorTargetViewVk {
+        todo!()
+        // if let Some(fence) = fence {
+        //     fence.cleanup_finished();
+        // }
 
-        let (image_num, _suboptimal, acquire_future) =
-            match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
-                Ok(r) => r,
-                Err(AcquireError::OutOfDate) => {
-                    todo!()
-                }
-                Err(e) => panic!("Failed to acquire next image: {:?}", e),
-            };
+        // let (image_num, _suboptimal, acquire_future) =
+        //     match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
+        //         Ok(r) => r,
+        //         Err(AcquireError::OutOfDate) => {
+        //             todo!()
+        //         }
+        //         Err(e) => panic!("Failed to acquire next image: {:?}", e),
+        //     };
 
-        self.swap_chain_acquire_future = Some(acquire_future);
-        self.index = image_num as i32;
+        // self.swap_chain_acquire_future = Some(acquire_future);
+        // self.index = image_num as i32;
 
-        ColorTargetViewVk::new_from_swap_chain(self)
+        // ColorTargetViewVk::new_from_swap_chain(self)
     }
 
     pub(crate) fn clone_current_image_view(&self) -> Arc<dyn ImageViewAbstract> {
@@ -148,7 +149,7 @@ impl ISwapChain for SwapChainVk {
         &mut self,
         semaphore: Option<&mut Self::SemaphoreType>,
         fence: Option<&mut Self::FenceType>,
-    ) -> Self::ColorTargetViewType {
+    ) -> &mut Self::ColorTargetViewType {
         self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }

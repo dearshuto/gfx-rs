@@ -4,44 +4,64 @@ use sjgfx_interface::{ISwapChain, SwapChainInfo};
 use sjvi::IDisplayEventListener;
 use wgpu::{SurfaceTexture, TextureFormat};
 
-use crate::{ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, SemaphoreWgpu};
+use crate::{
+    detail::SwapChainPipeline, ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu,
+};
 
 pub struct SwapChainWgpu {
+    device: Arc<wgpu::Device>,
     surface: Arc<wgpu::Surface>,
-    texture_format: TextureFormat,
+    texture_format: wgpu::TextureFormat,
     next_surface_texture: Option<Arc<Mutex<Option<SurfaceTexture>>>>,
+
+    swap_chain_pipeline: SwapChainPipeline,
 }
 
 impl SwapChainWgpu {
     pub fn new(device: &mut DeviceWgpu, info: &SwapChainInfo) -> Self {
         let adapter = device.get_adapter();
         let texture_format = device.get_surface().get_preferred_format(adapter).unwrap();
+        let swap_chain_pipeline = SwapChainPipeline::new(device.close_device(), texture_format);
 
-        device.update_surface_size(info.get_width(), info.get_height());
-        Self {
+        let mut result = Self {
+            device: device.close_device(),
             surface: device.clone_surface(),
             texture_format,
             next_surface_texture: None,
-        }
+            swap_chain_pipeline,
+        };
+
+        result.on_resized(info.get_width(), info.get_height());
+        result
     }
 
     pub fn acquire_next_scan_buffer_view(
         &mut self,
         _semaphore: Option<&mut SemaphoreWgpu>,
         _fence: Option<&mut FenceWgpu>,
-    ) -> ColorTargetViewWgpu {
-        let surface_texture = self.surface.get_current_texture().unwrap();
-        self.next_surface_texture = Some(Arc::new(Mutex::new(Some(surface_texture))));
-        ColorTargetViewWgpu::new_from_swap_chain(self)
+    ) -> &mut ColorTargetViewWgpu {
+        self.swap_chain_pipeline.get_color_target_view_mut()
     }
 
-    pub fn present(&mut self) {
-        let mut temp = None;
-        std::mem::swap(&mut temp, &mut self.next_surface_texture);
+    pub fn present(&mut self, queue: &mut QueueWgpu) {
+        // スキャンバッファのビューを作成
+        let surface_texture = self.surface.get_current_texture().unwrap();
+        let texture_view = surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut aa = None;
-        std::mem::swap(&mut aa, &mut temp.unwrap().lock().unwrap());
-        aa.unwrap().present();
+        // カラーターゲットの内容をスキャンバッファにコピー
+        let command_buffer = self.swap_chain_pipeline.build_command(&texture_view);
+        queue.submit_command_buffer_direct(command_buffer);
+        surface_texture.present();
+    }
+
+    pub fn get_scan_buffer_view(&self) -> &ColorTargetViewWgpu {
+        self.swap_chain_pipeline.get_color_target_view()
+    }
+
+    pub fn get_scan_buffer_view_mut(&mut self) -> &mut ColorTargetViewWgpu {
+        self.swap_chain_pipeline.get_color_target_view_mut()
     }
 
     pub fn get_texture_format(&self) -> TextureFormat {
@@ -67,11 +87,21 @@ impl ISwapChain for SwapChainWgpu {
         &mut self,
         semaphore: Option<&mut Self::SemaphoreType>,
         fence: Option<&mut Self::FenceType>,
-    ) -> Self::ColorTargetViewType {
+    ) -> &mut Self::ColorTargetViewType {
         self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }
 
 impl IDisplayEventListener for SwapChainWgpu {
-    fn on_resized(&mut self, _width: u32, _height: u32) {}
+    fn on_resized(&mut self, width: u32, height: u32) {
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: self.texture_format,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Mailbox,
+        };
+        self.surface.configure(&self.device, &config);
+        self.swap_chain_pipeline.set_size(width, height);
+    }
 }

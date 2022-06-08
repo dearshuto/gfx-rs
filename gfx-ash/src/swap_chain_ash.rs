@@ -116,32 +116,33 @@ impl SwapChainAsh {
 
     pub fn acquire_next_scan_buffer_view(
         &mut self,
-        semaphore: Option<&mut SemaphoreAsh>,
-        fence: Option<&mut FenceAsh>,
-    ) -> ColorTargetViewAsh {
-        let semaphore = match semaphore {
-            Some(value) => value.get_semaphore(),
-            None => ash::vk::Semaphore::null(),
-        };
+        _semaphore: Option<&mut SemaphoreAsh>,
+        _fence: Option<&mut FenceAsh>,
+    ) -> &mut ColorTargetViewAsh {
+        todo!()
+        // let semaphore = match semaphore {
+        //     Some(value) => value.get_semaphore(),
+        //     None => ash::vk::Semaphore::null(),
+        // };
 
-        let fence = match fence {
-            Some(value) => value.get_fence(),
-            None => ash::vk::Fence::null(),
-        };
+        // let fence = match fence {
+        //     Some(value) => value.get_fence(),
+        //     None => ash::vk::Fence::null(),
+        // };
 
-        let (index, _) = unsafe {
-            self.swap_chain.acquire_next_image(
-                self.swap_chain_khr,
-                std::u64::MAX, /*timeout*/
-                semaphore,
-                fence,
-            )
-        }
-        .unwrap();
-        let _image_view = self.image_views[index as usize];
-        self.current_view_index = index;
+        // let (index, _) = unsafe {
+        //     self.swap_chain.acquire_next_image(
+        //         self.swap_chain_khr,
+        //         std::u64::MAX, /*timeout*/
+        //         semaphore,
+        //         fence,
+        //     )
+        // }
+        // .unwrap();
+        // let _image_view = self.image_views[index as usize];
+        // self.current_view_index = index;
 
-        ColorTargetViewAsh::new_from_swap_chain(self)
+        // ColorTargetViewAsh::new_from_swap_chain(self)
     }
 
     pub fn get_swap_chain(&self) -> &ash::extensions::khr::Swapchain {
@@ -191,7 +192,7 @@ impl ISwapChain for SwapChainAsh {
         &mut self,
         semaphore: Option<&mut Self::SemaphoreType>,
         fence: Option<&mut Self::FenceType>,
-    ) -> Self::ColorTargetViewType {
+    ) -> &mut Self::ColorTargetViewType {
         self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }

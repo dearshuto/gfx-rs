@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use sjgfx_interface::{ColorTargetViewInfo, IColorTargetView};
 use wgpu::{TextureFormat, TextureViewDescriptor};
 
-use crate::{util, DeviceWgpu, SwapChainWgpu, TextureWgpu};
+use crate::{util, DeviceWgpu, TextureWgpu};
 
 #[derive(Debug, Clone)]
 pub struct ColorTargetViewWgpu {
@@ -24,20 +24,14 @@ impl ColorTargetViewWgpu {
         }
     }
 
-    pub(crate) fn new_from_swap_chain(swap_chain: &SwapChainWgpu) -> Self {
-        let surface_texture = swap_chain.clone_next_scan_buffer_surface_texture();
-        let scan_buffer_view = surface_texture
-            .lock()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .texture
-            .create_view(&TextureViewDescriptor::default());
-
+    pub(crate) fn new_direct(
+        texture_view: Arc<wgpu::TextureView>,
+        texture_format: TextureFormat,
+    ) -> Self {
         Self {
-            _surface_texture: Some(surface_texture),
-            texture_view: Some(Arc::new(scan_buffer_view)),
-            texture_format: swap_chain.get_texture_format(),
+            _surface_texture: None,
+            texture_view: Some(texture_view),
+            texture_format,
         }
     }
 

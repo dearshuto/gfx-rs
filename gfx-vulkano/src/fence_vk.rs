@@ -4,6 +4,7 @@ use vulkano::sync::{self, GpuFuture};
 use crate::DeviceVk;
 
 pub struct FenceVk {
+    #[allow(dead_code)]
     previous_frame_end: Option<Box<dyn GpuFuture>>,
 }
 
@@ -14,6 +15,7 @@ impl FenceVk {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn cleanup_finished(&mut self) {
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
     }

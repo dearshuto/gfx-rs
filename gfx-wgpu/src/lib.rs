@@ -2,6 +2,7 @@ mod buffer_wgpu;
 mod color_target_view_wgpu;
 mod command_buffer;
 mod depth_stencil_view_wgpu;
+mod detail;
 mod device_wgpu;
 mod fence_wgpu;
 mod gpu_address_wgpu;
