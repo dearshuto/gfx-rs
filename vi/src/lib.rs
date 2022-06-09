@@ -60,14 +60,18 @@ impl<T> Display<T> {
 }
 
 pub fn create_display<T>(event_loop: EventLoop<T>) -> Display<T> {
+    create_display_with_size(event_loop, 1280, 960)
+}
+
+pub fn create_display_with_size<T>(event_loop: EventLoop<T>, width: u32, height: u32) -> Display<T> {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     Display {
         window,
         event_loop,
         is_close_requested: false,
-        width: 1280,
-        height: 960
+        width,
+        height
     }
 }
 
