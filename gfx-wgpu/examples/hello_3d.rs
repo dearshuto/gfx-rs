@@ -1,7 +1,5 @@
 extern crate nalgebra_glm as glm;
 
-use std::{thread::sleep, time::Duration};
-
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology,
     QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange, VertexAttributeStateInfo,
@@ -11,14 +9,8 @@ use sjgfx_wgpu::{
     BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu,
     VertexStateWgpu,
 };
-use sjvi::IDisplayEventListener;
-use winit::{
-    dpi::PhysicalSize,
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
-    window::WindowBuilder,
-};
+
+use winit::event_loop::EventLoop;
 
 #[repr(C)]
 struct Vertex {
@@ -38,11 +30,9 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_inner_size(PhysicalSize::new(1280, 960))
-        .build(&event_loop)
-        .unwrap();
+    let event_loop = EventLoop::new();
+    let mut display = sjvi::create_display(event_loop);
+    let window = &display.window;
 
     let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
@@ -147,60 +137,36 @@ fn main() {
         &SwapChainInfo::new().with_width(1280).with_height(960),
     );
 
-    let mut should_close = false;
-    while !should_close {
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+    while !display.should_close() {
+        display.update(|| {
+            let mut color_target_view = swap_chain.get_scan_buffer_view_mut();
 
-            match event {
-                Event::RedrawRequested(_) => {
-                    let mut color_target_view = swap_chain.get_scan_buffer_view_mut();
+            command_buffer.begin();
+            command_buffer.clear_color(
+                &mut color_target_view,
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+                TextureArrayRange::new(),
+            );
+            command_buffer.set_render_targets(&[&color_target_view], None);
+            command_buffer.set_shader(&shader);
+            command_buffer.set_constant_buffer(0, &constant_buffer);
+            command_buffer.set_vertex_state(&vertex_state);
+            command_buffer.set_vertex_buffer(0, &vertex_buffer);
+            command_buffer.draw(
+                PrimitiveTopology::TriangleList,
+                6, /*coount*/
+                0, /*offset*/
+            );
+            command_buffer.end();
 
-                    command_buffer.begin();
-                    command_buffer.clear_color(
-                        &mut color_target_view,
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0,
-                        TextureArrayRange::new(),
-                    );
-                    command_buffer.set_render_targets(&[&color_target_view], None);
-                    command_buffer.set_shader(&shader);
-                    command_buffer.set_constant_buffer(0, &constant_buffer);
-                    command_buffer.set_vertex_state(&vertex_state);
-                    command_buffer.set_vertex_buffer(0, &vertex_buffer);
-                    command_buffer.draw(
-                        PrimitiveTopology::TriangleList,
-                        6, /*coount*/
-                        0, /*offset*/
-                    );
-                    command_buffer.end();
+            queue.execute(&command_buffer);
 
-                    queue.execute(&command_buffer);
-
-                    queue.present(&mut swap_chain);
-                    queue.flush();
-                    queue.sync();
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    should_close = true;
-                    *control_flow = ControlFlow::Exit;
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::Resized(size),
-                    ..
-                } => {
-                    swap_chain.on_resized(size.width, size.height);
-                    window.request_redraw();
-                }
-                _ => {}
-            }
+            queue.present(&mut swap_chain);
+            queue.flush();
+            queue.sync();
         });
-
-        sleep(Duration::from_millis(16));
     }
 }

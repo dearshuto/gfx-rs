@@ -16,6 +16,8 @@ pub struct Display<T: 'static> {
     pub window: Window,
     pub event_loop: EventLoop<T>,
     is_close_requested: bool,
+    width: u32,
+    height: u32,
 }
 
 impl<T> Display<T> {
@@ -23,19 +25,7 @@ impl<T> Display<T> {
         self.is_close_requested
     }
 
-    pub fn update<TFunc: FnMut()>(&mut self, updater: TFunc) {
-        let mut dummy_listener = DummyListener {};
-        self.update_with_listener(updater, &mut dummy_listener);
-    }
-
-    pub fn update_with_listener<TFunc, TListener>(
-        &mut self,
-        mut updater: TFunc,
-        listener: &mut TListener,
-    ) where
-        TFunc: FnMut(),
-        TListener: IDisplayEventListener,
-    {
+    pub fn update<TFunc: FnMut()>(&mut self, mut updater: TFunc) {
         self.event_loop.run_return(|event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -46,7 +36,8 @@ impl<T> Display<T> {
                 }
                 WindowEvent { event, .. } => match event {
                     Resized(size) => {
-                        listener.on_resized(size.width, size.height);
+                        self.width = size.width;
+                        self.height = size.height;
                     }
                     winit::event::WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
@@ -60,6 +51,11 @@ impl<T> Display<T> {
 
         self.window.request_redraw();
         sleep(Duration::from_millis(16));
+
+    }
+
+    pub fn listen<TListener: IDisplayEventListener>(&self, listener: &mut TListener) {
+        listener.on_resized(self.width, self.height);
     }
 }
 
@@ -70,6 +66,8 @@ pub fn create_display<T>(event_loop: EventLoop<T>) -> Display<T> {
         window,
         event_loop,
         is_close_requested: false,
+        width: 1280,
+        height: 960
     }
 }
 
