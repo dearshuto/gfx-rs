@@ -188,5 +188,7 @@ where
             queue.flush();
             queue.sync();
         });
+
+        display.listen(&mut swap_chain);
     }
 }
