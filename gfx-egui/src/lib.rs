@@ -147,7 +147,7 @@ impl<TApi: IApi> RenderPass<TApi>
             .zip(self.vertex_buffers.iter())
             .zip(self.index_buffers.iter())
         {
-            let scissor_state_info = {
+            let _scissor_state_info = {
                             // Transform clip rect to physical pixels.
             let clip_min_x = scale_factor * clip_rect.min.x;
             let clip_min_y = scale_factor * clip_rect.min.y;
@@ -191,7 +191,7 @@ impl<TApi: IApi> RenderPass<TApi>
             self.command_buffer.begin();
             self.command_buffer.set_render_targets(&[&color_target_view], None);
             self.command_buffer.set_shader(&self.shader);
-            self.command_buffer.set_scissor(&scissor_state_info);
+            // self.command_buffer.set_scissor(&scissor_state_info);
             self.command_buffer.set_texture(0, &self.texture.texture_view);
             self.command_buffer.set_sampler(1, &self.sampler);
             self.command_buffer.set_constant_buffer(2, &self.constant_buffer.buffer);
