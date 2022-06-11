@@ -75,8 +75,11 @@ where
     let event_loop = EventLoop::new();
     let mut display = sjvi::create_display(event_loop);
 
-    let mut device =
-        TDevice::new_with_surface(&DeviceInfo::new(), &display.window, &display.event_loop);
+    let mut device = TDevice::new_with_surface(
+        &DeviceInfo::new(),
+        &display.window,
+        display.event_loop.as_ref().unwrap(),
+    );
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TSwapChain::new(

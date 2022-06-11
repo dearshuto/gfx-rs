@@ -31,8 +31,11 @@ fn run<TApi: IApi>() {
     let event_loop = EventLoop::new();
     let mut display = sjvi::create_display(event_loop);
 
-    let mut device =
-        TApi::Device::new_with_surface(&DeviceInfo::new(), &display.window, &display.event_loop);
+    let mut device = TApi::Device::new_with_surface(
+        &DeviceInfo::new(),
+        &display.window,
+        &display.event_loop.as_ref().unwrap(),
+    );
     let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
     let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TApi::SwapChain::new(
