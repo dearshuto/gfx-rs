@@ -37,7 +37,7 @@ pub enum ImageFormat {
     D32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum PrimitiveTopology {
     PointList,
     TriangleList,
@@ -50,7 +50,7 @@ pub enum AttributeFormat {
     Float32_32_32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum IndexFormat {
     Uint32,
 }

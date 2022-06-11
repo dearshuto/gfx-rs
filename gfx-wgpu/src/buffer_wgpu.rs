@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
+use uuid::Uuid;
 
 use crate::{DeviceWgpu, GpuAddressWgpu};
 
@@ -8,6 +9,7 @@ pub struct BufferWgpu {
     device: Arc<wgpu::Device>,
     buffer: Arc<wgpu::Buffer>,
     size: usize,
+    id: Uuid,
 }
 
 impl BufferWgpu {
@@ -32,6 +34,18 @@ impl BufferWgpu {
             device,
             buffer: Arc::new(buffer),
             size: info.get_size(),
+            id: Uuid::new_v4(),
+        }
+    }
+
+    pub fn get_id(&self) -> &Uuid {
+        &self.id
+    }
+
+    pub fn view(&self) -> BufferView {
+        BufferView {
+            buffer: self.buffer.clone(),
+            id: self.id,
         }
     }
 
@@ -117,6 +131,11 @@ impl BufferWgpu {
 
         result
     }
+}
+
+pub struct BufferView {
+    pub buffer: Arc<wgpu::Buffer>,
+    pub id: Uuid,
 }
 
 impl IBuffer for BufferWgpu {

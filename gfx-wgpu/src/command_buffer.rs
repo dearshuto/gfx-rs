@@ -7,9 +7,9 @@ use sjgfx_interface::{
 use wgpu::Extent3d;
 
 use crate::{
-    shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView, BufferWgpu, ColorTargetViewWgpu,
-    DepthStencilViewWgpu, DeviceWgpu, SamplerWgpu, ShaderWgpu, TextureViewWgpu, TextureWgpu,
-    VertexStateWgpu,
+    buffer_wgpu::BufferView, shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView,
+    BufferWgpu, ColorTargetViewWgpu, DepthStencilViewWgpu, DeviceWgpu, SamplerWgpu, ShaderWgpu,
+    TextureViewWgpu, TextureWgpu, VertexStateWgpu,
 };
 
 struct DrawInfo {
@@ -24,7 +24,7 @@ struct DrawIndexedInfo {
     #[allow(dead_code)]
     pub primitive_topology: PrimitiveTopology,
     pub index_format: wgpu::IndexFormat,
-    pub index_buffer: Arc<wgpu::Buffer>,
+    pub index_buffer: BufferView,
     pub index_count: u32,
     pub instance_count: u32,
     pub base_instance: u32,
@@ -48,8 +48,8 @@ pub struct CommandBufferWgpu {
     scissor_state_info: Option<ScissorStateInfo>,
 
     shader: Option<ShaderView>,
-    constant_buffers: [Option<Arc<wgpu::Buffer>>; 8],
-    unordered_access_buffer: [Option<Arc<wgpu::Buffer>>; 8],
+    constant_buffers: [Option<BufferView>; 8],
+    unordered_access_buffer: [Option<BufferView>; 8],
     dispatch_count: Option<(u32, u32, u32)>,
 
     // テクスチャ
@@ -58,7 +58,7 @@ pub struct CommandBufferWgpu {
     images: [Option<Arc<wgpu::TextureView>>; 8],
 
     // Draw
-    vertex_buffer: [Option<Arc<wgpu::Buffer>>; 8],
+    vertex_buffer: [Option<BufferView>; 8],
     vertex_state: Option<VertexStateView>,
     draw_command: Option<DrawCommand>,
 
@@ -176,7 +176,10 @@ impl CommandBufferWgpu {
                     });
             self.render_pipeline = Some(render_pipeline);
             self.is_render_pipeliine_dirty = false;
-            println!("update RenderPipeline: {}", self.shader.as_ref().unwrap().get_id());
+            println!(
+                "update RenderPipeline: {}",
+                self.shader.as_ref().unwrap().get_id()
+            );
         } else {
             // レンダーパイプラインの更新が不要なのでなにもしない
         }
@@ -258,11 +261,21 @@ impl CommandBufferWgpu {
     }
 
     pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
-        self.constant_buffers[index as usize] = Some(buffer.close_buffer());
+        let current_buffer = &mut self.constant_buffers[index as usize];
+        if current_buffer.is_some() && current_buffer.as_ref().unwrap().id == *buffer.get_id() {
+            // 変更がないので更新しない
+        } else {
+            std::mem::swap(current_buffer, &mut Some(buffer.view()));
+        }
     }
 
     pub fn set_unordered_access_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
-        self.unordered_access_buffer[index as usize] = Some(buffer.close_buffer());
+        let current_buffer = &mut self.unordered_access_buffer[index as usize];
+        if current_buffer.is_some() && current_buffer.as_ref().unwrap().id == *buffer.get_id() {
+            // 変更がないので更新しない
+        } else {
+            std::mem::swap(current_buffer, &mut Some(buffer.view()));
+        }
     }
 
     pub fn set_texture_direct(&mut self, index: i32, texture: &TextureWgpu) {
@@ -287,7 +300,12 @@ impl CommandBufferWgpu {
     }
 
     pub fn set_vertex_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
-        self.vertex_buffer[index as usize] = Some(buffer.close_buffer());
+        let current_buffer = &mut self.vertex_buffer[index as usize];
+        if current_buffer.is_some() && current_buffer.as_ref().unwrap().id == *buffer.get_id() {
+            // 変更がないので更新しない
+        } else {
+            std::mem::swap(current_buffer, &mut Some(buffer.view()));
+        }
     }
 
     pub fn set_vertex_state(&mut self, vertex_state: &VertexStateWgpu) {
@@ -372,15 +390,31 @@ impl CommandBufferWgpu {
             IndexFormat::Uint32 => wgpu::IndexFormat::Uint32,
         };
 
-        let draw_indexed_info = DrawIndexedInfo {
-            primitive_topology,
-            index_format: index_format_wgpu,
-            index_buffer: index_buffer.close_buffer(),
-            index_count: index_count as u32,
-            instance_count: instance_count as u32,
-            base_instance: base_instance as u32,
-        };
-        self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
+        // すでに描画コマンドがある場合は使いまわす
+        if let Some(draw_command) = &mut self.draw_command {
+            if let DrawCommand::DrawIndexed(ref mut info) = draw_command {
+                // バッファビューのインスタンス生成が重いのでこれだけ分岐
+                // 他は値のコピーなのでそのままぶち込む
+                if info.index_buffer.id != info.index_buffer.id {
+                    info.index_buffer = index_buffer.view();
+                }
+                info.primitive_topology = primitive_topology.clone();
+                info.index_format = index_format_wgpu;
+                info.index_count = index_count as u32;
+                info.instance_count = instance_count as u32;
+                info.base_instance = base_instance as u32;
+            }
+        } else {
+            let draw_indexed_info = DrawIndexedInfo {
+                primitive_topology,
+                index_format: index_format_wgpu,
+                index_buffer: index_buffer.view(),
+                index_count: index_count as u32,
+                instance_count: instance_count as u32,
+                base_instance: base_instance as u32,
+            };
+            self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
+        }
     }
 
     pub fn copy_image_to_buffer(
@@ -511,12 +545,12 @@ impl CommandBufferWgpu {
             for (index, vertex_buffer_opt) in self.vertex_buffer.iter().enumerate() {
                 if let Some(vertex_buffer) = vertex_buffer_opt {
                     let index = index as u32;
-                    render_pass.set_vertex_buffer(index, vertex_buffer.slice(..));
+                    render_pass.set_vertex_buffer(index, vertex_buffer.buffer.slice(..));
                 }
             }
 
-            if let Some(vertex_buffer) = &self.vertex_buffer[0] {
-                render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+            if let Some(vertex_buffer_view) = &self.vertex_buffer[0] {
+                render_pass.set_vertex_buffer(0, vertex_buffer_view.buffer.slice(..));
             }
 
             // 描画
@@ -529,7 +563,7 @@ impl CommandBufferWgpu {
                         );
                     }
                     DrawCommand::DrawIndexed(ref draw_indexed_info) => {
-                        let buffer_slice = draw_indexed_info.index_buffer.slice(..);
+                        let buffer_slice = draw_indexed_info.index_buffer.buffer.slice(..);
                         render_pass.set_index_buffer(buffer_slice, draw_indexed_info.index_format);
                         render_pass.draw_indexed(
                             0..draw_indexed_info.index_count,
@@ -551,7 +585,7 @@ impl CommandBufferWgpu {
             if let Some(unordered_access_buffer) = &self.unordered_access_buffer[index] {
                 entries.push(wgpu::BindGroupEntry {
                     binding: index as u32,
-                    resource: unordered_access_buffer.as_entire_binding(),
+                    resource: unordered_access_buffer.buffer.as_entire_binding(),
                 });
             }
         }
@@ -561,7 +595,7 @@ impl CommandBufferWgpu {
             if let Some(constant_buffer) = &self.constant_buffers[index] {
                 entries.push(wgpu::BindGroupEntry {
                     binding: index as u32,
-                    resource: constant_buffer.as_entire_binding(),
+                    resource: constant_buffer.buffer.as_entire_binding(),
                 });
             }
         }
