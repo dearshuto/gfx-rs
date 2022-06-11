@@ -10,7 +10,7 @@ fn new() {
 #[test]
 fn begin_end() {
     let device = DeviceWgpu::new(&DeviceInfo::new());
-    let command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
+    let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
     command_buffer.begin();
     command_buffer.end();
@@ -54,7 +54,7 @@ fn simple_compute_command() {
 #[test]
 fn simple_graphics_command() {
     let device = DeviceWgpu::new(&DeviceInfo::new());
-    let command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
+    let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
     command_buffer.begin();
     command_buffer.end();
