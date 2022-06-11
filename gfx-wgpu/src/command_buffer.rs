@@ -93,8 +93,9 @@ impl CommandBufferWgpu {
             vertex_state: None,
             draw_command: None,
 
-            // 最初の一回は必ずレンダーパイプラインの生成が必要なのでダーティフラグを立てておく
-            is_render_pipeliine_dirty: true,
+            // レンダーパイプライン
+            // 演算シェーダの可能性もあるので false を初期値に設定
+            is_render_pipeliine_dirty: false,
             render_pipeline: None,
         }
     }
@@ -252,11 +253,15 @@ impl CommandBufferWgpu {
                 // 更新しない
             } else {
                 self.shader = Some(shader.view());
-                self.is_render_pipeliine_dirty = true;
+                if !self.shader.as_ref().unwrap().is_compute() {
+                    self.is_render_pipeliine_dirty = true;
+                }
             }
         } else {
             self.shader = Some(shader.view());
-            self.is_render_pipeliine_dirty = true;
+            if !self.shader.as_ref().unwrap().is_compute() {
+                self.is_render_pipeliine_dirty = true;
+            }
         }
     }
 
