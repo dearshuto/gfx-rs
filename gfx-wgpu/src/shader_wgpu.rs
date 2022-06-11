@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{IShader, ShaderInfo};
+use uuid::Uuid;
 use wgpu::ComputePipelineDescriptor;
 
 use crate::DeviceWgpu;
@@ -20,6 +21,10 @@ impl ShaderWgpu {
                 info.get_pixel_shader_binary().as_ref().unwrap(),
             );
         }
+    }
+
+    pub fn id(&self) -> &Uuid {
+        &self.shader_data.id
     }
 
     pub fn view(&self) -> ShaderView {
@@ -69,6 +74,7 @@ impl ShaderWgpu {
                 vertex_attributes: None,
                 bind_group_layout: Arc::new(bind_group_layout),
                 pipeline_layout: Arc::new(pipeline_layout),
+                id: Uuid::new_v4(),
             },
         }
     }
@@ -116,6 +122,7 @@ impl ShaderWgpu {
                 vertex_attributes: Some(Arc::new(vertex_attributes)),
                 bind_group_layout: Arc::new(bind_group_layout),
                 pipeline_layout: Arc::new(pipeline_layout),
+                id: Uuid::new_v4(),
             },
         }
     }
@@ -498,6 +505,10 @@ impl ShaderView {
     pub fn get_compute_pipeline(&self) -> &wgpu::ComputePipeline {
         self.shader_data.compute_pipeline.as_ref().unwrap()
     }
+
+    pub fn get_id(&self) -> &Uuid {
+        &self.shader_data.id
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -510,6 +521,7 @@ struct ShaderData {
     pub vertex_attributes: Option<Arc<Vec<wgpu::VertexAttribute>>>,
     pub bind_group_layout: Arc<wgpu::BindGroupLayout>,
     pub pipeline_layout: Arc<wgpu::PipelineLayout>,
+    pub id: Uuid,
 }
 
 #[cfg(test)]

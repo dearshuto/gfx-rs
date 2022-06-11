@@ -61,6 +61,9 @@ pub struct CommandBufferWgpu {
     vertex_buffer: [Option<Arc<wgpu::Buffer>>; 8],
     vertex_state: Option<VertexStateView>,
     draw_command: Option<DrawCommand>,
+
+    render_pipeline: Option<wgpu::RenderPipeline>,
+    is_render_pipeliine_dirty: bool,
 }
 
 impl CommandBufferWgpu {
@@ -89,12 +92,95 @@ impl CommandBufferWgpu {
             vertex_buffer: [None, None, None, None, None, None, None, None],
             vertex_state: None,
             draw_command: None,
+
+            // 最初の一回は必ずレンダーパイプラインの生成が必要なのでダーティフラグを立てておく
+            is_render_pipeliine_dirty: true,
+            render_pipeline: None,
         }
     }
 
     pub fn begin(&self) {}
 
-    pub fn end(&self) {}
+    pub fn end(&mut self) {
+        if self.is_render_pipeliine_dirty {
+            // レンダーターゲット
+            let formats = self
+                .color_target_view
+                .iter()
+                .filter_map(|x| {
+                    if let Some(view) = x {
+                        Some(wgpu::ColorTargetState {
+                            format: view.get_texture_format().into(),
+                            blend: Some(wgpu::BlendState {
+                                color: wgpu::BlendComponent {
+                                    src_factor: wgpu::BlendFactor::One,
+                                    dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                                    operation: wgpu::BlendOperation::Add,
+                                },
+                                alpha: wgpu::BlendComponent {
+                                    src_factor: wgpu::BlendFactor::OneMinusDstAlpha,
+                                    dst_factor: wgpu::BlendFactor::One,
+                                    operation: wgpu::BlendOperation::Add,
+                                },
+                            }),
+                            write_mask: wgpu::ColorWrites::ALL,
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            // シェーダ
+            let vertex_shader_module = self.shader.as_ref().unwrap().get_vertex_shader_module();
+            let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
+
+            // 頂点ステート
+            let vertex_buffer_layout = if let Some(vertex_state) = &self.vertex_state {
+                vertex_state.get_vertex_buffer_layout()
+            } else {
+                vec![]
+            };
+
+            let render_pipeline =
+                self.device
+                    .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                        label: None,
+                        layout: None,
+                        vertex: wgpu::VertexState {
+                            module: &vertex_shader_module,
+                            entry_point: "main",
+                            buffers: &vertex_buffer_layout,
+                        },
+                        fragment: Some(wgpu::FragmentState {
+                            module: &pixel_shader_module,
+                            entry_point: "main",
+                            targets: &formats,
+                        }),
+                        primitive: wgpu::PrimitiveState {
+                            topology: wgpu::PrimitiveTopology::TriangleList,
+                            unclipped_depth: false,
+                            conservative: false,
+                            cull_mode: None,
+                            front_face: wgpu::FrontFace::default(),
+                            polygon_mode: wgpu::PolygonMode::default(),
+                            strip_index_format: None,
+                        },
+                        depth_stencil: self.create_depth_stencil_state(),
+                        multisample: wgpu::MultisampleState {
+                            alpha_to_coverage_enabled: false,
+                            count: 1,
+                            mask: !0,
+                        },
+                        multiview: None,
+                    });
+            self.render_pipeline = Some(render_pipeline);
+            self.is_render_pipeliine_dirty = false;
+            println!("update RenderPipeline: {}", self.shader.as_ref().unwrap().get_id());
+        } else {
+            // レンダーパイプラインの更新が不要なのでなにもしない
+        }
+    }
 
     pub fn clear_color(
         &mut self,
@@ -158,7 +244,17 @@ impl CommandBufferWgpu {
     }
 
     pub fn set_shader(&mut self, shader: &ShaderWgpu) {
-        self.shader = Some(shader.view());
+        if let Some(current_shader) = &self.shader {
+            if current_shader.get_id() == shader.id() {
+                // 更新しない
+            } else {
+                self.shader = Some(shader.view());
+                self.is_render_pipeliine_dirty = true;
+            }
+        } else {
+            self.shader = Some(shader.view());
+            self.is_render_pipeliine_dirty = true;
+        }
     }
 
     pub fn set_constant_buffer(&mut self, index: i32, buffer: &BufferWgpu) {
@@ -351,76 +447,9 @@ impl CommandBufferWgpu {
     }
 
     fn build_graphics_command(&self) -> wgpu::CommandBuffer {
-        // レンダーターゲット
-        let formats = self
-            .color_target_view
-            .iter()
-            .filter_map(|x| {
-                if let Some(view) = x {
-                    Some( wgpu::ColorTargetState {
-                        format: view.get_texture_format().into(),
-                        blend: Some(wgpu::BlendState {
-                            color: wgpu::BlendComponent {
-                                src_factor: wgpu::BlendFactor::One,
-                                dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                                operation: wgpu::BlendOperation::Add,
-                            },
-                            alpha: wgpu::BlendComponent {
-                                src_factor: wgpu::BlendFactor::OneMinusDstAlpha,
-                                dst_factor: wgpu::BlendFactor::One,
-                                operation: wgpu::BlendOperation::Add,
-                            },
-                        }),
-                        write_mask: wgpu::ColorWrites::ALL
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
+        // レンダーパイプライン。CommandBufferWgpu::End() で更新済み
+        let render_pipeline = self.render_pipeline.as_ref().unwrap();
 
-        let vertex_shader_module = self.shader.as_ref().unwrap().get_vertex_shader_module();
-        let pixel_shader_module = self.shader.as_ref().unwrap().get_pixel_shader_module();
-
-        // 頂点ステート
-        let vertex_buffer_layout = if let Some(vertex_state) = &self.vertex_state {
-            vertex_state.get_vertex_buffer_layout()
-        } else {
-            vec![]
-        };
-
-        let render_pipeline = self
-            .device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: None,
-                layout: None,
-                vertex: wgpu::VertexState {
-                    module: &vertex_shader_module,
-                    entry_point: "main",
-                    buffers: &vertex_buffer_layout,
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &pixel_shader_module,
-                    entry_point: "main",
-                    targets: &formats,
-                }),
-                primitive: wgpu::PrimitiveState {
-                    topology: wgpu::PrimitiveTopology::TriangleList,
-                    unclipped_depth: false,
-                    conservative: false,
-                    cull_mode: None,
-                    front_face: wgpu::FrontFace::default(),
-                    polygon_mode: wgpu::PolygonMode::default(),
-                    strip_index_format: None,
-                },
-                depth_stencil: self.create_depth_stencil_state(),
-                multisample: wgpu::MultisampleState {
-                    alpha_to_coverage_enabled: false,
-                    count: 1,
-                    mask: !0,
-                },
-                multiview: None,
-            });
         let bind_group = self.create_bind_group();
         let mut command_encoder = self
             .device
@@ -630,7 +659,7 @@ impl ICommandBuffer for CommandBufferWgpu {
     }
 
     fn end(&mut self) {
-        CommandBufferWgpu::end(&self);
+        CommandBufferWgpu::end(self);
     }
 
     fn clear_color(
