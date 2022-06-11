@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use sjgfx_interface::{AttributeFormat, IVertexState, VertexBufferStateInfo, VertexStateInfo};
+use uuid::Uuid;
 use wgpu::{VertexAttribute, VertexBufferLayout, VertexStepMode};
 
 use crate::DeviceWgpu;
@@ -8,6 +9,7 @@ use crate::DeviceWgpu;
 pub struct VertexStateWgpu {
     vertex_attribute_map: Arc<HashMap<i32, Vec<wgpu::VertexAttribute>>>,
     verex_buffer_state_infos: Arc<Vec<VertexBufferStateInfo>>,
+    pub id: Uuid,
 }
 
 impl VertexStateWgpu {
@@ -32,6 +34,7 @@ impl VertexStateWgpu {
         Self {
             vertex_attribute_map: Arc::new(map),
             verex_buffer_state_infos: Arc::new(info.get_buffer_state_info_array().to_vec()),
+            id: Uuid::new_v4(),
         }
     }
 
@@ -59,6 +62,7 @@ impl VertexStateWgpu {
 pub struct VertexStateView {
     vertex_attributes: Arc<HashMap<i32, Vec<wgpu::VertexAttribute>>>,
     vertex_buffer_state_infos: Arc<Vec<VertexBufferStateInfo>>,
+    pub id: Uuid,
 }
 
 impl VertexStateView {
@@ -66,6 +70,7 @@ impl VertexStateView {
         Self {
             vertex_attributes: vertex_state.clone_vertex_attributes(),
             vertex_buffer_state_infos: vertex_state.clone_vertex_buffer_state_infos(),
+            id: vertex_state.id,
         }
     }
 

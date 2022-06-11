@@ -309,7 +309,12 @@ impl CommandBufferWgpu {
     }
 
     pub fn set_vertex_state(&mut self, vertex_state: &VertexStateWgpu) {
-        self.vertex_state = Some(vertex_state.view());
+        if self.vertex_state.is_some() && self.vertex_state.as_ref().unwrap().id == vertex_state.id
+        {
+            // 差分がないので更新しない
+        } else {
+            self.vertex_state = Some(vertex_state.view());
+        }
     }
 
     pub fn dispatch(
