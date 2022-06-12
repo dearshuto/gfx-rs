@@ -8,7 +8,6 @@ use sjgfx_interface::{
     ShaderInfo, SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo,
     VertexBufferStateInfo, VertexStateInfo,
 };
-use winit::event_loop::EventLoop;
 
 #[repr(C)]
 struct ConstantBuffer {
@@ -28,14 +27,18 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let event_loop = EventLoop::new();
-    let mut display = sjvi::create_display(event_loop);
+    let mut instance = sjvi::Instance::new();
+    let id = instance.create_display_with_size(1280, 960);
 
-    let mut device = TApi::Device::new_with_surface(
-        &DeviceInfo::new(),
-        &display.window,
-        &display.event_loop.as_ref().unwrap(),
-    );
+    let mut device = {
+        let display = instance.try_get_display(id).unwrap();
+
+        TApi::Device::new_with_surface(
+            &DeviceInfo::new(),
+            &display.window,
+            instance.get_event_loop(),
+        )
+    };
     let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
     let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TApi::SwapChain::new(
@@ -111,8 +114,10 @@ fn run<TApi: IApi>() {
 
     let mut semaphore = TApi::Semaphore::new(&device, &SemaphoreInfo::new());
 
-    while !display.should_close() {
-        display.update(|| {
+    while instance.try_update() {
+        let display = instance.try_get_display(id).unwrap();
+
+        if display.is_redraw_requested() {
             let mut next_scan_buffer_view =
                 swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
@@ -143,6 +148,8 @@ fn run<TApi: IApi>() {
             queue.present(&mut swap_chain);
             queue.flush();
             queue.sync();
-        });
+        }
+
+        display.listen(&mut swap_chain);
     }
 }
