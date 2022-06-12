@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::{thread::sleep, time::Duration};
 
+use winit::dpi::PhysicalSize;
 use winit::event::Event::{MainEventsCleared, RedrawRequested, WindowEvent};
 use winit::event::WindowEvent::Resized;
 use winit::window::WindowId;
@@ -32,16 +33,27 @@ impl Instance {
         }
     }
 
+    pub fn get_event_loop(&self) -> &EventLoop<()> {
+        &self.event_loop
+    }
+
     pub fn create_display(&mut self) -> Id {
-        let window = WindowBuilder::new().build(&self.event_loop).unwrap();
+        self.create_display_with_size(1280, 960)
+    }
+
+    pub fn create_display_with_size(&mut self, width: u32, height: u32) -> Id {
+        let window = WindowBuilder::new()
+            .with_inner_size(PhysicalSize::new(width, height))
+            .build(&self.event_loop)
+            .unwrap();
         let id = Id { id: window.id() };
         let display = Display {
             window,
             event_loop: None,
             is_close_requested: false,
             is_redraw_requested: false,
-            width: 1280,
-            height: 960,
+            width,
+            height,
         };
         self.display_map.insert(id, display);
         id
@@ -151,7 +163,11 @@ pub fn create_display<T>(event_loop: EventLoop<T>) -> Display<T> {
     create_display_with_size(event_loop, 1280, 960)
 }
 
-pub fn create_display_with_size<T>(event_loop: EventLoop<T>, width: u32, height: u32) -> Display<T> {
+pub fn create_display_with_size<T>(
+    event_loop: EventLoop<T>,
+    width: u32,
+    height: u32,
+) -> Display<T> {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     Display {
@@ -160,7 +176,7 @@ pub fn create_display_with_size<T>(event_loop: EventLoop<T>, width: u32, height:
         is_close_requested: false,
         is_redraw_requested: false,
         width,
-        height
+        height,
     }
 }
 
