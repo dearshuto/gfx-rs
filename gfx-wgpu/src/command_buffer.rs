@@ -400,31 +400,15 @@ impl CommandBufferWgpu {
             IndexFormat::Uint32 => wgpu::IndexFormat::Uint32,
         };
 
-        // すでに描画コマンドがある場合は使いまわす
-        if let Some(draw_command) = &mut self.draw_command {
-            if let DrawCommand::DrawIndexed(ref mut info) = draw_command {
-                // バッファビューのインスタンス生成が重いのでこれだけ分岐
-                // 他は値のコピーなのでそのままぶち込む
-                if info.index_buffer.id != info.index_buffer.id {
-                    info.index_buffer = index_buffer.view();
-                }
-                info.primitive_topology = primitive_topology.clone();
-                info.index_format = index_format_wgpu;
-                info.index_count = index_count as u32;
-                info.instance_count = instance_count as u32;
-                info.base_instance = base_instance as u32;
-            }
-        } else {
-            let draw_indexed_info = DrawIndexedInfo {
-                primitive_topology,
-                index_format: index_format_wgpu,
-                index_buffer: index_buffer.view(),
-                index_count: index_count as u32,
-                instance_count: instance_count as u32,
-                base_instance: base_instance as u32,
-            };
-            self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
-        }
+        let draw_indexed_info = DrawIndexedInfo {
+            primitive_topology,
+            index_format: index_format_wgpu,
+            index_buffer: index_buffer.view(),
+            index_count: index_count as u32,
+            instance_count: instance_count as u32,
+            base_instance: base_instance as u32,
+        };
+        self.draw_command = Some(DrawCommand::DrawIndexed(draw_indexed_info));
     }
 
     pub fn copy_image_to_buffer(
