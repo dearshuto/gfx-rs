@@ -1,15 +1,23 @@
 use std::time::Instant;
 
-use sjgfx::{api::IApi, TDeviceBuilder, TQueueBuilder, TSwapChainBuilder, TCommandBufferBuilder, TSemaphoreBuilder};
-use sjgfx_interface::{ISwapChain, ICommandBuffer, TextureArrayRange, IQueue};
-use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, platform::run_return::EventLoopExtRunReturn, dpi::PhysicalSize};
+use egui::FontDefinitions;
+use egui_winit_platform::Platform;
+use egui_winit_platform::PlatformDescriptor;
+use epi::App;
+use sjgfx::{
+    api::IApi, TCommandBufferBuilder, TDeviceBuilder, TQueueBuilder, TSemaphoreBuilder,
+    TSwapChainBuilder,
+};
+use sjgfx_interface::{ICommandBuffer, IQueue, ISwapChain, TextureArrayRange};
 use winit::event::Event::RedrawRequested;
 use winit::event::Event::WindowEvent;
 use winit::event::WindowEvent::Resized;
-use egui_winit_platform::Platform;
-use egui_winit_platform::PlatformDescriptor;
-use egui::FontDefinitions;
-use epi::App;
+use winit::{
+    dpi::PhysicalSize,
+    event_loop::{ControlFlow, EventLoop},
+    platform::run_return::EventLoopExtRunReturn,
+    window::WindowBuilder,
+};
 
 struct ExampleRepaintSignal;
 
@@ -23,14 +31,19 @@ fn main() {
     run::<sjgfx::api::Wgpu>();
 }
 
-fn run<TApi: IApi>()
-{
+fn run<TApi: IApi>() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_inner_size(PhysicalSize::new(2560, 1920)).build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(2560, 1920))
+        .build(&event_loop)
+        .unwrap();
 
     let mut device = TDeviceBuilder::<TApi>::new().build_with_surface(&window, &event_loop);
     let mut queue = TQueueBuilder::<TApi>::new().build(&device);
-    let mut swap_chain = TSwapChainBuilder::<TApi>::new().with_width(2560).with_height(1920).build(&mut device);
+    let mut swap_chain = TSwapChainBuilder::<TApi>::new()
+        .with_width(2560)
+        .with_height(1920)
+        .build(&mut device);
     let mut command_buffer = TCommandBufferBuilder::<TApi>::new().build(&device);
     let mut semaphore = TSemaphoreBuilder::<TApi>::new().build(&device);
 
@@ -50,7 +63,7 @@ fn run<TApi: IApi>()
     // let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal(std::sync::Mutex::new(
     //     event_loop.create_proxy(),
     // )));
-    let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal{});
+    let repaint_signal = std::sync::Arc::new(ExampleRepaintSignal {});
     event_loop.run_return(|event, _, control_flow| {
         platform.handle_event(&event);
 
@@ -60,9 +73,17 @@ fn run<TApi: IApi>()
         match event {
             RedrawRequested(..) => {
                 // 画面をクリア
-                let mut next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None/*fence*/);
+                let mut next_scan_buffer_view = swap_chain
+                    .acquire_next_scan_buffer_view(Some(&mut semaphore), None /*fence*/);
                 command_buffer.begin();
-                command_buffer.clear_color(&mut next_scan_buffer_view, 0.1, 0.2, 0.4, 0.0, TextureArrayRange::new());
+                command_buffer.clear_color(
+                    &mut next_scan_buffer_view,
+                    0.1,
+                    0.2,
+                    0.4,
+                    0.0,
+                    TextureArrayRange::new(),
+                );
                 command_buffer.end();
                 queue.execute(&command_buffer);
 
@@ -72,7 +93,7 @@ fn run<TApi: IApi>()
                 platform.begin_frame();
                 let app_output = epi::backend::AppOutput::default();
 
-                let mut frame =  epi::Frame::new(epi::backend::FrameData {
+                let mut frame = epi::Frame::new(epi::backend::FrameData {
                     info: epi::IntegrationInfo {
                         name: "egui_example",
                         web_info: None,
@@ -94,7 +115,7 @@ fn run<TApi: IApi>()
 
                 gfx_egui_render_pass.update_buffers(&device, &paint_jobs);
                 gfx_egui_render_pass.update_texture(&device, &platform.context().font_image());
-                gfx_egui_render_pass.execute(&next_scan_buffer_view, &mut queue, &paint_jobs, window.scale_factor() as f32);
+                gfx_egui_render_pass.execute(&next_scan_buffer_view, &mut queue, &paint_jobs);
 
                 queue.present(&mut swap_chain);
 
@@ -102,15 +123,13 @@ fn run<TApi: IApi>()
                 queue.sync();
             }
             WindowEvent { event, .. } => match event {
-                Resized(_size) => {
-                }
+                Resized(_size) => {}
                 winit::event::WindowEvent::CloseRequested => {
                     *control_flow = ControlFlow::Exit;
                 }
                 _ => {}
-            }
+            },
             _ => {}
         }
     });
-
 }
