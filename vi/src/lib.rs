@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::{thread::sleep, time::Duration};
+use winit::event::Event;
 
 use winit::dpi::PhysicalSize;
 use winit::event::Event::{MainEventsCleared, RedrawRequested, WindowEvent};
@@ -60,12 +61,21 @@ impl Instance {
     }
 
     pub fn try_update(&mut self) -> bool {
+        self.try_update_direct_event_callback(|_| {})
+    }
+
+    pub fn try_update_direct_event_callback<TFunc: FnMut(&Event<()>)>(
+        &mut self,
+        mut func: TFunc,
+    ) -> bool {
         for display in self.display_map.values_mut() {
             display.is_redraw_requested = false;
         }
 
         self.event_loop.run_return(|event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
+
+            func(&event);
 
             match event {
                 RedrawRequested(window_id) => {
@@ -76,7 +86,10 @@ impl Instance {
                 MainEventsCleared => {
                     *control_flow = ControlFlow::Exit;
                 }
-                WindowEvent { event, window_id } => match event {
+                WindowEvent {
+                    ref event,
+                    window_id,
+                } => match event {
                     Resized(size) => {
                         if let Some(display) = self.display_map.get_mut(&Id { id: window_id }) {
                             display.width = size.width;
@@ -95,6 +108,7 @@ impl Instance {
         for display in self.display_map.values_mut() {
             display.window.request_redraw();
         }
+
         sleep(Duration::from_millis(16));
 
         !self.display_map.is_empty()
