@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::{thread::sleep, time::Duration};
-use winit::event::Event;
+use winit::event::{ElementState, Event, MouseButton};
 
 use winit::dpi::PhysicalSize;
 use winit::event::Event::{MainEventsCleared, RedrawRequested, WindowEvent};
@@ -12,8 +12,16 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+pub enum MouseEvent {
+    Pressed(f64, f64, MouseButton),
+    Released(f64, f64, MouseButton),
+    Moved(f64, f64),
+}
+
 pub trait IDisplayEventListener {
     fn on_resized(&mut self, _width: u32, _height: u32) {}
+
+    fn on_mouse_operated(&mut self, _mouse_event: MouseEvent) {}
 }
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
@@ -55,6 +63,10 @@ impl Instance {
             is_redraw_requested: false,
             width,
             height,
+
+            // マウスイベント
+            mouse_event: Vec::new(),
+            current_mouse_position: (0.0, 0.0),
         };
         self.display_map.insert(id, display);
         id
@@ -70,6 +82,7 @@ impl Instance {
     ) -> bool {
         for display in self.display_map.values_mut() {
             display.is_redraw_requested = false;
+            display.mouse_event.clear();
         }
 
         self.event_loop.run_return(|event, _, control_flow| {
@@ -99,6 +112,44 @@ impl Instance {
                     winit::event::WindowEvent::CloseRequested => {
                         self.display_map.remove(&Id { id: window_id });
                     }
+                    winit::event::WindowEvent::MouseInput {
+                        state: ElementState::Pressed,
+                        button: MouseButton::Left,
+                        ..
+                    } => {
+                        if let Some(display) = self.display_map.get_mut(&Id { id: window_id }) {
+                            display.mouse_event.push(MouseEvent::Pressed(
+                                display.current_mouse_position.0,
+                                display.current_mouse_position.1,
+                                MouseButton::Left,
+                            ))
+                        }
+                    }
+                    winit::event::WindowEvent::MouseInput {
+                        state: ElementState::Released,
+                        button: MouseButton::Left,
+                        ..
+                    } => {
+                        if let Some(display) = self.display_map.get_mut(&Id { id: window_id }) {
+                            display.mouse_event.push(MouseEvent::Released(
+                                display.current_mouse_position.0,
+                                display.current_mouse_position.1,
+                                MouseButton::Left,
+                            ))
+                        }
+                    }
+                    winit::event::WindowEvent::CursorMoved { position, .. } => {
+                        if let Some(display) = self.display_map.get_mut(&Id { id: window_id }) {
+                            if !(display.current_mouse_position.0 == position.x
+                                && display.current_mouse_position.1 == position.y)
+                            {
+                                display
+                                    .mouse_event
+                                    .push(MouseEvent::Moved(position.x, position.y));
+                                display.current_mouse_position = (position.x, position.y);
+                            }
+                        }
+                    }
                     _ => {}
                 },
                 _ => {}
@@ -126,6 +177,10 @@ pub struct Display<T: 'static> {
     is_redraw_requested: bool,
     width: u32,
     height: u32,
+
+    // マウス操作
+    mouse_event: Vec<MouseEvent>,
+    current_mouse_position: (f64, f64),
 }
 
 impl<T> Display<T> {
@@ -171,6 +226,10 @@ impl<T> Display<T> {
     pub fn is_redraw_requested(&self) -> bool {
         self.is_redraw_requested
     }
+
+    pub fn get_mouse_events(&self) -> &[MouseEvent] {
+        &self.mouse_event
+    }
 }
 
 pub fn create_display<T>(event_loop: EventLoop<T>) -> Display<T> {
@@ -191,6 +250,10 @@ pub fn create_display_with_size<T>(
         is_redraw_requested: false,
         width,
         height,
+
+        // マウスイベント
+        current_mouse_position: (0.0, 0.0),
+        mouse_event: Vec::new(),
     }
 }
 
