@@ -16,4 +16,5 @@ sjgfx = { path = "../gfx" }
 epi = "0.16"
 egui_winit_platform = "0.13"
 egui_demo_lib = "0.16"
+sjvi = { path = "../vi" }
 winit = "0.26"
