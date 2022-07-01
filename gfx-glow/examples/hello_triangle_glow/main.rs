@@ -1,28 +1,33 @@
 use glow::HasContext;
-use sjgfx_interface::DeviceInfo;
+use sjgfx_interface::{CommandBufferInfo, DeviceInfo, QueueInfo};
 
 fn main() {
+    sjgfx_glow::initialize();
+    // let mut instance = sjgfx_glow::vi::Instance::new();
+    // let id = instance.create_display();
+    let mut device = sjgfx_glow::DeviceGlow::new(&DeviceInfo::new());
+    let mut command_buffer = sjgfx_glow::CommandBufferGlow::new(&device, &CommandBufferInfo::new());
+    let mut queue = sjgfx_glow::QueueGlow::new(&device, &QueueInfo::new());
+
     let vertex_shader_source = include_str!("resources/hello_triangle.vs");
     let pixel_shader_source = include_str!("resources/hello_triangle.fs");
-    let device = sjgfx_glow::DeviceGlow::new(&DeviceInfo::new());
+
     let shader = sjgfx_glow::ShaderGlow::new(
-        &device,
+        &mut device,
         &sjgfx_interface::ShaderInfo::new()
             .set_vertex_shader_source(vertex_shader_source)
             .set_pixel_shader_source(pixel_shader_source),
     );
 
-    let context = device.clone_context();
-    unsafe {
-        context.use_program(Some(shader.get_program()));
+    command_buffer.begin();
+    command_buffer.set_shader(&shader);
+    command_buffer.end();
+    queue.execute(&command_buffer);
+
+    let error = unsafe { device.clone_context().get_error() };
+    if error != glow::NO_ERROR {
+        println!("ERROR");
     }
-    unsafe {
-        context.clear_color(1.0, 1.0, 1.0, 1.0);
-    }
-    unsafe {
-        context.clear(glow::COLOR_BUFFER_BIT);
-    }
-    unsafe {
-        context.draw_arrays(glow::TRIANGLES, 0, 3);
-    }
+
+    sjgfx_glow::finalize();
 }

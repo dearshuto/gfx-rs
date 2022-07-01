@@ -11,9 +11,10 @@ pub struct ShaderGlow {
 }
 
 impl ShaderGlow {
-    pub fn new(device: &DeviceGlow, info: &ShaderInfo) -> Self {
-        let gl = device.clone_context();
+    pub fn new(device: &mut DeviceGlow, info: &ShaderInfo) -> Self {
+        device.make_current();
 
+        let gl = device.clone_context();
         let program = unsafe { gl.create_program() }.unwrap();
 
         if let Some(compute_shader_binary) = info.get_compute_shader_binary() {
@@ -41,8 +42,9 @@ impl ShaderGlow {
 impl IShader for ShaderGlow {
     type DeviceType = DeviceGlow;
 
-    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
-        Self::new(device, info)
+    fn new(_device: &Self::DeviceType, _info: &ShaderInfo) -> Self {
+        // Self::new(device, info)
+        todo!()
     }
 }
 
