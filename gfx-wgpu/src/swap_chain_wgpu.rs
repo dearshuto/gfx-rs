@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use sjvi::IDisplayEventListener;
+use sjvi::winit::IDisplayEventListener;
 use wgpu::{SurfaceTexture, TextureFormat};
 
 use crate::{

@@ -73,7 +73,7 @@ where
     TVertexState: IVertexState<DeviceType = TDevice>,
 {
     let event_loop = EventLoop::new();
-    let mut display = sjvi::create_display(event_loop);
+    let mut display = sjvi::winit::create_display(event_loop);
 
     let mut device = TDevice::new_with_surface(
         &DeviceInfo::new(),

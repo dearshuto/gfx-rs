@@ -27,7 +27,7 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let mut instance = sjvi::Instance::new();
+    let mut instance = sjvi::winit::Instance::new();
     let id = instance.create_display_with_size(1280, 960);
 
     let mut device = {
