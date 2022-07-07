@@ -10,7 +10,6 @@ members = [
         "gfx-vulkano",
         "gfx-wgpu",
         "examples",
-        "vi"
 #	"examples/clear_color",
 #	"examples/hello_graphics_pipeline",
 #	"examples/hello_3d",

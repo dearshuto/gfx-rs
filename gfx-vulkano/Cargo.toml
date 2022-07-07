@@ -4,7 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-sjvi = { path = "../vi" }
+sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
 sjgfx-interface = { path = "../gfx-interface" }
 vulkano = "0.29.0"
 vulkano-win = "0.29.0"
