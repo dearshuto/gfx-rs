@@ -86,11 +86,11 @@ impl IBuffer for BufferGlow {
 
     fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
         let target = glow::ARRAY_BUFFER;
+        unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
         let size = unsafe { self.gl.get_buffer_parameter_i32(target, glow::BUFFER_SIZE) };
         let length = (size as usize) / std::mem::size_of::<T>();
         let offset = 0;
-        let access = glow::READ_WRITE;
-        unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
+        let access = glow::MAP_WRITE_BIT;
 
         let mapped_data = unsafe {
             self.gl
