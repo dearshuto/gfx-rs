@@ -8,6 +8,10 @@ edition = "2021"
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
 glow = "*"
-glutin = "*"
 winit = "0.26.0"
+glutin = "*"
 raw-window-handle = "0.4.0"
+lazy_static = "1.4.0"
+uuid = { version = "0.8.0", features = ["v4"] }
+
+[dev-dependencies]

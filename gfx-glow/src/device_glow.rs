@@ -1,69 +1,77 @@
 use std::sync::Arc;
 
 use glow::HasContext;
-use glutin::{
-    event_loop::EventLoop,
-    window::{Window, WindowBuilder},
-};
+use glutin::{dpi::PhysicalSize, window::Window, ContextWrapper, PossiblyCurrent};
 use sjgfx_interface::{DeviceInfo, IDevice};
+use winit::event_loop::EventLoop;
 
 pub struct DeviceGlow {
-    #[allow(dead_code)]
-    event_loop: EventLoop<()>,
-    #[allow(dead_code)]
-    gl_window: glutin::ContextWrapper<glutin::PossiblyCurrent, Window>,
     context: Arc<glow::Context>,
+    window: Option<ContextWrapper<PossiblyCurrent, Window>>,
 }
 
 impl DeviceGlow {
     pub fn new(_info: &DeviceInfo) -> Self {
-        let event_loop = EventLoop::new();
-        let window_builder = WindowBuilder::new();
-
-        let gl_window = unsafe {
+        let event_loop = unsafe { &crate::GLOW_STATIC_DATA.as_ref().unwrap().event_loop };
+        let window_builder = winit::window::WindowBuilder::new()
+            .with_visible(false)
+            .with_inner_size(PhysicalSize::new(640, 480));
+        let window = unsafe {
             glutin::ContextBuilder::new()
-                // .with_depth_buffer(native_options.depth_buffer)
-                // .with_multisampling(native_options.multisampling)
-                // .with_srgb(true)
-                // .with_stencil_buffer(native_options.stencil_buffer)
-                // .with_vsync(native_options.vsync)
                 .build_windowed(window_builder, &event_loop)
                 .unwrap()
                 .make_current()
                 .unwrap()
         };
-
-        let gl = unsafe { glow::Context::from_loader_function(|s| gl_window.get_proc_address(s)) };
+        let gl = unsafe {
+            glow::Context::from_loader_function(|s| {
+                let _ = 10;
+                window.get_proc_address(s)
+            })
+        };
 
         let error = unsafe { gl.get_error() };
         assert_eq!(error, glow::NO_ERROR);
 
         Self {
-            event_loop,
-            gl_window,
             context: Arc::new(gl),
+            window: Some(window),
         }
     }
 
     pub fn clone_context(&self) -> Arc<glow::Context> {
         self.context.clone()
     }
+
+    pub fn make_current(&mut self) {
+        let mut temp = None;
+        std::mem::swap(&mut temp, &mut self.window);
+        let new_context = unsafe { temp.unwrap().make_current() }.unwrap();
+        self.window = Some(new_context);
+    }
+
+    // 仮実装
+    pub fn swap_buffers(&mut self) {
+        self.window.as_mut().unwrap().swap_buffers().unwrap();
+    }
 }
 
 impl IDevice for DeviceGlow {
-    fn new(info: &DeviceInfo) -> Self {
-        Self::new(info)
+    fn new(_info: &DeviceInfo) -> Self {
+        // Self::new(info)
+        todo!()
     }
 
     fn new_with_surface<TWindow>(
-        info: &DeviceInfo,
+        _info: &DeviceInfo,
         _window: &TWindow,
         _event_loop: &EventLoop<()>,
     ) -> Self
     where
         TWindow: raw_window_handle::HasRawWindowHandle,
     {
-        Self::new(info)
+        // Self::new(info)
+        todo!()
     }
 }
 
@@ -75,6 +83,6 @@ mod tests {
 
     #[test]
     fn new() {
-        let _device = DeviceGlow::new(&DeviceInfo::new());
+        // let _device = DeviceGlow::new(&DeviceInfo::new());
     }
 }

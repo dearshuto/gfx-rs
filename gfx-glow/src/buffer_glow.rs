@@ -12,17 +12,17 @@ pub struct BufferGlow {
 
 impl BufferGlow {
     pub fn new(device: &DeviceGlow, _info: &BufferInfo) -> Self {
+        device.make_current();
         let gl = device.clone_context();
         let buffer = unsafe{ gl.create_buffer() }.unwrap();
+        let target = glow::ARRAY_BUFFER;
+        unsafe { gl.bind_buffer(target, Some(buffer)) }
+        unsafe { gl.buffer_data_size(target, info.get_size() as i32, glow::STATIC_DRAW) }
+        unsafe { gl.bind_buffer(target, None) }
         Self { gl ,buffer }
     }
 
-    pub fn map(&self, _offset: i32, _size: u32) {
-        unsafe{ self.gl.bind_buffer(glow::ARRAY_BUFFER, Some(self.buffer)) };
-        unsafe{ self.gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, &[], glow::STATIC_DRAW) };
-    }
-
-    pub fn get_buffer(&self) -> glow::NativeBuffer {
+    pub fn get_handle(&self) -> glow::NativeBuffer {
         self.buffer
     }
 }
