@@ -8,6 +8,7 @@ mod sampler_glow;
 mod shader_glow;
 mod texture_glow;
 mod texture_view_glow;
+mod vertex_state_glow;
 pub mod vi;
 
 pub use buffer_glow::BufferGlow;
@@ -18,6 +19,7 @@ pub use sampler_glow::SamplerGlow;
 pub use shader_glow::ShaderGlow;
 pub use texture_glow::TextureGlow;
 pub use texture_view_glow::TextureViewGlow;
+pub use vertex_state_glow::VertexStateGlow;
 
 static mut GLOW_STATIC_DATA: Option<StaticData> = None;
 
