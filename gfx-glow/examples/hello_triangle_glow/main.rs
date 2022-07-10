@@ -1,5 +1,7 @@
 use glow::HasContext;
-use sjgfx_interface::{CommandBufferInfo, DeviceInfo, QueueInfo, BufferInfo, GpuAccess, IBuffer};
+use sjgfx_interface::{
+    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IBuffer, ICommandBuffer, QueueInfo,
+};
 
 fn main() {
     sjgfx_glow::initialize();
@@ -18,7 +20,12 @@ fn main() {
             .set_pixel_shader_source(pixel_shader_source),
     );
 
-    let vertex_buffer = sjgfx_glow::BufferGlow::new(&mut device, &BufferInfo::new().set_gpu_access_flags(GpuAccess::VERTEX_BUFFER).set_size(256));
+    let vertex_buffer = sjgfx_glow::BufferGlow::new(
+        &mut device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
+            .set_size(256),
+    );
     vertex_buffer.map_as_slice_mut(|data: &mut [f32]| {
         data[0] = 0.0;
         data[1] = 0.1;
@@ -33,7 +40,17 @@ fn main() {
         command_buffer.set_shader(&shader);
         command_buffer.end();
         queue.execute(&command_buffer);
-        instance.try_get_display(id).unwrap().window.swap_buffers().unwrap();
+        instance
+            .try_get_display(id)
+            .unwrap()
+            .window
+            .swap_buffers()
+            .unwrap();
+
+        let error = unsafe { device.clone_context().get_error() };
+        if error != glow::NO_ERROR {
+            println!("ERROR: {}", error);
+        }
     }
 
     sjgfx_glow::finalize();
