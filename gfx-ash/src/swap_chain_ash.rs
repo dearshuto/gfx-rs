@@ -1,5 +1,5 @@
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use sjvi::winit::IDisplayEventListener;
+use sjvi::IDisplayEventListener;
 
 use crate::{ColorTargetViewAsh, DeviceAsh, FenceAsh, SemaphoreAsh};
 

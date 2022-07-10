@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use sjvi::winit::IDisplayEventListener;
+use sjvi::IDisplayEventListener;
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo},
