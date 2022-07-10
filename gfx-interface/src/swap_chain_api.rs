@@ -1,4 +1,4 @@
-use sjvi::winit::IDisplayEventListener;
+use sjvi::IDisplayEventListener;
 
 pub struct SwapChainInfo {
     width: u32,
