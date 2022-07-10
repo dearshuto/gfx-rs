@@ -119,7 +119,7 @@ where
 
     // 定数バッファ
     let constant_buffer = TBuffer::new(
-        &device,
+        &mut device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)
             .set_size(std::mem::size_of::<ConstantBuffer>()),
@@ -138,7 +138,7 @@ where
 
     // 頂点バッファ、インデクスバッファ
     let obj_data = sjgfx_examples::load_obj(
-        &device,
+        &mut device,
         &include_str!("../resources/models/plane/plane.obj"),
     );
 

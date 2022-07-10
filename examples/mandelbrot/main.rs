@@ -70,7 +70,7 @@ fn run<TApi: IApi>() {
         .set_size(128);
 
     // 画面いっぱいに四角形を描く
-    let vertex_buffer = TApi::Buffer::new(&device, &buffer_info);
+    let vertex_buffer = TApi::Buffer::new(&mut device, &buffer_info);
     vertex_buffer.map_as_slice_mut(|mapped_data: &mut [f32]| {
         mapped_data[0] = -1.0;
         mapped_data[1] = 1.0;

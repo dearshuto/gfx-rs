@@ -35,7 +35,7 @@ impl BufferInfo {
 pub trait IBuffer {
     type DeviceType;
 
-    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self;
+    fn new(device: &mut Self::DeviceType, info: &BufferInfo) -> Self;
 
     fn map<T, F: Fn(&T)>(&self, func: F);
 

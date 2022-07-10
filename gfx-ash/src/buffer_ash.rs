@@ -226,7 +226,7 @@ impl Drop for BufferAsh {
 impl IBuffer for BufferAsh {
     type DeviceType = DeviceAsh;
 
-    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &BufferInfo) -> Self {
         Self::new(device, info)
     }
 

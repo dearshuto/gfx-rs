@@ -15,7 +15,7 @@ impl<T: IApi> TBufferBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::Device) -> T::Buffer {
+    pub fn build(&self, device: &mut T::Device) -> T::Buffer {
         T::Buffer::new(device, &self.info)
     }
 

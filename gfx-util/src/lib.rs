@@ -10,7 +10,7 @@ pub struct ObjData<TBuffer: IBuffer> {
     pub index_count: i32,
 }
 
-pub fn load_obj<TDevice, TBuffer>(device: &TDevice, obj_text: &str) -> ObjData<TBuffer>
+pub fn load_obj<TDevice, TBuffer>(device: &mut TDevice, obj_text: &str) -> ObjData<TBuffer>
 where
     TDevice: IDevice,
     TBuffer: IBuffer<DeviceType = TDevice>,
