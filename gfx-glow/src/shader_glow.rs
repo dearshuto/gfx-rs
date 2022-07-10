@@ -182,6 +182,9 @@ mod tests {
     #[test]
     fn new_compute_shader() {
         let mut device = DeviceGlow::new(&DeviceInfo::new());
-        let _shader = ShaderGlow::new(&mut device, &ShaderInfo::new().set_compute_shader_binary(&[]));
+        let _shader = ShaderGlow::new(
+            &mut device,
+            &ShaderInfo::new().set_compute_shader_binary(&[]),
+        );
     }
 }

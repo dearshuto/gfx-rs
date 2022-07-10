@@ -5,6 +5,7 @@ mod command_buffer_glow;
 mod device_glow;
 mod queue_glow;
 mod shader_glow;
+mod texture_glow;
 pub mod vi;
 
 pub use buffer_glow::BufferGlow;
@@ -12,6 +13,7 @@ pub use command_buffer_glow::CommandBufferGlow;
 pub use device_glow::DeviceGlow;
 pub use queue_glow::QueueGlow;
 pub use shader_glow::ShaderGlow;
+pub use texture_glow::TextureGlow;
 
 static mut GLOW_STATIC_DATA: Option<StaticData> = None;
 
