@@ -7,6 +7,7 @@ mod queue_glow;
 mod sampler_glow;
 mod shader_glow;
 mod texture_glow;
+mod texture_view_glow;
 pub mod vi;
 
 pub use buffer_glow::BufferGlow;
@@ -16,6 +17,7 @@ pub use queue_glow::QueueGlow;
 pub use sampler_glow::SamplerGlow;
 pub use shader_glow::ShaderGlow;
 pub use texture_glow::TextureGlow;
+pub use texture_view_glow::TextureViewGlow;
 
 static mut GLOW_STATIC_DATA: Option<StaticData> = None;
 
