@@ -32,7 +32,7 @@ fn main() {
     let vertex_buffer = BufferBuilder::new()
         .with_size(64)
         .enable_vertex_buffer()
-        .build(&device);
+        .build(&mut device);
     IBuffer::map_as_slice_mut(&vertex_buffer, |x| {
         x[0] = Vertex { x: -0.5, y: -0.5 };
         x[1] = Vertex { x: 0.5, y: -0.5 };

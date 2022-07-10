@@ -17,7 +17,7 @@ impl<'a, TApi: IApi> TTextureBuilder<'a, TApi> {
         }
     }
 
-    pub fn build(&self, device: &TApi::Device) -> TApi::Texture {
+    pub fn build(&self, device: &mut TApi::Device) -> TApi::Texture {
         if let Some(data) = self.data {
             TApi::Texture::new_with_data(device, &self.info, data)
         } else {
@@ -84,14 +84,14 @@ mod tests {
 
     #[test]
     fn new() {
-        let device = TDeviceBuilder::<api::Ash>::new().build();
+        let mut device = TDeviceBuilder::<api::Ash>::new().build();
         let texture_builder = TTextureBuilder::<api::Ash>::new()
             .with_size(640, 640)
             .with_format(ImageFormat::R8Uint)
             .enable_sampler()
             .enable_image();
 
-        let _ = texture_builder.build(&device);
-        let _ = texture_builder.build(&device);
+        let _ = texture_builder.build(&mut device);
+        let _ = texture_builder.build(&mut device);
     }
 }

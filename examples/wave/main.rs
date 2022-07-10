@@ -144,7 +144,7 @@ where
 
     // 深度バッファ
     let depth_buffer = TTexture::new(
-        &device,
+        &mut device,
         &TextureInfo::new()
             .set_width(1280)
             .set_height(960)

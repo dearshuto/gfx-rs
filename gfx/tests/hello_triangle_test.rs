@@ -23,7 +23,7 @@ fn make_command_vulkano() {
 }
 
 fn make_commnd_impl<TApi: IApi>() {
-    let device = TDeviceBuilder::<TApi>::new()
+    let mut device = TDeviceBuilder::<TApi>::new()
         .enable_debug_assertion()
         .build();
     let mut queue = TQueueBuilder::<TApi>::new().build(&device);
@@ -87,13 +87,13 @@ fn make_commnd_impl<TApi: IApi>() {
 
     let texture = TTextureBuilder::<TApi>::new()
         .enable_color_buffer()
-        .build(&device);
+        .build(&mut device);
     let color_target_view = TColorTargetViewBuilder::<TApi>::new().build(&device, &texture);
 
     let vertex_buffer = TBufferBuilder::<TApi>::new()
         .enable_vertex_buffer()
         .with_size(std::mem::size_of::<Vertex>() * 3)
-        .build(&device);
+        .build(&mut device);
     vertex_buffer.map_as_slice_mut(|x: &mut [Vertex]| {
         x[0].position_x = -0.5;
         x[0].position_y = -0.5;

@@ -117,7 +117,7 @@ where
     );
 
     let vertex_buffer = TBuffer::new(
-        &device,
+        &mut device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
             .set_size(std::mem::size_of::<Vertex>() * 6),
@@ -157,7 +157,7 @@ where
     });
 
     let index_buffer = TBuffer::new(
-        &device,
+        &mut device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::INDEX_BUFFER)
             .set_size(std::mem::size_of::<u32>() * 6),
@@ -174,7 +174,7 @@ where
 
     // 深度バッファ
     let texture = TTexture::new(
-        &device,
+        &mut device,
         &TextureInfo::new()
             .set_width(1280)
             .set_height(960)
