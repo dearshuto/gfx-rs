@@ -102,7 +102,7 @@ fn run<TApi: IApi>() {
 
     // 深度バッファ
     let depth_buffer = TApi::Texture::new(
-        &device,
+        &mut device,
         &TextureInfo::new()
             .set_width(1280)
             .set_height(960)

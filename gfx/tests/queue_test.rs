@@ -25,7 +25,7 @@ fn image() {
 }
 
 fn image_impl<TApi: IApi>() {
-    let device = TDeviceBuilder::<TApi>::new().build();
+    let mut device = TDeviceBuilder::<TApi>::new().build();
     let mut queue = TQueueBuilder::<TApi>::new().build(&device);
     let mut command_buffer = TCommandBufferBuilder::<TApi>::new().build(&device);
 
@@ -35,7 +35,7 @@ fn image_impl<TApi: IApi>() {
         .with_size(640, 640)
         .with_format(ImageFormat::R8Unorm)
         .enable_image()
-        .build(&device);
+        .build(&mut device);
     let texture_view = TTextureViewBuilder::<TApi>::new().build(&device, &texture);
 
     command_buffer.begin();

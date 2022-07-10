@@ -31,7 +31,7 @@ struct ConstantBuffer {
 
 fn main() {
     let event_loop = EventLoop::new();
-    let mut display = sjvi::create_display(event_loop);
+    let mut display = sjvi::winit::create_display(event_loop);
     let window = &display.window;
 
     let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);

@@ -995,9 +995,9 @@ mod tests {
 
     #[test]
     fn set_image() {
-        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let mut device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let texture = TextureAsh::new(
-            &device,
+            &mut device,
             &TextureInfo::new()
                 .set_width(64)
                 .set_height(64)

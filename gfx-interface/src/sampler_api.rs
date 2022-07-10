@@ -11,5 +11,5 @@ impl SamplerInfo {
 pub trait ISampler {
     type DeviceType: IDevice;
 
-    fn new(device: &Self::DeviceType, info: &SamplerInfo) -> Self;
+    fn new(device: &mut Self::DeviceType, info: &SamplerInfo) -> Self;
 }

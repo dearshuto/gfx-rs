@@ -68,7 +68,7 @@ impl TextureAsh {
 impl ITexture for TextureAsh {
     type DeviceType = DeviceAsh;
 
-    fn new(device: &Self::DeviceType, info: &sjgfx_interface::TextureInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &sjgfx_interface::TextureInfo) -> Self {
         // テクスチャ
         let image = Self::create_image(device.get_device_ref(), info);
 
@@ -152,9 +152,9 @@ mod tests {
     }
 
     fn new_impl(image_format: ImageFormat, gpu_access: GpuAccess) {
-        let device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let mut device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _ = TextureAsh::new(
-            &device,
+            &mut device,
             &TextureInfo::new()
                 .set_width(64)
                 .set_height(64)

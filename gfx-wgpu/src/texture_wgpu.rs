@@ -85,7 +85,7 @@ impl TextureWgpu {
 impl ITexture for TextureWgpu {
     type DeviceType = DeviceWgpu;
 
-    fn new(device: &Self::DeviceType, info: &TextureInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &TextureInfo) -> Self {
         Self::new(device, info)
     }
 

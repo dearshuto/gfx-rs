@@ -15,7 +15,7 @@ impl<TApi: IApi> TSamplerBuilder<TApi> {
         }
     }
 
-    pub fn build(&self, device: &TApi::Device) -> TApi::Sampler {
+    pub fn build(&self, device: &mut TApi::Device) -> TApi::Sampler {
         TApi::Sampler::new(device, &self.info)
     }
 }

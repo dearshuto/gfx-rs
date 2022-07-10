@@ -113,8 +113,8 @@ fn run<TApi: IApi>() {
                 let frame_time = (Instant::now() - egui_start).as_secs_f64() as f32;
                 previous_frame_time = Some(frame_time);
 
-                gfx_egui_render_pass.update_buffers(&device, &paint_jobs);
-                gfx_egui_render_pass.update_texture(&device, &platform.context().font_image());
+                gfx_egui_render_pass.update_buffers(&mut device, &paint_jobs);
+                gfx_egui_render_pass.update_texture(&mut device, &platform.context().font_image());
                 gfx_egui_render_pass.execute(&next_scan_buffer_view, &mut queue, &paint_jobs);
 
                 queue.present(&mut swap_chain);

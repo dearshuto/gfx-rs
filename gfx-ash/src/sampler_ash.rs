@@ -22,7 +22,7 @@ impl SamplerAsh {
 impl ISampler for SamplerAsh {
     type DeviceType = DeviceAsh;
 
-    fn new(device: &Self::DeviceType, info: &SamplerInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &SamplerInfo) -> Self {
         Self::new(device, info)
     }
 }

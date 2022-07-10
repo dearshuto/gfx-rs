@@ -103,7 +103,7 @@ impl<TApi: IApi> RenderPass<TApi> {
         }
     }
 
-    pub fn update_texture(&mut self, device: &TApi::Device, font_image: &egui::FontImage) {
+    pub fn update_texture(&mut self, device: &mut TApi::Device, font_image: &egui::FontImage) {
         if self.texture.version == font_image.version {
             return;
         } else {
