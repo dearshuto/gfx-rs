@@ -141,7 +141,7 @@ pub struct BufferView {
 impl IBuffer for BufferWgpu {
     type DeviceType = DeviceWgpu;
 
-    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &BufferInfo) -> Self {
         Self::new(device, info)
     }
 

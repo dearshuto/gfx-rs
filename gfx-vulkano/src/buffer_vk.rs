@@ -123,7 +123,7 @@ impl BufferVk {
 impl IBuffer for BufferVk {
     type DeviceType = DeviceVk;
 
-    fn new(device: &Self::DeviceType, info: &BufferInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &BufferInfo) -> Self {
         Self::new(device, info)
     }
 

@@ -20,7 +20,7 @@ pub struct RenderPass<TApi: IApi> {
 }
 
 impl<TApi: IApi> RenderPass<TApi> {
-    pub fn new(device: &TApi::Device) -> Self {
+    pub fn new(device: &mut TApi::Device) -> Self {
         let mut shader_compiler = sjgfx_util::ShaderCompiler::new();
         let vertex_shader_binary = shader_compiler.create_binary(
             include_str!("../resources/egui.vs"),
@@ -137,7 +137,7 @@ impl<TApi: IApi> RenderPass<TApi> {
 
     pub fn update_buffers(
         &mut self,
-        device: &TApi::Device,
+        device: &mut TApi::Device,
         paint_jobs: &[egui::epaint::ClippedMesh],
     ) {
         for (index, egui::ClippedMesh(_, mesh)) in paint_jobs.iter().enumerate() {
@@ -270,7 +270,7 @@ impl<TApi: IApi> RenderPass<TApi> {
     }
 
     fn update_buffer(
-        device: &TApi::Device,
+        device: &mut TApi::Device,
         buffer_cache: &mut BufferCache<TApi>,
         data: &[u8],
     ) -> Option<BufferCache<TApi>> {
