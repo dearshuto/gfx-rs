@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use glow::HasContext;
 use sjgfx_interface::{
     CommandBufferInfo, ICommandBuffer, ScissorStateInfo, VertexAttributeStateInfo,
     VertexBufferStateInfo,
@@ -9,6 +12,7 @@ use crate::{
 };
 
 pub struct CommandBufferGlow {
+    gl: Arc<glow::Context>,
     shader: Option<glow::Program>,
     render_target: [Option<glow::Texture>; 8],
     depth_buffer: Option<glow::Texture>,
@@ -21,6 +25,8 @@ pub struct CommandBufferGlow {
     vertex_buffer_state_infos: Option<Vec<VertexBufferStateInfo>>,
     scissor_state: Option<ScissorStateInfo>,
     draw_command: Option<DrawCommand>,
+
+    vertex_array_object: Option<glow::VertexArray>,
 }
 
 impl CommandBufferGlow {
@@ -35,6 +41,14 @@ impl CommandBufferGlow {
     pub fn try_get_command(&self) -> Option<&DrawCommand> {
         self.draw_command.as_ref()
     }
+
+    pub fn get_vertex_buffers(&self) -> &[Option<glow::Buffer>] {
+        &self.vertex_buffers
+    }
+
+    pub fn try_get_vertex_array_object(&self) -> Option<glow::VertexArray> {
+        self.vertex_array_object
+    }
 }
 
 impl ICommandBuffer for CommandBufferGlow {
@@ -48,8 +62,9 @@ impl ICommandBuffer for CommandBufferGlow {
     type TextureViewType = TextureViewGlow;
     type VertexStateType = VertexStateGlow;
 
-    fn new(_device: &Self::DeviceType, _info: &CommandBufferInfo) -> Self {
+    fn new(device: &Self::DeviceType, _info: &CommandBufferInfo) -> Self {
         Self {
+            gl: device.clone_context(),
             shader: None,
             render_target: Default::default(),
             depth_buffer: None,
@@ -62,12 +77,50 @@ impl ICommandBuffer for CommandBufferGlow {
             vertex_buffer_state_infos: None,
             scissor_state: None,
             draw_command: None,
+            vertex_array_object: None,
         }
     }
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {}
+    fn end(&mut self) {
+        // VAO がなかったら作る
+        if self.vertex_array_object.is_none() {
+            let new_vao = unsafe { self.gl.create_vertex_array() }.unwrap();
+            self.vertex_array_object = Some(new_vao);
+        }
+
+        // VAO の更新を開始
+        unsafe { self.gl.bind_vertex_array(self.vertex_array_object) }
+
+        // 頂点ステート/頂点バッファ
+        if let Some(vertex_attribute_state_info_array) = &self.vertex_attribute_state_infos {
+            for info in vertex_attribute_state_info_array {
+                // 頂点バッファをバインド
+                let buffer = &self.vertex_buffers[info.get_buffer_index() as usize];
+                unsafe { self.gl.bind_buffer(glow::ARRAY_BUFFER, *buffer) }
+
+                let slot = info.get_slot() as u32;
+                unsafe { self.gl.enable_vertex_attrib_array(slot) }
+                unsafe {
+                    self.gl.vertex_attrib_pointer_f32(
+                        slot,
+                        2,
+                        glow::FLOAT,
+                        false,
+                        2 * std::mem::size_of::<f32>() as i32,
+                        info.get_offset() as i32,
+                    )
+                }
+
+                // 頂点バッファのバインドを解除
+                unsafe { self.gl.bind_buffer(glow::ARRAY_BUFFER, None) }
+            }
+        }
+
+        // VAO の更新を終了
+        unsafe { self.gl.bind_vertex_array(None) }
+    }
 
     fn clear_color(
         &mut self,
