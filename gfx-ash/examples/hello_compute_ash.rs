@@ -17,7 +17,7 @@ where
     TShader: IShader<DeviceType = TDevice>,
     TBuffer: IBuffer<DeviceType = TDevice>,
 {
-    let device = TDevice::new(&DeviceInfo::new());
+    let mut device = TDevice::new(&DeviceInfo::new());
     let mut queue = TQueue::new(&device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
@@ -37,7 +37,7 @@ where
     );
 
     let buffer = TBuffer::new(
-        &device,
+        &mut device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER)
             .set_size(std::mem::size_of::<u32>() * 64),
