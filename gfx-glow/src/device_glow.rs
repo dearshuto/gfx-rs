@@ -5,12 +5,27 @@ use glutin::{dpi::PhysicalSize, window::Window, ContextWrapper, PossiblyCurrent}
 use sjgfx_interface::{DeviceInfo, IDevice};
 use winit::event_loop::EventLoop;
 
+use crate::vi::Display;
+
 pub struct DeviceGlow {
     context: Arc<glow::Context>,
     window: Option<ContextWrapper<PossiblyCurrent, Window>>,
 }
 
 impl DeviceGlow {
+    pub fn new_with_display(_info: &DeviceInfo, display: &Display) -> Self {
+        let gl =
+            unsafe { glow::Context::from_loader_function(|s| display.window.get_proc_address(s)) };
+
+        let error = unsafe { gl.get_error() };
+        assert_eq!(error, glow::NO_ERROR);
+
+        Self {
+            context: Arc::new(gl),
+            window: None,
+        }
+    }
+
     pub fn new(_info: &DeviceInfo) -> Self {
         let event_loop = unsafe { &crate::GLOW_STATIC_DATA.as_ref().unwrap().event_loop };
         let window_builder = winit::window::WindowBuilder::new()
@@ -44,15 +59,19 @@ impl DeviceGlow {
     }
 
     pub fn make_current(&mut self) {
-        let mut temp = None;
-        std::mem::swap(&mut temp, &mut self.window);
-        let new_context = unsafe { temp.unwrap().make_current() }.unwrap();
-        self.window = Some(new_context);
+        if self.window.is_some() {
+            let mut temp = None;
+            std::mem::swap(&mut temp, &mut self.window);
+            let new_context = unsafe { temp.unwrap().make_current() }.unwrap();
+            self.window = Some(new_context);
+        }
     }
 
     // 仮実装
     pub fn swap_buffers(&mut self) {
-        self.window.as_mut().unwrap().swap_buffers().unwrap();
+        if let Some(window) = &self.window {
+            window.swap_buffers().unwrap();
+        }
     }
 }
 

@@ -64,6 +64,10 @@ impl IBuffer for BufferGlow {
         };
         let data = unsafe { (mapped_data as *mut T).as_mut().unwrap() };
         func(data);
+        unsafe {
+            self.gl
+                .flush_mapped_buffer_range(glow::ARRAY_BUFFER, offset, length as i32)
+        }
         unsafe { self.gl.unmap_buffer(target) }
     }
 
