@@ -56,7 +56,7 @@ fn run<TApi: IApi>() {
     });
 
     let mut demo_app = egui_demo_lib::WrapApp::default();
-    let mut gfx_egui_render_pass = gfx_egui::RenderPass::<TApi>::new(&device);
+    let mut gfx_egui_render_pass = gfx_egui::RenderPass::<TApi>::new(&mut device);
 
     let start_time = Instant::now();
     let mut previous_frame_time = None;

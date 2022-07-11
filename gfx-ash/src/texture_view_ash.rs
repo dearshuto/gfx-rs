@@ -72,9 +72,9 @@ mod tests {
 
     #[test]
     fn new_texture() {
-        let device = DeviceAsh::new(&DeviceInfo::new());
+        let mut device = DeviceAsh::new(&DeviceInfo::new());
         let texture = TextureAsh::new(
-            &device,
+            &mut device,
             &TextureInfo::new()
                 .set_width(64)
                 .set_height(64)

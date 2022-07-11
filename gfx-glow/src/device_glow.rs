@@ -102,6 +102,6 @@ mod tests {
 
     #[test]
     fn new() {
-        // let _device = DeviceGlow::new(&DeviceInfo::new());
+        let _device = DeviceGlow::new(&DeviceInfo::new());
     }
 }

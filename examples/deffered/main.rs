@@ -1,8 +1,22 @@
 extern crate nalgebra_glm as glm;
 
-use sjgfx::{api::IApi, TDeviceBuilder, TSemaphoreBuilder, TQueueBuilder, TSwapChainBuilder, TCommandBufferBuilder, TTextureBuilder, TColorTargetViewBuilder, TTextureViewBuilder, TShaderBuilder, TSamplerBuilder, TBufferBuilder, TVertexStateBuilder};
-use sjgfx_interface::{ISwapChain, IQueue, ICommandBuffer, ImageFormat, IBuffer, IDepthStencilView, VertexAttributeStateInfo, AttributeFormat, PrimitiveTopology, VertexBufferStateInfo, IndexFormat, DepthStencilStateInfo};
-use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, dpi::PhysicalSize, platform::run_return::EventLoopExtRunReturn, event::{Event, WindowEvent}};
+use sjgfx::{
+    api::IApi, TBufferBuilder, TColorTargetViewBuilder, TCommandBufferBuilder, TDeviceBuilder,
+    TQueueBuilder, TSamplerBuilder, TSemaphoreBuilder, TShaderBuilder, TSwapChainBuilder,
+    TTextureBuilder, TTextureViewBuilder, TVertexStateBuilder,
+};
+use sjgfx_interface::{
+    AttributeFormat, DepthStencilStateInfo, IBuffer, ICommandBuffer, IDepthStencilView, IQueue,
+    ISwapChain, ImageFormat, IndexFormat, PrimitiveTopology, VertexAttributeStateInfo,
+    VertexBufferStateInfo,
+};
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    platform::run_return::EventLoopExtRunReturn,
+    window::WindowBuilder,
+};
 
 #[repr(C)]
 struct Vertex2d {
@@ -32,78 +46,156 @@ fn main() {
 
 fn run<TApi: IApi>() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_resizable(false).with_inner_size(PhysicalSize::new(1280, 960)).build(&event_loop).unwrap();
-    let mut device = TDeviceBuilder::<TApi>::new().enable_debug_assertion().build_with_surface(&window, &event_loop);
+    let window = WindowBuilder::new()
+        .with_resizable(false)
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .build(&event_loop)
+        .unwrap();
+    let mut device = TDeviceBuilder::<TApi>::new()
+        .enable_debug_assertion()
+        .build_with_surface(&window, &event_loop);
     let mut queue = TQueueBuilder::<TApi>::new().build(&device);
-    let mut swap_chain = TSwapChainBuilder::<TApi>::new().with_width(1280).with_height(960).build(&mut device);
+    let mut swap_chain = TSwapChainBuilder::<TApi>::new()
+        .with_width(1280)
+        .with_height(960)
+        .build(&mut device);
     let mut semaphore = TSemaphoreBuilder::<TApi>::new().build(&device);
     let mut command_buffer = TCommandBufferBuilder::<TApi>::new().build(&device);
     let mut g_buffer_command_buffer = TCommandBufferBuilder::<TApi>::new().build(&device);
 
     let geometry_buffer_shader = TShaderBuilder::<TApi>::new()
-        .set_vertex_shader_binary(include_bytes!("../outputs/resources/shaders/geometry_output.vs.spv"))
-        .set_pixel_shader_binary(include_bytes!("../outputs/resources/shaders/geometry_output.fs.spv"))
+        .set_vertex_shader_binary(include_bytes!(
+            "../outputs/resources/shaders/geometry_output.vs.spv"
+        ))
+        .set_pixel_shader_binary(include_bytes!(
+            "../outputs/resources/shaders/geometry_output.fs.spv"
+        ))
         .build(&device);
     let shading_shader = TShaderBuilder::<TApi>::new()
-        .set_vertex_shader_binary(include_bytes!("../outputs/resources/shaders/deffered_shading.vs.spv"))
-        .set_pixel_shader_binary(include_bytes!("../outputs/resources/shaders/deffered_shading.fs.spv"))
+        .set_vertex_shader_binary(include_bytes!(
+            "../outputs/resources/shaders/deffered_shading.vs.spv"
+        ))
+        .set_pixel_shader_binary(include_bytes!(
+            "../outputs/resources/shaders/deffered_shading.fs.spv"
+        ))
         .build(&device);
 
     // G-Buffer
-    let sampler = TSamplerBuilder::<TApi>::new().build(&device);
+    let sampler = TSamplerBuilder::<TApi>::new().build(&mut device);
     let (albedo_buffer, normal_buffer, depth_buffer) = {
         let albedo_buffer = TTextureBuilder::<TApi>::new()
             .with_size(1280, 960)
             .with_format(ImageFormat::R8G8B8A8Unorm)
             .enable_color_buffer()
             .enable_sampler()
-            .build(&device);
+            .build(&mut device);
 
         let normal_buffer = TTextureBuilder::<TApi>::new()
             .with_size(1280, 960)
             .with_format(ImageFormat::R8G8B8A8Unorm)
             .enable_color_buffer()
             .enable_sampler()
-            .build(&device);
+            .build(&mut device);
 
         let depth_buffer = TTextureBuilder::<TApi>::new()
             .with_size(1280, 960)
             .with_format(ImageFormat::D32)
             .enable_depth_buffer()
             .enable_sampler()
-            .build(&device);
+            .build(&mut device);
 
         (albedo_buffer, normal_buffer, depth_buffer)
     };
 
-    let albedo_view = TTextureViewBuilder::<TApi>::new().with_format(ImageFormat::R8G8B8A8Unorm).build(&device, &albedo_buffer);
-    let normal_view = TTextureViewBuilder::<TApi>::new().with_format(ImageFormat::R8G8B8A8Unorm).build(&device, &normal_buffer);
-    let depth_view = TTextureViewBuilder::<TApi>::new().with_format(ImageFormat::D32).build(&device, &depth_buffer);
+    let albedo_view = TTextureViewBuilder::<TApi>::new()
+        .with_format(ImageFormat::R8G8B8A8Unorm)
+        .build(&device, &albedo_buffer);
+    let normal_view = TTextureViewBuilder::<TApi>::new()
+        .with_format(ImageFormat::R8G8B8A8Unorm)
+        .build(&device, &normal_buffer);
+    let depth_view = TTextureViewBuilder::<TApi>::new()
+        .with_format(ImageFormat::D32)
+        .build(&device, &depth_buffer);
 
     // レンダーターゲット
     let albedo_target_view = TColorTargetViewBuilder::<TApi>::new().build(&device, &albedo_buffer);
     let normal_target_view = TColorTargetViewBuilder::<TApi>::new().build(&device, &normal_buffer);
-    let depth_stencil_view = TApi::DepthStencilView::new(&device, &DepthStencilStateInfo::new().set_depth_test_enabled(true), &depth_buffer);
+    let depth_stencil_view = TApi::DepthStencilView::new(
+        &device,
+        &DepthStencilStateInfo::new().set_depth_test_enabled(true),
+        &depth_buffer,
+    );
 
     // 矩形描画のデータ
-    let rect_vertex_buffer = TBufferBuilder::<TApi>::new().enable_vertex_buffer().with_size(std::mem::size_of::<Vertex2d>() * 6).build(&device);
+    let rect_vertex_buffer = TBufferBuilder::<TApi>::new()
+        .enable_vertex_buffer()
+        .with_size(std::mem::size_of::<Vertex2d>() * 6)
+        .build(&mut device);
     rect_vertex_buffer.map_as_slice_mut(|x| {
-        x[0] = Vertex2d{ x: -1.0, y: 1.0, u: 0.0, v: 0.0 };
-        x[1] = Vertex2d{ x: -1.0, y: -1.0, u: 0.0, v: 1.0 };
-        x[2] = Vertex2d{ x: 1.0, y: -1.0, u: 1.0, v: 1.0 };
-        x[3] = Vertex2d{ x: -1.0, y: 1.0, u: 0.0, v: 0.0 };
-        x[4] = Vertex2d{ x: 1.0, y: -1.0, u: 1.0, v: 1.0 };
-        x[5] = Vertex2d{ x: 1.0, y: 1.0, u: 1.0, v: 0.0 };
+        x[0] = Vertex2d {
+            x: -1.0,
+            y: 1.0,
+            u: 0.0,
+            v: 0.0,
+        };
+        x[1] = Vertex2d {
+            x: -1.0,
+            y: -1.0,
+            u: 0.0,
+            v: 1.0,
+        };
+        x[2] = Vertex2d {
+            x: 1.0,
+            y: -1.0,
+            u: 1.0,
+            v: 1.0,
+        };
+        x[3] = Vertex2d {
+            x: -1.0,
+            y: 1.0,
+            u: 0.0,
+            v: 0.0,
+        };
+        x[4] = Vertex2d {
+            x: 1.0,
+            y: -1.0,
+            u: 1.0,
+            v: 1.0,
+        };
+        x[5] = Vertex2d {
+            x: 1.0,
+            y: 1.0,
+            u: 1.0,
+            v: 0.0,
+        };
     });
-    let rect_vertex_state = TVertexStateBuilder::<TApi>::new().set_vertex_attribute_states([
-        VertexAttributeStateInfo::new().set_buffer_index(0).set_format(AttributeFormat::Float32_32).set_offset(0).set_slot(0),
-        VertexAttributeStateInfo::new().set_buffer_index(0).set_format(AttributeFormat::Float32_32).set_offset((std::mem::size_of::<f32>() * 2) as i64).set_slot(1),
-    ].into_iter())
-    .set_vertex_buffer_states([VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex2d>() as i64)].into_iter())
-    .build(&device);
+    let rect_vertex_state = TVertexStateBuilder::<TApi>::new()
+        .set_vertex_attribute_states(
+            [
+                VertexAttributeStateInfo::new()
+                    .set_buffer_index(0)
+                    .set_format(AttributeFormat::Float32_32)
+                    .set_offset(0)
+                    .set_slot(0),
+                VertexAttributeStateInfo::new()
+                    .set_buffer_index(0)
+                    .set_format(AttributeFormat::Float32_32)
+                    .set_offset((std::mem::size_of::<f32>() * 2) as i64)
+                    .set_slot(1),
+            ]
+            .into_iter(),
+        )
+        .set_vertex_buffer_states(
+            [VertexBufferStateInfo::new().set_stride(std::mem::size_of::<Vertex2d>() as i64)]
+                .into_iter(),
+        )
+        .build(&device);
 
     // 3D モデルのデータ
-    let obj_data = sjgfx_examples::load_obj(&device, &include_str!("../resources/models/standard_bunny/stanford_bunny_res4.obj"));
+    let obj_data = sjgfx_examples::load_obj(
+        &mut device,
+        &include_str!("../resources/models/standard_bunny/stanford_bunny_res4.obj"),
+    );
     let vertex_attribute_state_info_array = [
         VertexAttributeStateInfo::new()
             .set_slot(0)
@@ -118,14 +210,16 @@ fn run<TApi: IApi>() {
     ];
     let vertex_buffer_state_info_array =
         [VertexBufferStateInfo::new().set_stride((std::mem::size_of::<f32>() * 6) as i64)];
-    let vertex_state = TVertexStateBuilder::<TApi>::new().set_vertex_attribute_states(vertex_attribute_state_info_array.into_iter())
-        .set_vertex_buffer_states(vertex_buffer_state_info_array.into_iter()).build(&device);
+    let vertex_state = TVertexStateBuilder::<TApi>::new()
+        .set_vertex_attribute_states(vertex_attribute_state_info_array.into_iter())
+        .set_vertex_buffer_states(vertex_buffer_state_info_array.into_iter())
+        .build(&device);
 
     // 定数バッファ
     let constant_buffer = TBufferBuilder::<TApi>::new()
         .enable_constant_buffer()
         .with_size(std::mem::size_of::<ConstantBuffer>())
-        .build(&device);
+        .build(&mut device);
     constant_buffer.map_mut(|x: &mut ConstantBuffer| {
         let position = glm::vec3(0.0, 1.5, -1.0);
         let at = glm::vec3(0.0, 0.0, -0.5);
@@ -139,12 +233,21 @@ fn run<TApi: IApi>() {
 
     // G-Buffer を出力するコマンドを生成
     g_buffer_command_buffer.begin();
-    g_buffer_command_buffer.set_render_targets(&[&albedo_target_view, &normal_target_view], Some(&depth_stencil_view));
+    g_buffer_command_buffer.set_render_targets(
+        &[&albedo_target_view, &normal_target_view],
+        Some(&depth_stencil_view),
+    );
     g_buffer_command_buffer.set_shader(&geometry_buffer_shader);
     g_buffer_command_buffer.set_constant_buffer(0, &constant_buffer);
     g_buffer_command_buffer.set_vertex_state(&vertex_state);
     g_buffer_command_buffer.set_vertex_buffer(0, &obj_data.vertex_buffer);
-    g_buffer_command_buffer.draw_indexed(PrimitiveTopology::TriangleList, IndexFormat::Uint32, &obj_data.index_buffer, obj_data.index_count, 0/*base_vertex*/);
+    g_buffer_command_buffer.draw_indexed(
+        PrimitiveTopology::TriangleList,
+        IndexFormat::Uint32,
+        &obj_data.index_buffer,
+        obj_data.index_count,
+        0, /*base_vertex*/
+    );
     g_buffer_command_buffer.end();
 
     event_loop.run_return(|event, _, control_flow| {
@@ -152,7 +255,8 @@ fn run<TApi: IApi>() {
 
         match event {
             Event::RedrawRequested(_) => {
-                let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
+                let next_scan_buffer_view =
+                    swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
                 command_buffer.begin();
                 command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
