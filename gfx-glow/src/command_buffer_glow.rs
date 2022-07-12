@@ -100,17 +100,36 @@ impl ICommandBuffer for CommandBufferGlow {
                 let buffer = &self.vertex_buffers[info.get_buffer_index() as usize];
                 unsafe { self.gl.bind_buffer(glow::ARRAY_BUFFER, *buffer) }
 
+                // 頂点アトリビュートを生成
                 let slot = info.get_slot() as u32;
                 unsafe { self.gl.enable_vertex_attrib_array(slot) }
+
+                // 頂点アトリビュートの設定
                 unsafe {
-                    self.gl.vertex_attrib_pointer_f32(
-                        slot,
-                        2,
-                        glow::FLOAT,
-                        false,
-                        2 * std::mem::size_of::<f32>() as i32,
-                        info.get_offset() as i32,
-                    )
+                    match info.get_format() {
+                        sjgfx_interface::AttributeFormat::Uint32 => self.gl.vertex_attrib_pointer_i32(
+                            slot,
+                            1,
+                            glow::UNSIGNED_INT,
+                            2 * std::mem::size_of::<u32>() as i32,
+                            info.get_offset() as i32,),
+                        sjgfx_interface::AttributeFormat::Float32_32 => 
+                            self.gl.vertex_attrib_pointer_f32(
+                                slot,
+                                2,
+                                glow::FLOAT,
+                                false,
+                                2 * std::mem::size_of::<f32>() as i32,
+                                info.get_offset() as i32,),
+                        sjgfx_interface::AttributeFormat::Float32_32_32 => 
+                            self.gl.vertex_attrib_pointer_f32(
+                                slot,
+                                3,
+                                glow::FLOAT,
+                                false,
+                                3 * std::mem::size_of::<f32>() as i32,
+                                info.get_offset() as i32,),
+                    }
                 }
 
                 // 頂点バッファのバインドを解除
