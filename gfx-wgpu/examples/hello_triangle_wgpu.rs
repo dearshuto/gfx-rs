@@ -7,12 +7,6 @@ use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
     SwapChainWgpu, VertexStateWgpu,
 };
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
-    window::WindowBuilder,
-};
 
 fn main() {
     run::<
@@ -56,10 +50,17 @@ where
     TColorTargetView: IColorTargetView,
     TVertexState: IVertexState<DeviceType = TDevice>,
 {
-    let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let mut instance = sjvi::winit::Instance::new();
+    let id = instance.create_display();
 
-    let mut device = TDevice::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
+    let mut device = {
+        let displaty = instance.try_get_display(id).unwrap();
+        TDevice::new_with_surface(
+            &DeviceInfo::new(),
+            &displaty.window,
+            instance.get_event_loop(),
+        )
+    };
     let mut swap_chain = TSwapChain::new(
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
@@ -83,62 +84,43 @@ where
             .set_pixel_shader_binary(&pixel_shader_binary),
     );
 
-    let mut should_close = false;
-    while !should_close {
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+    while instance.try_update() {
+        let display = instance.try_get_display(id).unwrap();
+        if display.is_redraw_requested() {
+            // スキャンバッファの取得
+            let mut next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(None, None);
+            //let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(&mut semaphore, &mut display_fence);
 
-            match event {
-                Event::RedrawRequested(_) => {
-                    // スキャンバッファの取得
-                    let mut next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(None, None);
-                    //let next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(&mut semaphore, &mut display_fence);
+            // スキャンバッファの取得を同期 (GPU)
+            // queue.sync_semaphore(&semaphore);
 
-                    // スキャンバッファの取得を同期 (GPU)
-                    // queue.sync_semaphore(&semaphore);
+            // コマンドを作成
+            command_buffer.begin();
+            command_buffer.clear_color(
+                &mut next_scan_buffer_view,
+                0.0,
+                0.1,
+                0.2,
+                1.0,
+                TextureArrayRange::new(),
+            );
+            command_buffer.set_shader(&shader);
+            command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
+            command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
+            command_buffer.end();
 
-                    // コマンドを作成
-                    command_buffer.begin();
-                    command_buffer.clear_color(
-                        &mut next_scan_buffer_view,
-                        0.0,
-                        0.1,
-                        0.2,
-                        1.0,
-                        TextureArrayRange::new(),
-                    );
-                    command_buffer.set_shader(&shader);
-                    command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
-                    command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
-                    command_buffer.end();
+            // コマンドをキューに積む
+            queue.execute(&command_buffer);
+            //queue.execute(&command_buffer, &fence);
 
-                    // コマンドをキューに積む
-                    queue.execute(&command_buffer);
-                    //queue.execute(&command_buffer, &fence);
+            // 結果の表示
+            queue.present(&mut swap_chain);
 
-                    // 結果の表示
-                    queue.present(&mut swap_chain);
+            // コマンドを実行
+            queue.flush();
+        }
 
-                    // コマンドを実行
-                    queue.flush();
-
-                    // スキャンバッファの取得を同期 (CPU)
-                    // display_fence.sync();
-
-                    // 前フレームのコマンドの実行を同期
-                    // fence.sync();
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    should_close = true;
-                    *control_flow = ControlFlow::Exit;
-                }
-                _ => {}
-            }
-        });
+        display.listen(&mut swap_chain);
     }
 
     // GPU コマンドが全て完了するのを待つ
