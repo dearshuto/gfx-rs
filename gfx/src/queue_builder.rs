@@ -13,7 +13,7 @@ impl<T: IApi> TQueueBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::Device) -> T::Queue {
+    pub fn build(&self, device: &mut T::Device) -> T::Queue {
         T::Queue::new(device, &QueueInfo::new())
     }
 }

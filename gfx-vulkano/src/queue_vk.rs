@@ -151,7 +151,7 @@ impl IQueue for QueueVk {
     type FenceType = FenceVk;
     type SwapChainType = SwapChainVk;
 
-    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &QueueInfo) -> Self {
         Self::new(device, info)
     }
 

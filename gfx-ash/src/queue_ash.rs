@@ -61,7 +61,7 @@ impl IQueue for QueueAsh {
     type FenceType = FenceAsh;
     type SwapChainType = SwapChainAsh;
 
-    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &QueueInfo) -> Self {
         Self::new(device, info)
     }
 
