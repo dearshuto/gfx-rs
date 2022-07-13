@@ -132,7 +132,7 @@ impl ShaderWgpu {
         sprv_binary_opt: &Option<&[u8]>,
     ) -> Option<wgpu::ShaderModule> {
         match sprv_binary_opt {
-            Some(sprv_binary) => Some(device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+            Some(sprv_binary) => Some(device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: None,
                 source: wgpu::util::make_spirv(sprv_binary),
             })),

@@ -7,13 +7,14 @@ version = "0.1.0"
 sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
-wgpu = {version = "0.12.0", features = ["spirv"]}
+wgpu = {version = "0.13.0", features = ["spirv"]}
 futures = "0.3.1"
 raw-window-handle = "0.4.0"
 spirv-reflect = "0.2.3"
 winit = "0.26.0"
 bytemuck = { version = "*", features = ["derive"] }
 uuid = { version = "0.8.0", features = ["v4"] }
+futures-intrusive = "0.4"
 
 [dev-dependencies]
 sjgfx-util = { path = "../gfx-util" }
