@@ -8,6 +8,10 @@ pub struct ColorTargetViewGlow {
 }
 
 impl ColorTargetViewGlow {
+    pub(crate) fn new_direct(texture: glow::Texture, format: ImageFormat) -> Self {
+        Self{ texture, format }
+    }
+
     pub fn get_texture(&self) -> glow::Texture {
         self.texture
     }
@@ -26,6 +30,8 @@ impl IColorTargetView for ColorTargetViewGlow {
         info: &ColorTargetViewInfo,
         texture: &Self::TextureType,
     ) -> Self {
+        // OpenGL の仕様だとレンダーターゲット (glow::Framebuffer) はメインループの途中で変えにくい
+        // ということでコマンドバッファ内で glow::Framebuffer を作ることにする
         Self {
             texture: texture.get_handle(),
             format: info.get_image_format(),
