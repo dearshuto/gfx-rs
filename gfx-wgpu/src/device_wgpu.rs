@@ -44,10 +44,10 @@ impl DeviceWgpu {
 
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_preferred_format(&adapter).unwrap(),
+            format: surface.get_supported_formats(&adapter)[0],
             width: 1600,
             height: 1200,
-            present_mode: wgpu::PresentMode::Mailbox,
+            present_mode: wgpu::PresentMode::Fifo,
         };
         surface.configure(&device, &config);
 
@@ -91,10 +91,10 @@ impl DeviceWgpu {
         if let Some(surface) = &self.surface_opt {
             let config = wgpu::SurfaceConfiguration {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: surface.get_preferred_format(&self.adapter).unwrap(),
-                width: width,
-                height: height,
-                present_mode: wgpu::PresentMode::Mailbox,
+                format: surface.get_supported_formats(&self.adapter)[0],
+                width,
+                height,
+                present_mode: wgpu::PresentMode::Fifo,
             };
             surface.configure(&self.device, &config);
         }

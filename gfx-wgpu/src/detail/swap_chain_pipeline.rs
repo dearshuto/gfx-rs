@@ -31,11 +31,11 @@ impl SwapChainPipeline {
         let pixel_shader_binary =
             compiler.create_binary(&pixel_shader_source, sjgfx_util::ShaderStage::Pixel);
 
-        let vertex_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        let vertex_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::util::make_spirv(&vertex_shader_binary),
         });
-        let pixel_module = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+        let pixel_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::util::make_spirv(&pixel_shader_binary),
         });
@@ -67,11 +67,11 @@ impl SwapChainPipeline {
             fragment: Some(wgpu::FragmentState {
                 module: &pixel_module,
                 entry_point: "main",
-                targets: &[wgpu::ColorTargetState {
+                targets: &[Some(wgpu::ColorTargetState {
                     format: texture_format,
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
-                }],
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -181,7 +181,7 @@ impl SwapChainPipeline {
         {
             let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
-                color_attachments: &[color_attachment],
+                color_attachments: &[Some(color_attachment)],
                 depth_stencil_attachment: None,
             });
             render_pass.set_pipeline(&self.render_pipeline);

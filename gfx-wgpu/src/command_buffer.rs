@@ -108,7 +108,7 @@ impl CommandBufferWgpu {
             let formats = self
                 .color_target_view
                 .iter()
-                .filter_map(|x| {
+                .map(|x| {
                     if let Some(view) = x {
                         Some(wgpu::ColorTargetState {
                             format: view.get_texture_format().into(),
@@ -201,7 +201,7 @@ impl CommandBufferWgpu {
         {
             let _ = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: None,
-                color_attachments: &[wgpu::RenderPassColorAttachment {
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: color_target_view.get_texture_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
@@ -213,7 +213,7 @@ impl CommandBufferWgpu {
                         }),
                         store: true,
                     },
-                }],
+                })],
                 depth_stencil_attachment: None,
             });
         }
@@ -468,7 +468,7 @@ impl CommandBufferWgpu {
 
             let (dispatch_count_x, dispatch_cout_y, dispatch_count_z) =
                 *self.dispatch_count.as_ref().unwrap();
-            compute_pass.dispatch(dispatch_count_x, dispatch_cout_y, dispatch_count_z);
+            compute_pass.dispatch_workgroups(dispatch_count_x, dispatch_cout_y, dispatch_count_z);
         }
 
         command_encoder.finish()
@@ -486,7 +486,7 @@ impl CommandBufferWgpu {
             let color_attachments = self
                 .color_target_view
                 .iter()
-                .filter_map(|x| {
+                .map(|x| {
                     if let Some(view) = x {
                         Some(wgpu::RenderPassColorAttachment {
                             view: view.get_texture_view(),
