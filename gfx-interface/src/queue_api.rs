@@ -14,7 +14,7 @@ pub trait IQueue {
     type FenceType: IFence<DeviceType = Self::DeviceType>;
     type SwapChainType: ISwapChain;
 
-    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self;
+    fn new(device: &mut Self::DeviceType, info: &QueueInfo) -> Self;
 
     fn execute(&mut self, command_buffer: &Self::CommandBufferType);
 

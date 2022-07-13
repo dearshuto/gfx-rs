@@ -50,7 +50,7 @@ impl IQueue for QueueWgpu {
     type FenceType = FenceWgpu;
     type SwapChainType = SwapChainWgpu;
 
-    fn new(device: &Self::DeviceType, info: &QueueInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &QueueInfo) -> Self {
         Self::new(device, info)
     }
 
