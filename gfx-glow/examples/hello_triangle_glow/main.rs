@@ -4,8 +4,8 @@ use glow::HasContext;
 use sjgfx_glow::VertexStateGlow;
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IBuffer, ICommandBuffer,
-    IVertexState, PrimitiveTopology, QueueInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
-    VertexStateInfo,
+    IQueue, ISwapChain, IVertexState, PrimitiveTopology, QueueInfo, SwapChainInfo,
+    VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
 
 fn main() {
@@ -14,8 +14,9 @@ fn main() {
     let id = instance.create_display();
     let display = instance.try_get_display(id).unwrap();
     let mut device = sjgfx_glow::DeviceGlow::new_with_display(&DeviceInfo::new(), &display);
+    let mut swap_chain = sjgfx_glow::SwapChainGlow::new(&mut device, &SwapChainInfo::new());
     let mut command_buffer = sjgfx_glow::CommandBufferGlow::new(&device, &CommandBufferInfo::new());
-    let mut queue = sjgfx_glow::QueueGlow::new(&device, &QueueInfo::new());
+    let mut queue = sjgfx_glow::QueueGlow::new(&mut device, &QueueInfo::new());
 
     let vertex_shader_source = include_str!("resources/hello_triangle.vs");
     let pixel_shader_source = include_str!("resources/hello_triangle.fs");
@@ -64,19 +65,26 @@ fn main() {
     }
 
     while instance.should_update() {
+        let scan_buffer = swap_chain.acquire_next_scan_buffer_view(None, None);
+
         command_buffer.begin();
+        command_buffer.set_render_targets(&[&scan_buffer], None);
         command_buffer.set_shader(&shader);
         command_buffer.set_vertex_state(&vertex_state);
         command_buffer.set_vertex_buffer(0, &vertex_buffer);
         command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
         command_buffer.end();
+
         queue.execute(&command_buffer);
-        instance
-            .try_get_display(id)
-            .unwrap()
-            .window
-            .swap_buffers()
-            .unwrap();
+        queue.present(&mut swap_chain);
+        queue.flush();
+
+        // instance
+        //     .try_get_display(id)
+        //     .unwrap()
+        //     .window
+        //     .swap_buffers()
+        //     .unwrap();
     }
 
     sjgfx_glow::finalize();

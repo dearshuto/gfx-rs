@@ -26,6 +26,8 @@ pub struct CommandBufferGlow {
     scissor_state: Option<ScissorStateInfo>,
     draw_command: Option<DrawCommand>,
 
+    render_buffer: Option<glow::Renderbuffer>,
+    frame_buffer_object: Option<glow::Framebuffer>,
     vertex_array_object: Option<glow::VertexArray>,
 }
 
@@ -48,6 +50,10 @@ impl CommandBufferGlow {
 
     pub fn try_get_vertex_array_object(&self) -> Option<glow::VertexArray> {
         self.vertex_array_object
+    }
+
+    pub fn try_get_frame_buffer_object(&self) -> Option<glow::Framebuffer> {
+        self.frame_buffer_object
     }
 }
 
@@ -77,6 +83,9 @@ impl ICommandBuffer for CommandBufferGlow {
             vertex_buffer_state_infos: None,
             scissor_state: None,
             draw_command: None,
+
+            render_buffer: None,
+            frame_buffer_object: None,
             vertex_array_object: None,
         }
     }
@@ -84,11 +93,45 @@ impl ICommandBuffer for CommandBufferGlow {
     fn begin(&mut self) {}
 
     fn end(&mut self) {
+        // RBO がなかったら作る
+        if self.render_buffer.is_none() {
+            let new_rbo = unsafe { self.gl.create_renderbuffer() }.unwrap();
+            self.render_buffer = Some(new_rbo);
+        }
+
+        // FBO がなかったら作る
+        if self.frame_buffer_object.is_none() {
+            let new_fbo = unsafe { self.gl.create_framebuffer() }.unwrap();
+            self.frame_buffer_object = Some(new_fbo);
+        }
+
         // VAO がなかったら作る
         if self.vertex_array_object.is_none() {
             let new_vao = unsafe { self.gl.create_vertex_array() }.unwrap();
             self.vertex_array_object = Some(new_vao);
         }
+
+        // FBO の更新を開始
+        unsafe {
+            self.gl
+                .bind_framebuffer(glow::FRAMEBUFFER, self.frame_buffer_object)
+        }
+        {
+            // フレームバッファのテクスチャを設定
+            unsafe {
+                self.gl
+                    .bind_texture(glow::TEXTURE_2D, self.render_target[0])
+            }
+            unsafe {
+                self.gl.framebuffer_texture(
+                    glow::FRAMEBUFFER,
+                    glow::COLOR_ATTACHMENT0,
+                    self.render_target[0],
+                    0,
+                )
+            }
+        }
+        unsafe { self.gl.bind_framebuffer(glow::FRAMEBUFFER, None) }
 
         // VAO の更新を開始
         unsafe { self.gl.bind_vertex_array(self.vertex_array_object) }
@@ -107,28 +150,35 @@ impl ICommandBuffer for CommandBufferGlow {
                 // 頂点アトリビュートの設定
                 unsafe {
                     match info.get_format() {
-                        sjgfx_interface::AttributeFormat::Uint32 => self.gl.vertex_attrib_pointer_i32(
-                            slot,
-                            1,
-                            glow::UNSIGNED_INT,
-                            2 * std::mem::size_of::<u32>() as i32,
-                            info.get_offset() as i32,),
-                        sjgfx_interface::AttributeFormat::Float32_32 => 
+                        sjgfx_interface::AttributeFormat::Uint32 => {
+                            self.gl.vertex_attrib_pointer_i32(
+                                slot,
+                                1,
+                                glow::UNSIGNED_INT,
+                                2 * std::mem::size_of::<u32>() as i32,
+                                info.get_offset() as i32,
+                            )
+                        }
+                        sjgfx_interface::AttributeFormat::Float32_32 => {
                             self.gl.vertex_attrib_pointer_f32(
                                 slot,
                                 2,
                                 glow::FLOAT,
                                 false,
                                 2 * std::mem::size_of::<f32>() as i32,
-                                info.get_offset() as i32,),
-                        sjgfx_interface::AttributeFormat::Float32_32_32 => 
+                                info.get_offset() as i32,
+                            )
+                        }
+                        sjgfx_interface::AttributeFormat::Float32_32_32 => {
                             self.gl.vertex_attrib_pointer_f32(
                                 slot,
                                 3,
                                 glow::FLOAT,
                                 false,
                                 3 * std::mem::size_of::<f32>() as i32,
-                                info.get_offset() as i32,),
+                                info.get_offset() as i32,
+                            )
+                        }
                     }
                 }
 
