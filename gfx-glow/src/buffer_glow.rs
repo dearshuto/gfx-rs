@@ -55,7 +55,7 @@ impl IBuffer for BufferGlow {
         let target = glow::ARRAY_BUFFER;
         let offset = 0;
         let length = std::mem::size_of::<T>();
-        let access = glow::READ_BUFFER;
+        let access = glow::MAP_WRITE_BIT;
         unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
 
         let mapped_data = unsafe {
