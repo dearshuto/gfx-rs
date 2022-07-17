@@ -35,7 +35,11 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    run::<sjgfx::api::Wgpu>();
+    if cfg!(feature = "backend-glow") {
+        run::<sjgfx::api::Glow>();
+    } else {
+        run::<sjgfx::api::Wgpu>();
+    }
 }
 
 fn run<TApi: IApi>() {

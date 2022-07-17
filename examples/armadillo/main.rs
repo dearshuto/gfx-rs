@@ -16,13 +16,14 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    run::<sjgfx::api::Wgpu>();
     if cfg!(feature = "backend-ash") {
         run::<sjgfx::api::Ash>();
     } else if cfg!(feature = "backend-wgpu") {
         run::<sjgfx::api::Wgpu>();
     } else if cfg!(feature = "backend-vulkano") {
         run::<sjgfx::api::Vulkano>();
+    } else if cfg!(feature = "backend-glow") {
+        run::<sjgfx::api::Glow>();
     } else {
         println!("help: cargon run --release --bin armadillo --features backend-<ash/wgpu/vulkano>")
     }
@@ -52,7 +53,9 @@ fn run<TApi: IApi>() {
         &mut device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(vertex_shader_binary)
-            .set_pixel_shader_binary(pixel_shader_binary),
+            .set_vertex_shader_source(include_str!("../resources/shaders/armadillo.vs"))
+            .set_pixel_shader_binary(pixel_shader_binary)
+            .set_pixel_shader_source(include_str!("../resources/shaders/armadillo.fs")),
     );
 
     // 頂点ステート
