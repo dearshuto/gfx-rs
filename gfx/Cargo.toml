@@ -4,6 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
+sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
 sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }

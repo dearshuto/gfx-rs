@@ -1,17 +1,14 @@
 extern crate nalgebra_glm as glm;
 
+use sjgfx::api::IApi;
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DepthStencilStateInfo, DeviceInfo, GpuAccess,
-    IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader,
-    ISwapChain, ITexture, IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo,
-    ShaderInfo, SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo,
-    VertexBufferStateInfo, VertexStateInfo,
+    IBuffer, ICommandBuffer, IDepthStencilView, IDevice, IQueue, IShader, ISwapChain, ITexture,
+    IVertexState, ImageFormat, IndexFormat, PrimitiveTopology, QueueInfo, ShaderInfo,
+    SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo, VertexBufferStateInfo,
+    VertexStateInfo,
 };
-use sjgfx_wgpu::{
-    BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
-    QueueWgpu, ShaderWgpu, SwapChainWgpu, TextureWgpu, VertexStateWgpu,
-};
-use winit::event_loop::EventLoop;
+use sjvi::{IDisplay, IInstance};
 
 #[repr(C)]
 struct ConstantBuffer {
@@ -23,66 +20,18 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    run::<
-        DeviceWgpu,
-        QueueWgpu,
-        CommandBufferWgpu,
-        SwapChainWgpu,
-        ColorTargetViewWgpu,
-        DepthStencilViewWgpu,
-        ShaderWgpu,
-        BufferWgpu,
-        TextureWgpu,
-        VertexStateWgpu,
-    >();
+    run::<sjgfx::api::Wgpu>();
 }
 
-fn run<
-    TDevice,
-    TQueue,
-    TCommandBuffer,
-    TSwapChain,
-    TColorTargetView,
-    TDepthStencilView,
-    TShader,
-    TBuffer,
-    TTexture,
-    TVertexState,
->()
-where
-    TDevice: IDevice,
-    TQueue: IQueue<
-        DeviceType = TDevice,
-        CommandBufferType = TCommandBuffer,
-        SwapChainType = TSwapChain,
-    >,
-    TCommandBuffer: ICommandBuffer<
-        DeviceType = TDevice,
-        ShaderType = TShader,
-        BufferType = TBuffer,
-        ColorTargetViewType = TColorTargetView,
-        DepthStencilViewType = TDepthStencilView,
-        VertexStateType = TVertexState,
-    >,
-    TSwapChain: ISwapChain<DeviceType = TDevice, ColorTargetViewType = TColorTargetView>,
-    TColorTargetView: IColorTargetView<DeviceType = TDevice>,
-    TDepthStencilView: IDepthStencilView<DeviceType = TDevice, TextureType = TTexture>,
-    TShader: IShader<DeviceType = TDevice>,
-    TBuffer: IBuffer<DeviceType = TDevice>,
-    TTexture: ITexture<DeviceType = TDevice>,
-    TVertexState: IVertexState<DeviceType = TDevice>,
-{
-    let event_loop = EventLoop::new();
-    let mut display = sjvi::winit::create_display(event_loop);
+fn run<TApi: IApi>() {
+    let mut instance = TApi::Instance::new();
+    let id = instance.create_display();
+    let display = instance.try_get_display(&id).unwrap();
 
-    let mut device = TDevice::new_with_surface(
-        &DeviceInfo::new(),
-        &display.window,
-        display.event_loop.as_ref().unwrap(),
-    );
-    let mut queue = TQueue::new(&device, &QueueInfo::new());
-    let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
-    let mut swap_chain = TSwapChain::new(
+    let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &display);
+    let mut queue = TApi::Queue::new(&mut device, &QueueInfo::new());
+    let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
+    let mut swap_chain = TApi::SwapChain::new(
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
     );
@@ -90,7 +39,7 @@ where
     // シェーダ
     let vertex_shader_binary = include_bytes!("../outputs/resources/shaders/wave.vs.spv");
     let pixel_shader_binary = include_bytes!("../outputs/resources/shaders/wave.fs.spv");
-    let shader = TShader::new(
+    let shader = TApi::Shader::new(
         &device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(vertex_shader_binary)
@@ -115,10 +64,10 @@ where
     let vertex_state_info = VertexStateInfo::new()
         .set_attribute_state_info_array(vertex_attribute_state_info_array.into_iter())
         .set_buffer_state_info_array(vertex_buffer_state_info_array.into_iter());
-    let vertex_state = TVertexState::new(&device, &vertex_state_info);
+    let vertex_state = TApi::VertexState::new(&device, &vertex_state_info);
 
     // 定数バッファ
-    let constant_buffer = TBuffer::new(
+    let constant_buffer = TApi::Buffer::new(
         &mut device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::CONSTANT_BUFFER)
@@ -143,7 +92,7 @@ where
     );
 
     // 深度バッファ
-    let depth_buffer = TTexture::new(
+    let depth_buffer = TApi::Texture::new(
         &mut device,
         &TextureInfo::new()
             .set_width(1280)
@@ -152,10 +101,11 @@ where
             .set_image_format(ImageFormat::D32),
     );
     let depth_stencil_view =
-        TDepthStencilView::new(&device, &DepthStencilStateInfo::new(), &depth_buffer);
+        TApi::DepthStencilView::new(&device, &DepthStencilStateInfo::new(), &depth_buffer);
 
-    while !display.should_close() {
-        display.update(|| {
+    while instance.try_update() {
+        let display = instance.try_get_display(&id).unwrap();
+        if display.is_redraw_requested() {
             constant_buffer.map_mut(|x: &mut ConstantBuffer| {
                 x.time += 0.05;
             });
@@ -190,7 +140,7 @@ where
             queue.present(&mut swap_chain);
             queue.flush();
             queue.sync();
-        });
+        }
 
         display.listen(&mut swap_chain);
     }

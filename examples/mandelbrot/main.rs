@@ -7,12 +7,7 @@ use sjgfx_interface::{
     VertexStateInfo,
 };
 
-use winit::dpi::PhysicalSize;
-use winit::event::WindowEvent;
-use winit::event_loop::EventLoop;
-use winit::platform::run_return::EventLoopExtRunReturn;
-use winit::window::WindowBuilder;
-use winit::{event::Event, event_loop::ControlFlow};
+use sjvi::{IDisplay, IInstance};
 
 fn main() {
     if cfg!(feature = "backend-wgpu") {
@@ -29,15 +24,12 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_inner_size(PhysicalSize::new(1280, 960))
-        .with_resizable(false)
-        .build(&event_loop)
-        .unwrap();
+    let mut instance = TApi::Instance::new();
+    let id = instance.create_display();
+    let display = instance.try_get_display(&id).unwrap();
 
-    let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &window, &event_loop);
-    let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
+    let mut device = TApi::Device::new_with_surface(&DeviceInfo::new(), &display);
+    let mut queue = TApi::Queue::new(&mut device, &QueueInfo::new());
     let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TApi::SwapChain::new(
         &mut device,
@@ -90,45 +82,30 @@ fn run<TApi: IApi>() {
 
     let mut semaphore = TApi::Semaphore::new(&device, &SemaphoreInfo::new());
 
-    let mut should_close = false;
-    while !should_close {
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+    while instance.try_update() {
+        let display = instance.try_get_display(&id).unwrap();
+        if display.is_redraw_requested() {
+            let next_scan_buffer_view =
+                swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
-            match event {
-                Event::RedrawRequested(_) => {
-                    // queue.sync_semaphore(&mut semaphore);
+            command_buffer.begin();
+            command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
+            command_buffer.set_shader(&shader);
+            command_buffer.set_vertex_state(&vertex_state);
+            command_buffer.set_vertex_buffer(0, &vertex_buffer);
+            command_buffer.draw(
+                PrimitiveTopology::TriangleList,
+                6, /*vertex_count*/
+                0, /*vertex_offset*/
+            );
+            command_buffer.end();
 
-                    let next_scan_buffer_view =
-                        swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
+            queue.execute(&command_buffer);
+            queue.present(&mut swap_chain);
+            queue.flush();
+            queue.sync();
+        }
 
-                    command_buffer.begin();
-                    command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
-                    command_buffer.set_shader(&shader);
-                    command_buffer.set_vertex_state(&vertex_state);
-                    command_buffer.set_vertex_buffer(0, &vertex_buffer);
-                    command_buffer.draw(
-                        PrimitiveTopology::TriangleList,
-                        6, /*vertex_count*/
-                        0, /*vertex_offset*/
-                    );
-                    command_buffer.end();
-
-                    queue.execute(&command_buffer);
-                    queue.present(&mut swap_chain);
-                    queue.flush();
-                    queue.sync();
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    should_close = true;
-                    *control_flow = ControlFlow::Exit;
-                }
-                _ => {}
-            }
-        });
-        std::thread::sleep(std::time::Duration::from_millis(32));
+        display.listen(&mut swap_chain);
     }
 }

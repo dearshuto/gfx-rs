@@ -112,6 +112,8 @@ impl DeviceVk {
 }
 
 impl IDevice for DeviceVk {
+    type Display = sjvi::winit::Display<()>;
+
     fn new(_info: &DeviceInfo) -> Self {
         let (_instance, device, queue) = Self::create_device();
         Self {
@@ -121,15 +123,8 @@ impl IDevice for DeviceVk {
         }
     }
 
-    fn new_with_surface<TWindow>(
-        info: &DeviceInfo,
-        _window: &TWindow,
-        event_loop: &EventLoop<()>,
-    ) -> Self
-    where
-        TWindow: raw_window_handle::HasRawWindowHandle,
-    {
-        Self::new_as_graphics(info, event_loop)
+    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
+        Self::new_as_graphics(info, display.event_loop.as_ref().unwrap())
     }
 }
 

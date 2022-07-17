@@ -27,7 +27,7 @@ fn main() {
 
     let mut device = DeviceBuilder::new().build_with_surface(&window, &event_loop);
     let mut swap_chain = SwapChainBuilder::new().build(&mut device);
-    let mut queue = QueueBuilder::new().build(&device);
+    let mut queue = QueueBuilder::new().build(&mut device);
     let mut command_buffer = CommandBufferBuilder::new().build(&device);
     let vertex_buffer = BufferBuilder::new()
         .with_size(64)
