@@ -77,5 +77,5 @@ impl<'a> ShaderInfo<'a> {
 pub trait IShader {
     type DeviceType: IDevice;
 
-    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self;
+    fn new(device: &mut Self::DeviceType, info: &ShaderInfo) -> Self;
 }

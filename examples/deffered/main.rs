@@ -62,7 +62,7 @@ fn run<TApi: IApi>() {
         .set_pixel_shader_binary(include_bytes!(
             "../outputs/resources/shaders/geometry_output.fs.spv"
         ))
-        .build(&device);
+        .build(&mut device);
     let shading_shader = TShaderBuilder::<TApi>::new()
         .set_vertex_shader_binary(include_bytes!(
             "../outputs/resources/shaders/deffered_shading.vs.spv"
@@ -70,7 +70,7 @@ fn run<TApi: IApi>() {
         .set_pixel_shader_binary(include_bytes!(
             "../outputs/resources/shaders/deffered_shading.fs.spv"
         ))
-        .build(&device);
+        .build(&mut device);
 
     // G-Buffer
     let sampler = TSamplerBuilder::<TApi>::new().build(&mut device);

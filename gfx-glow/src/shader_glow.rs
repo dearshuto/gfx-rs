@@ -42,9 +42,8 @@ impl ShaderGlow {
 impl IShader for ShaderGlow {
     type DeviceType = DeviceGlow;
 
-    fn new(_device: &Self::DeviceType, _info: &ShaderInfo) -> Self {
-        // Self::new(device, info)
-        todo!()
+    fn new(device: &mut Self::DeviceType, info: &ShaderInfo) -> Self {
+        Self::new(device, info)
     }
 }
 
