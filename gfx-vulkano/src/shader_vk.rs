@@ -101,7 +101,7 @@ impl ShaderVk {
 impl IShader for ShaderVk {
     type DeviceType = DeviceVk;
 
-    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &ShaderInfo) -> Self {
         Self::new(device, info)
     }
 }

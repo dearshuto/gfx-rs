@@ -39,7 +39,7 @@ fn run<TApi: IApi>() {
     let vertex_shader_binary = include_bytes!("../outputs/resources/shaders/mandelbrot.vs.spv");
     let pixel_shader_binary = include_bytes!("../outputs/resources/shaders/mandelbrot.fs.spv");
     let shader = TApi::Shader::new(
-        &device,
+        &mut device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(vertex_shader_binary)
             .set_pixel_shader_binary(pixel_shader_binary),

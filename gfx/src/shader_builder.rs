@@ -19,7 +19,7 @@ impl<T: IApi> TShaderBuilder<T> {
         }
     }
 
-    pub fn build(&self, device: &T::Device) -> T::Shader {
+    pub fn build(&self, device: &mut T::Device) -> T::Shader {
         let shader_info = self.create_info();
         T::Shader::new(device, &shader_info)
     }

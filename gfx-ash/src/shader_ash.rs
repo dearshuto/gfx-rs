@@ -223,7 +223,7 @@ impl ShaderAsh {
 impl IShader for ShaderAsh {
     type DeviceType = DeviceAsh;
 
-    fn new(device: &Self::DeviceType, info: &ShaderInfo) -> Self {
+    fn new(device: &mut Self::DeviceType, info: &ShaderInfo) -> Self {
         Self::new(device, info)
     }
 }
