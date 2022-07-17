@@ -10,13 +10,7 @@ use sjgfx_interface::{
     ISwapChain, ImageFormat, IndexFormat, PrimitiveTopology, VertexAttributeStateInfo,
     VertexBufferStateInfo,
 };
-use winit::{
-    dpi::PhysicalSize,
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
-    window::WindowBuilder,
-};
+use sjvi::{IDisplay, IInstance};
 
 #[repr(C)]
 struct Vertex2d {
@@ -45,16 +39,14 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_resizable(false)
-        .with_inner_size(PhysicalSize::new(1280, 960))
-        .build(&event_loop)
-        .unwrap();
+    let mut instance = TApi::Instance::new();
+    let id = instance.create_display();
+    let display = instance.try_get_display(&id).unwrap();
+
     let mut device = TDeviceBuilder::<TApi>::new()
         .enable_debug_assertion()
-        .build_with_surface(&window, &event_loop);
-    let mut queue = TQueueBuilder::<TApi>::new().build(&device);
+        .build_with_surface(&display);
+    let mut queue = TQueueBuilder::<TApi>::new().build(&mut device);
     let mut swap_chain = TSwapChainBuilder::<TApi>::new()
         .with_width(1280)
         .with_height(960)
@@ -250,39 +242,31 @@ fn run<TApi: IApi>() {
     );
     g_buffer_command_buffer.end();
 
-    event_loop.run_return(|event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+    while instance.try_update() {
+        let display = instance.try_get_display(&id).unwrap();
+        if display.is_redraw_requested() {
+            let next_scan_buffer_view =
+                swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
 
-        match event {
-            Event::RedrawRequested(_) => {
-                let next_scan_buffer_view =
-                    swap_chain.acquire_next_scan_buffer_view(Some(&mut semaphore), None);
+            command_buffer.begin();
+            command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
+            command_buffer.set_shader(&shading_shader);
+            command_buffer.set_texture(0, &albedo_view);
+            command_buffer.set_texture(1, &normal_view);
+            command_buffer.set_texture(2, &depth_view);
+            command_buffer.set_sampler(3, &sampler);
+            command_buffer.set_vertex_state(&rect_vertex_state);
+            command_buffer.set_vertex_buffer(0, &rect_vertex_buffer);
+            command_buffer.draw(PrimitiveTopology::TriangleList, 6, 0);
+            command_buffer.end();
 
-                command_buffer.begin();
-                command_buffer.set_render_targets(&[&next_scan_buffer_view], None);
-                command_buffer.set_shader(&shading_shader);
-                command_buffer.set_texture(0, &albedo_view);
-                command_buffer.set_texture(1, &normal_view);
-                command_buffer.set_texture(2, &depth_view);
-                command_buffer.set_sampler(3, &sampler);
-                command_buffer.set_vertex_state(&rect_vertex_state);
-                command_buffer.set_vertex_buffer(0, &rect_vertex_buffer);
-                command_buffer.draw(PrimitiveTopology::TriangleList, 6, 0);
-                command_buffer.end();
+            queue.execute(&g_buffer_command_buffer);
+            queue.execute(&command_buffer);
+            queue.present(&mut swap_chain);
+            queue.flush();
+            queue.sync();
 
-                queue.execute(&g_buffer_command_buffer);
-                queue.execute(&command_buffer);
-                queue.present(&mut swap_chain);
-                queue.flush();
-                queue.sync();
-            }
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                *control_flow = ControlFlow::Exit;
-            }
-            _ => {}
+            display.listen(&mut swap_chain);
         }
-    });
+    }
 }

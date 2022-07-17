@@ -1,4 +1,4 @@
-use winit::event_loop::EventLoop;
+use sjvi::IDisplay;
 
 use crate::enums::DebugMode;
 
@@ -24,13 +24,9 @@ impl DeviceInfo {
 }
 
 pub trait IDevice {
+    type Display: IDisplay;
+
     fn new(info: &DeviceInfo) -> Self;
 
-    fn new_with_surface<TWindow>(
-        info: &DeviceInfo,
-        window: &TWindow,
-        event_loop: &EventLoop<()>,
-    ) -> Self
-    where
-        TWindow: raw_window_handle::HasRawWindowHandle;
+    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self;
 }

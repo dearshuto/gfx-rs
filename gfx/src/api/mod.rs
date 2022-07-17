@@ -16,12 +16,13 @@ use sjgfx_wgpu::{
     FenceWgpu, QueueWgpu, SamplerWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu,
     TextureWgpu, VertexStateWgpu,
 };
+use sjvi::{IDisplay, IInstance};
 
 pub trait IApi {
     type Buffer: IBuffer<DeviceType = Self::Device>;
     type ColorTargetView: IColorTargetView<DeviceType = Self::Device, TextureType = Self::Texture>;
     type DepthStencilView: IDepthStencilView<DeviceType = Self::Device, TextureType = Self::Texture>;
-    type Device: IDevice;
+    type Device: IDevice<Display = Self::Display>;
     type Queue: IQueue<
         DeviceType = Self::Device,
         CommandBufferType = Self::CommandBuffer,
@@ -50,6 +51,9 @@ pub trait IApi {
         ColorTargetViewType = Self::ColorTargetView,
     >;
     type VertexState: IVertexState<DeviceType = Self::Device>;
+
+    type Instance: IInstance<Display = Self::Display>;
+    type Display: IDisplay;
 }
 
 pub struct Ash;
@@ -68,6 +72,9 @@ impl IApi for Ash {
     type Texture = TextureAsh;
     type TextureView = TextureViewAsh;
     type VertexState = VertexStateAsh;
+
+    type Instance = sjvi::winit::Instance;
+    type Display = sjvi::winit::Display<()>;
 }
 
 pub struct Wgpu;
@@ -86,6 +93,9 @@ impl IApi for Wgpu {
     type Texture = TextureWgpu;
     type TextureView = TextureViewWgpu;
     type VertexState = VertexStateWgpu;
+
+    type Instance = sjvi::winit::Instance;
+    type Display = sjvi::winit::Display<()>;
 }
 
 pub struct Vulkano;
@@ -104,4 +114,7 @@ impl IApi for Vulkano {
     type Semaphore = SemaphoreVk;
     type SwapChain = SwapChainVk;
     type VertexState = VertexStateVk;
+
+    type Instance = sjvi::winit::Instance;
+    type Display = sjvi::winit::Display<()>;
 }

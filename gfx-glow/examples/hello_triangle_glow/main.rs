@@ -10,7 +10,7 @@ use sjgfx_interface::{
 
 fn main() {
     sjgfx_glow::initialize();
-    let mut instance = sjgfx_glow::vi::Instance::new();
+    let mut instance = sjvi::glutin::Instance::new();
     let id = instance.create_display();
     let display = instance.try_get_display(id).unwrap();
     let mut device = sjgfx_glow::DeviceGlow::new_with_display(&DeviceInfo::new(), &display);
@@ -64,7 +64,7 @@ fn main() {
         println!("MAP ERROR: {}", error);
     }
 
-    while instance.should_update() {
+    while instance.try_update() {
         let scan_buffer = swap_chain.acquire_next_scan_buffer_view(None, None);
 
         command_buffer.begin();

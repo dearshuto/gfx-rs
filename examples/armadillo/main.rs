@@ -8,6 +8,7 @@ use sjgfx_interface::{
     ShaderInfo, SwapChainInfo, TextureArrayRange, TextureInfo, VertexAttributeStateInfo,
     VertexBufferStateInfo, VertexStateInfo,
 };
+use sjvi::{IDisplay, IInstance};
 
 #[repr(C)]
 struct ConstantBuffer {
@@ -15,6 +16,7 @@ struct ConstantBuffer {
 }
 
 fn main() {
+    run::<sjgfx::api::Wgpu>();
     if cfg!(feature = "backend-ash") {
         run::<sjgfx::api::Ash>();
     } else if cfg!(feature = "backend-wgpu") {
@@ -27,19 +29,16 @@ fn main() {
 }
 
 fn run<TApi: IApi>() {
-    let mut instance = sjvi::winit::Instance::new();
-    let id = instance.create_display_with_size(1280, 960);
+    let mut instance = TApi::Instance::new();
+    // let id = instance.create_display_with_size(1280, 960);
+    let id = instance.create_display();
 
     let mut device = {
-        let display = instance.try_get_display(id).unwrap();
+        let display = instance.try_get_display(&id).unwrap();
 
-        TApi::Device::new_with_surface(
-            &DeviceInfo::new(),
-            &display.window,
-            instance.get_event_loop(),
-        )
+        TApi::Device::new_with_surface(&DeviceInfo::new(), &display)
     };
-    let mut queue = TApi::Queue::new(&device, &QueueInfo::new());
+    let mut queue = TApi::Queue::new(&mut device, &QueueInfo::new());
     let mut command_buffer = TApi::CommandBuffer::new(&device, &CommandBufferInfo::new());
     let mut swap_chain = TApi::SwapChain::new(
         &mut device,
@@ -115,7 +114,7 @@ fn run<TApi: IApi>() {
     let mut semaphore = TApi::Semaphore::new(&device, &SemaphoreInfo::new());
 
     while instance.try_update() {
-        let display = instance.try_get_display(id).unwrap();
+        let display = instance.try_get_display(&id).unwrap();
 
         if display.is_redraw_requested() {
             let mut next_scan_buffer_view =

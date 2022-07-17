@@ -3,9 +3,9 @@ use std::sync::Arc;
 use glow::HasContext;
 use glutin::{dpi::PhysicalSize, window::Window, ContextWrapper, PossiblyCurrent};
 use sjgfx_interface::{DeviceInfo, IDevice};
-use winit::event_loop::EventLoop;
+use sjvi::glutin::Display;
 
-use crate::vi::Display;
+// use crate::vi::Display;
 
 pub struct DeviceGlow {
     context: Arc<glow::Context>,
@@ -76,21 +76,15 @@ impl DeviceGlow {
 }
 
 impl IDevice for DeviceGlow {
+    type Display = sjvi::glutin::Display;
+
     fn new(_info: &DeviceInfo) -> Self {
         // Self::new(info)
         todo!()
     }
 
-    fn new_with_surface<TWindow>(
-        _info: &DeviceInfo,
-        _window: &TWindow,
-        _event_loop: &EventLoop<()>,
-    ) -> Self
-    where
-        TWindow: raw_window_handle::HasRawWindowHandle,
-    {
-        // Self::new(info)
-        todo!()
+    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
+        Self::new_with_display(info, display)
     }
 }
 
