@@ -152,6 +152,8 @@ impl ICommandBuffer for CommandBufferGlow {
                 unsafe { self.gl.enable_vertex_attrib_array(slot) }
 
                 // 頂点アトリビュートの設定
+                let vertex_buffer_info = &self.vertex_buffer_state_infos.as_ref().unwrap()
+                    [info.get_buffer_index() as usize];
                 unsafe {
                     match info.get_format() {
                         sjgfx_interface::AttributeFormat::Uint32 => {
@@ -169,7 +171,7 @@ impl ICommandBuffer for CommandBufferGlow {
                                 2,
                                 glow::FLOAT,
                                 false,
-                                2 * std::mem::size_of::<f32>() as i32,
+                                vertex_buffer_info.get_stride() as i32,
                                 info.get_offset() as i32,
                             )
                         }
@@ -179,7 +181,7 @@ impl ICommandBuffer for CommandBufferGlow {
                                 3,
                                 glow::FLOAT,
                                 false,
-                                3 * std::mem::size_of::<f32>() as i32,
+                                vertex_buffer_info.get_stride() as i32,
                                 info.get_offset() as i32,
                             )
                         }
