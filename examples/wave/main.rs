@@ -20,7 +20,11 @@ struct ConstantBuffer {
 }
 
 fn main() {
-    run::<sjgfx::api::Wgpu>();
+    if cfg!(feature = "backend-glow") {
+        run::<sjgfx::api::Glow>();
+    } else {
+        run::<sjgfx::api::Wgpu>();
+    }
 }
 
 fn run<TApi: IApi>() {
@@ -43,7 +47,9 @@ fn run<TApi: IApi>() {
         &mut device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(vertex_shader_binary)
-            .set_pixel_shader_binary(pixel_shader_binary),
+            .set_vertex_shader_source(include_str!("../resources/shaders/wave.vs"))
+            .set_pixel_shader_binary(pixel_shader_binary)
+            .set_pixel_shader_source(include_str!("../resources/shaders/wave.fs")),
     );
 
     // 頂点ステート

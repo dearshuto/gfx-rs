@@ -24,6 +24,7 @@ default = [ ]
 backend-wgpu = [ ]
 backend-ash = [ ]
 backend-vulkano = [ ]
+backend-glow = [ ]
 
 [dependencies]
 sjgfx-ash = { path = "../gfx-ash" }
