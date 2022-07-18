@@ -187,6 +187,15 @@ impl ICommandBuffer for CommandBufferGlow {
             }
         }
 
+        if let Some(draw_command) = &self.draw_command {
+            if let DrawCommand::DrawIndexed(draw_command) = draw_command {
+                unsafe {
+                    self.gl
+                        .bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(draw_command.buffer))
+                }
+            }
+        }
+
         // VAO の更新を終了
         unsafe { self.gl.bind_vertex_array(None) }
     }
