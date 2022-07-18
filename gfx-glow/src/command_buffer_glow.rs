@@ -48,6 +48,10 @@ impl CommandBufferGlow {
         &self.vertex_buffers
     }
 
+    pub fn get_constant_buffers(&self) -> &[Option<glow::Buffer>] {
+        &self.constant_buffers
+    }
+
     pub fn try_get_vertex_array_object(&self) -> Option<glow::VertexArray> {
         self.vertex_array_object
     }

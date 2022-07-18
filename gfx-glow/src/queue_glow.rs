@@ -43,6 +43,15 @@ impl QueueGlow {
         let vao = command_buffer.try_get_vertex_array_object();
         unsafe { self.gl.bind_vertex_array(vao) }
 
+        // 定数バッファ
+        for index in 0..command_buffer.get_constant_buffers().len() {
+            let constant_buffer = command_buffer.get_constant_buffers()[index];
+            unsafe {
+                self.gl
+                    .bind_buffer_base(glow::UNIFORM_BUFFER, index as u32, constant_buffer)
+            }
+        }
+
         // コマンド
         if let Some(command) = command_buffer.try_get_command() {
             match command {
