@@ -14,7 +14,10 @@ fn main() {
     let id = instance.create_display();
     let display = instance.try_get_display(id).unwrap();
     let mut device = sjgfx_glow::DeviceGlow::new_with_display(&DeviceInfo::new(), &display);
-    let mut swap_chain = sjgfx_glow::SwapChainGlow::new(&mut device, &SwapChainInfo::new());
+    let mut swap_chain = sjgfx_glow::SwapChainGlow::new(
+        &mut device,
+        &SwapChainInfo::new().with_width(1280).with_height(960),
+    );
     let mut command_buffer = sjgfx_glow::CommandBufferGlow::new(&device, &CommandBufferInfo::new());
     let mut queue = sjgfx_glow::QueueGlow::new(&mut device, &QueueInfo::new());
 
