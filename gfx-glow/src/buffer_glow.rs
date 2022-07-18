@@ -1,4 +1,4 @@
-use sjgfx_interface::IBuffer;
+use sjgfx_interface::{GpuAccess, IBuffer};
 use std::sync::Arc;
 
 use glow::HasContext;
@@ -9,6 +9,7 @@ use crate::DeviceGlow;
 pub struct BufferGlow {
     gl: Arc<glow::Context>,
     buffer: glow::NativeBuffer,
+    target: u32,
 }
 
 impl BufferGlow {
@@ -16,15 +17,33 @@ impl BufferGlow {
         device.make_current();
         let gl = device.clone_context();
         let buffer = unsafe { gl.create_buffer() }.unwrap();
-        let target = glow::ARRAY_BUFFER;
+        let target = Self::convert_to_target(&info.get_gpu_access_flags());
         unsafe { gl.bind_buffer(target, Some(buffer)) }
-        unsafe { gl.buffer_data_size(target, info.get_size() as i32, glow::STATIC_DRAW) }
+        unsafe { gl.buffer_data_size(target, info.get_size() as i32, glow::DYNAMIC_DRAW) }
         unsafe { gl.bind_buffer(target, None) }
-        Self { gl, buffer }
+
+        let error = unsafe { gl.get_error() };
+        if error != glow::NO_ERROR {
+            println!("BUFFER ERROR: {}", error);
+        }
+
+        Self { gl, buffer, target }
     }
 
     pub fn get_handle(&self) -> glow::NativeBuffer {
         self.buffer
+    }
+
+    fn convert_to_target(gpu_access: &GpuAccess) -> u32 {
+        if gpu_access.contains(GpuAccess::VERTEX_BUFFER) {
+            glow::ARRAY_BUFFER
+        } else if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
+            glow::UNIFORM_BUFFER
+        } else if gpu_access.contains(GpuAccess::INDEX_BUFFER) {
+            glow::ELEMENT_ARRAY_BUFFER
+        } else {
+            todo!()
+        }
     }
 }
 
@@ -36,7 +55,7 @@ impl IBuffer for BufferGlow {
     }
 
     fn map<T, F: Fn(&T)>(&self, func: F) {
-        let target = glow::ARRAY_BUFFER;
+        let target = self.target;
         let offset = 0;
         let length = std::mem::size_of::<T>();
         let access = glow::READ_BUFFER;
@@ -52,27 +71,37 @@ impl IBuffer for BufferGlow {
     }
 
     fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
-        let target = glow::ARRAY_BUFFER;
+        let target = self.target;
         let offset = 0;
         let length = std::mem::size_of::<T>();
         let access = glow::MAP_WRITE_BIT;
         unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
+        let error = unsafe { self.gl.get_error() };
+        if error != glow::NO_ERROR {
+            println!("BIND ERROR: {}", error);
+        }
 
         let mapped_data = unsafe {
             self.gl
                 .map_buffer_range(target, offset, length as i32, access)
         };
+        let error = unsafe { self.gl.get_error() };
+        if error != glow::NO_ERROR {
+            println!("MAP_MUT BUFFER_RANGE ERROR: {}", error);
+        }
+
         let data = unsafe { (mapped_data as *mut T).as_mut().unwrap() };
         func(data);
-        unsafe {
-            self.gl
-                .flush_mapped_buffer_range(glow::ARRAY_BUFFER, offset, length as i32)
-        }
         unsafe { self.gl.unmap_buffer(target) }
+
+        let error = unsafe { self.gl.get_error() };
+        if error != glow::NO_ERROR {
+            println!("MAP_MUT ERROR: {}", error);
+        }
     }
 
     fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
-        let target = glow::ARRAY_BUFFER;
+        let target = self.target;
         let size = unsafe { self.gl.get_buffer_parameter_i32(target, glow::BUFFER_SIZE) };
         let length = (size as usize) / std::mem::size_of::<T>();
         let offset = 0;
@@ -89,7 +118,7 @@ impl IBuffer for BufferGlow {
     }
 
     fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
-        let target = glow::ARRAY_BUFFER;
+        let target = self.target;
         unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
         let size = unsafe { self.gl.get_buffer_parameter_i32(target, glow::BUFFER_SIZE) };
         let length = (size as usize) / std::mem::size_of::<T>();
