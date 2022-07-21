@@ -143,3 +143,5 @@ impl IApi for Vulkano {
     type Instance = sjvi::winit::Instance;
     type Display = sjvi::winit::Display<()>;
 }
+
+pub struct Wasm;
