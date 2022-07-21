@@ -1,3 +1,8 @@
+mod platform_glow;
+mod platform_winit;
+use platform_glow::PlatformGlow;
+use platform_winit::PlatformWinit;
+
 use sjgfx::{
     api::IApi, TBufferBuilder, TCommandBufferBuilder, TSamplerBuilder, TShaderBuilder,
     TTextureBuilder, TTextureViewBuilder, TVertexStateBuilder,

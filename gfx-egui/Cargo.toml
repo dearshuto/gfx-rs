@@ -11,6 +11,7 @@ bytemuck = "1.7"
 sjgfx-util = { path = "../gfx-util" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx = { path = "../gfx" }
+egui_winit_platform = "0.13"
 
 [dev-dependencies]
 epi = "0.16"
