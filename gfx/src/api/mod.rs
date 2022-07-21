@@ -145,3 +145,23 @@ impl IApi for Vulkano {
 }
 
 pub struct Wasm;
+
+#[cfg(target_arch = "wasm32")]
+impl IApi for Wasm {
+    type Buffer = BufferGlow;
+    type ColorTargetView = ColorTargetViewGlow;
+    type DepthStencilView = DepthStencilViewGlow;
+    type Device = DeviceGlow;
+    type Queue = QueueGlow;
+    type CommandBuffer = CommandBufferGlow;
+    type Fence = FenceGlow;
+    type Shader = ShaderGlow;
+    type Texture = TextureGlow;
+    type TextureView = TextureViewGlow;
+    type Sampler = SamplerGlow;
+    type Semaphore = SemaphoerGlow;
+    type SwapChain = SwapChainGlow;
+    type VertexState = VertexStateGlow;
+    type Instance = sjvi::web_sys::Instance;
+    type Display = sjvi::web_sys::Display;
+}
