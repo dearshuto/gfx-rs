@@ -14,7 +14,6 @@ mod swap_chain_glow;
 mod texture_glow;
 mod texture_view_glow;
 mod vertex_state_glow;
-pub mod vi;
 
 pub use buffer_glow::BufferGlow;
 pub use color_target_view_glow::ColorTargetViewGlow;
@@ -41,6 +40,7 @@ pub fn initialize() {
 pub fn finalize() {}
 
 struct StaticData {
+    #[allow(dead_code)]
     pub event_loop: EventLoop<()>,
 }
 

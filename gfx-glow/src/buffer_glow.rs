@@ -8,7 +8,7 @@ use crate::DeviceGlow;
 
 pub struct BufferGlow {
     gl: Arc<glow::Context>,
-    buffer: glow::NativeBuffer,
+    buffer: glow::Buffer,
     target: u32,
 }
 
@@ -30,7 +30,7 @@ impl BufferGlow {
         Self { gl, buffer, target }
     }
 
-    pub fn get_handle(&self) -> glow::NativeBuffer {
+    pub fn get_handle(&self) -> glow::Buffer {
         self.buffer
     }
 
