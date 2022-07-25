@@ -4,7 +4,6 @@ pub mod glutin;
 #[cfg(any(not(target_arch = "wasm32")))]
 pub mod winit;
 
-#[cfg(target_arch = "wasm32")]
 pub mod web_sys;
 
 pub trait IDisplayEventListener {
