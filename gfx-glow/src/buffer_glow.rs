@@ -10,6 +10,7 @@ pub struct BufferGlow {
     gl: Arc<glow::Context>,
     buffer: glow::Buffer,
     target: u32,
+    size: usize,
 }
 
 impl BufferGlow {
@@ -27,7 +28,7 @@ impl BufferGlow {
             println!("BUFFER ERROR: {}", error);
         }
 
-        Self { gl, buffer, target }
+        Self { gl, buffer, target, size: info.get_size() }
     }
 
     pub fn get_handle(&self) -> glow::Buffer {
@@ -118,20 +119,25 @@ impl IBuffer for BufferGlow {
     }
 
     fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
-        let target = self.target;
+        let target = glow::ARRAY_BUFFER;//self.target;
         unsafe { self.gl.bind_buffer(target, Some(self.buffer)) }
-        let size = unsafe { self.gl.get_buffer_parameter_i32(target, glow::BUFFER_SIZE) };
-        let length = (size as usize) / std::mem::size_of::<T>();
-        let offset = 0;
-        let access = glow::MAP_WRITE_BIT;
 
-        let mapped_data = unsafe {
-            self.gl
-                .map_buffer_range(target, offset, length as i32, access)
-        };
-        let data = unsafe { std::slice::from_raw_parts_mut(mapped_data as *mut T, length) };
+        // GPU のデータを取得するバッファを確保
+        let length = self.size;
+        let mut buffer = Vec::new();
+        buffer.resize(length, 0);
+
+        // バッファのデータを取得
+        let offset = 0;
+        unsafe{ self.gl.get_buffer_sub_data(target, offset, &mut buffer) }
+
+        // 無理やりキャストして関数呼び出し
+        let raw_ptr = buffer.as_mut_ptr();
+        let data = unsafe { std::slice::from_raw_parts_mut(raw_ptr as *mut T, length) };
         func(data);
-        unsafe { self.gl.unmap_buffer(target) }
+
+        // 変更を GPU のメモリに反映
+        unsafe{ self.gl.buffer_data_u8_slice(target, &buffer, glow::DYNAMIC_DRAW) }
     }
 
     fn flush_mapped_range(&self, _offset: isize, _size: usize) {}

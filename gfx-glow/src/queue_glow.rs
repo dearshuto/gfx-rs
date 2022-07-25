@@ -1,5 +1,6 @@
 use std::{mem::size_of, sync::Arc};
 
+use bytemuck::{Zeroable, Pod};
 use glow::HasContext;
 use sjgfx_interface::{IQueue, QueueInfo, ShaderInfo};
 
@@ -145,53 +146,47 @@ impl IQueue for QueueGlow {
         }
 
         // 頂点情報
-        let mapped_data = unsafe {
-            gl.map_buffer_range(
-                glow::ARRAY_BUFFER,
-                0,                                    /*offset*/
-                (size_of::<VertexData>() * 6) as i32, /*length*/
-                glow::MAP_WRITE_BIT,
-            )
+        let vertex_data = [
+            VertexData {
+                x: -1.0,
+                y: 1.0,
+                u: 0.0,
+                v: 1.0,
+            },
+            VertexData {
+                x: -1.0,
+                y: -1.0,
+                u: 0.0,
+                v: 0.0,
+            },
+            VertexData {
+                x: 1.0,
+                y: -1.0,
+                u: 1.0,
+                v: 0.0,
+            },
+            VertexData {
+                x: -1.0,
+                y: 1.0,
+                u: 0.0,
+                v: 1.0,
+            },
+            VertexData {
+                x: 1.0,
+                y: -1.0,
+                u: 1.0,
+                v: 0.0,
+            },
+            VertexData {
+                x: 1.0,
+                y: 1.0,
+                u: 1.0,
+                v: 1.0,
+            }];
+        let raw_data = bytemuck::cast_slice(&vertex_data);
+        unsafe {
+            gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, &raw_data, glow::STATIC_DRAW);
         };
-        let vertex_data: &mut [VertexData] =
-            unsafe { std::slice::from_raw_parts_mut(mapped_data as *mut VertexData, 6) };
-        vertex_data[0] = VertexData {
-            x: -1.0,
-            y: 1.0,
-            u: 0.0,
-            v: 1.0,
-        };
-        vertex_data[1] = VertexData {
-            x: -1.0,
-            y: -1.0,
-            u: 0.0,
-            v: 0.0,
-        };
-        vertex_data[2] = VertexData {
-            x: 1.0,
-            y: -1.0,
-            u: 1.0,
-            v: 0.0,
-        };
-        vertex_data[3] = VertexData {
-            x: -1.0,
-            y: 1.0,
-            u: 0.0,
-            v: 1.0,
-        };
-        vertex_data[4] = VertexData {
-            x: 1.0,
-            y: -1.0,
-            u: 1.0,
-            v: 0.0,
-        };
-        vertex_data[5] = VertexData {
-            x: 1.0,
-            y: 1.0,
-            u: 1.0,
-            v: 1.0,
-        };
-        unsafe { gl.unmap_buffer(glow::ARRAY_BUFFER) }
 
         // 頂点座標
         unsafe { gl.enable_vertex_attrib_array(0) }
@@ -250,9 +245,9 @@ impl IQueue for QueueGlow {
             println!("BIND FBO ERROR: {}", error);
         }
 
-        //
-        // クリアはしない。どうせ画面全体に描画される
-        //
+        // 画面全体にフレームバッファが描画されるけど念のためにクリア
+        unsafe{ self.gl.clear_color(0.0, 0.1, 0.3, 0.0) }
+        unsafe{ self.gl.clear(glow::COLOR_BUFFER_BIT) }
 
         // シェーダ
         unsafe { self.gl.use_program(Some(self.shader.get_program())) }
@@ -289,6 +284,7 @@ impl IQueue for QueueGlow {
     fn sync(&mut self) {}
 }
 
+#[derive(Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
 struct VertexData {
     x: f32,

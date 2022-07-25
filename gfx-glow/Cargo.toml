@@ -8,12 +8,66 @@ edition = "2021"
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
 sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
-glow = "*"
+glow = { version = "*", features = ["WebGlVertexArrayObject"] }
 winit = "0.26.0"
+bytemuck = "1.10.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 uuid = { version = "1.1.2", features = ["v4", "js"] }
-web-sys = { version = "0.3.58", features=[ "GpuBuffer", "HtmlCanvasElement", "WebGl2RenderingContext", "Window", "Document"] }
+web-sys = { version = "0.3.58", features=[
+  "Document",
+  "Element",
+  "HtmlCanvasElement",
+  "HtmlImageElement",
+  "HtmlVideoElement",
+  "ImageBitmap",
+  "WebGlActiveInfo",
+  "WebGlBuffer",
+  "WebGlFramebuffer",
+  "WebGlProgram",
+  "WebGlQuery",
+  "WebGlRenderbuffer",
+  "WebGlRenderingContext",
+  "WebGl2RenderingContext",
+  "WebGlSampler",
+  "WebGlShader",
+  "WebGlSync",
+  "WebGlTexture",
+  "WebGlTransformFeedback",
+  "WebGlUniformLocation",
+  "WebGlVertexArrayObject",
+  "Window",
+
+  "AngleInstancedArrays",
+  "ExtBlendMinmax",
+  "ExtColorBufferFloat",
+  "ExtColorBufferHalfFloat",
+  "ExtDisjointTimerQuery",
+  "ExtFragDepth",
+  "ExtShaderTextureLod",
+  "ExtSRgb",
+  "ExtTextureFilterAnisotropic",
+  "OesElementIndexUint",
+  "OesStandardDerivatives",
+  "OesTextureFloat",
+  "OesTextureFloatLinear",
+  "OesTextureHalfFloat",
+  "OesTextureHalfFloatLinear",
+  "OesVertexArrayObject",
+  "WebglColorBufferFloat",
+  "WebglCompressedTextureAstc",
+  "WebglCompressedTextureEtc",
+  "WebglCompressedTextureEtc1",
+  "WebglCompressedTexturePvrtc",
+  "WebglCompressedTextureS3tc",
+  "WebglCompressedTextureS3tcSrgb",
+  "WebglDebugRendererInfo",
+  "WebglDebugShaders",
+  "WebglDepthTexture",
+  "WebglDrawBuffers",
+  "WebglLoseContext",
+  "OvrMultiview2",
+] }
 wasm-bindgen = { version = "0.2" }
 
 [target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]

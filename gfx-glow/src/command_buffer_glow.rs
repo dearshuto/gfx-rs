@@ -122,17 +122,19 @@ impl ICommandBuffer for CommandBufferGlow {
         }
         {
             // フレームバッファのテクスチャを設定
-            unsafe {
-                self.gl
-                    .bind_texture(glow::TEXTURE_2D, self.render_target[0])
-            }
-            unsafe {
-                self.gl.framebuffer_texture(
-                    glow::FRAMEBUFFER,
-                    glow::COLOR_ATTACHMENT0,
-                    self.render_target[0],
-                    0,
-                )
+            if let Some(render_target) = self.render_target[0].as_ref() {
+                unsafe {
+                    self.gl
+                        .bind_texture(glow::TEXTURE_2D, Some(*render_target))
+                }
+                unsafe {
+                    self.gl.framebuffer_texture(
+                        glow::FRAMEBUFFER,
+                        glow::COLOR_ATTACHMENT0,
+                        Some(*render_target),
+                        0,
+                    )
+                }
             }
         }
         unsafe { self.gl.bind_framebuffer(glow::FRAMEBUFFER, None) }
