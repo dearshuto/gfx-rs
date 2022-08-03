@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 use uuid::Uuid;
-use winit::event::Event::{MainEventsCleared, RedrawRequested};
-use winit::platform::run_return::EventLoopExtRunReturn;
+use glutin::event::Event::{MainEventsCleared, RedrawRequested};
+use glutin::platform::run_return::EventLoopExtRunReturn;
 
 pub struct Display {
     pub window: ContextWrapper<PossiblyCurrent, Window>,
@@ -17,7 +17,7 @@ impl Display {
     pub fn new() -> Self {
         let event_loop = unsafe { &crate::GLOW_STATIC_DATA.as_ref().unwrap().event_loop };
         let window_builder =
-            winit::window::WindowBuilder::new().with_inner_size(PhysicalSize::new(640, 480));
+            glutin::window::WindowBuilder::new().with_inner_size(PhysicalSize::new(640, 480));
         let window = unsafe {
             glutin::ContextBuilder::new()
                 // .with_shared_lists(other)

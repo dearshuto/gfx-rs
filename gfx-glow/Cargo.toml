@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
-sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
+sjvi = { path = "../vi-rs" }
 glow = "*"
 winit = "0.26.0"
 glutin = "*"

@@ -16,5 +16,5 @@ sjgfx = { path = "../gfx" }
 epi = "0.16"
 egui_winit_platform = "0.13"
 egui_demo_lib = "0.16"
-sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
+sjvi = { path = "../vi-rs" }
 winit = "0.26"

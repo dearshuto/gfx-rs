@@ -1,4 +1,4 @@
-use winit::event_loop::EventLoop;
+use glutin::event_loop::EventLoop;
 
 mod buffer_glow;
 mod color_target_view_glow;
