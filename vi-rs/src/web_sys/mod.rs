@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use wasm_bindgen::JsCast;
 
@@ -31,7 +31,10 @@ impl Instance {
             .dyn_into::<web_sys::WebGl2RenderingContext>()
             .unwrap();
         let id = DisplayId { id: canvas.id() };
-        let display = Display { canvas, context };
+        let display = Display {
+            canvas,
+            context: Arc::new(context),
+        };
         self.display_table.insert(id.clone(), display);
         id
     }
@@ -69,7 +72,7 @@ pub struct DisplayId {
 
 pub struct Display {
     pub canvas: web_sys::HtmlCanvasElement,
-    pub context: web_sys::WebGl2RenderingContext,
+    pub context: Arc<web_sys::WebGl2RenderingContext>,
 }
 
 impl IDisplay for Display {
