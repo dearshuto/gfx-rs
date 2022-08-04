@@ -4,7 +4,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop" }
+sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.0", default-features = false, features = ["linked", "debug"] }
 ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.0" }

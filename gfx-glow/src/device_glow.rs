@@ -28,7 +28,7 @@ impl DeviceGlow {
 
     pub fn new(_info: &DeviceInfo) -> Self {
         let event_loop = unsafe { &crate::GLOW_STATIC_DATA.as_ref().unwrap().event_loop };
-        let window_builder = winit::window::WindowBuilder::new()
+        let window_builder = glutin::window::WindowBuilder::new()
             .with_visible(false)
             .with_inner_size(PhysicalSize::new(640, 480));
         let window = unsafe {

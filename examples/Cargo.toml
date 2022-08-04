@@ -32,7 +32,7 @@ sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx = { path = "../gfx" }
-sjvi = { git = "https://github.com/dearshuto/vi-rs.git", branch = "develop"}
+sjvi = { path = "../vi-rs" }
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 nalgebra-glm = "0.3"
