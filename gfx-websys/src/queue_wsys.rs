@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use sjgfx_interface::IQueue;
 use web_sys::WebGl2RenderingContext;
+use web_sys::WebGl2RenderingContext as GL;
 
 use crate::{CommandBufferWsys, DeviceWsys, FenceWsys, SwapChainWsys};
 
@@ -26,6 +27,13 @@ impl IQueue for QueueWsys {
         let shader = command_buffer.try_get_shader();
         self.gl.use_program(shader);
 
+        self.gl.clear_color(0.1, 0.2, 0.3, 1.0);
+        self.gl.clear(GL::COLOR_BUFFER_BIT);
+
+        // 頂点バッファ
+        self.gl
+            .bind_vertex_array(command_buffer.try_get_vertex_array_object().as_ref());
+
         // コマンド
         if let Some(command) = command_buffer.try_get_command() {
             match command {
@@ -46,9 +54,7 @@ impl IQueue for QueueWsys {
         self.execute(command_buffer)
     }
 
-    fn present(&mut self, _swap_chain: &mut Self::SwapChainType) {
-
-    }
+    fn present(&mut self, _swap_chain: &mut Self::SwapChainType) {}
 
     fn flush(&mut self) {
         self.gl.flush()
