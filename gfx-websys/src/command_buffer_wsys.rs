@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use sjgfx_interface::{
     ICommandBuffer, PrimitiveTopology, VertexAttributeStateInfo, VertexBufferStateInfo,
 };
-use web_sys::WebGlRenderingContext as GL;
+use web_sys::{WebGl2RenderingContext, WebGlRenderingContext as GL, WebGlVertexArrayObject};
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlSampler, WebGlTexture};
 
 use crate::{
@@ -10,6 +12,7 @@ use crate::{
 };
 
 pub struct CommandBufferWsys {
+    gl: Arc<WebGl2RenderingContext>,
     shader: Option<WebGlProgram>,
 
     // デスクリプタたち
@@ -24,6 +27,9 @@ pub struct CommandBufferWsys {
     vertex_buffer_state_infos: Option<Vec<VertexBufferStateInfo>>,
 
     command: Option<Command>,
+
+    // VAO
+    vertex_array_object: Option<WebGlVertexArrayObject>,
 }
 
 impl CommandBufferWsys {
@@ -33,6 +39,14 @@ impl CommandBufferWsys {
 
     pub fn try_get_command(&self) -> Option<&Command> {
         self.command.as_ref()
+    }
+
+    pub fn try_get_vertex_array_object(&self) -> Option<WebGlVertexArrayObject> {
+        if let Some(vao) = &self.vertex_array_object {
+            Some(vao.clone())
+        } else {
+            None
+        }
     }
 }
 
@@ -47,8 +61,9 @@ impl ICommandBuffer for CommandBufferWsys {
     type TextureViewType = TextureViewWsys;
     type VertexStateType = VertexStateWsys;
 
-    fn new(_device: &Self::DeviceType, _info: &sjgfx_interface::CommandBufferInfo) -> Self {
+    fn new(device: &Self::DeviceType, _info: &sjgfx_interface::CommandBufferInfo) -> Self {
         Self {
+            gl: device.clone_context(),
             shader: None,
             samplers: Default::default(),
             textures: Default::default(),
@@ -57,12 +72,74 @@ impl ICommandBuffer for CommandBufferWsys {
             vertex_attribute_state_infos: None,
             vertex_buffer_state_infos: None,
             command: None,
+            vertex_array_object: None,
         }
     }
 
     fn begin(&mut self) {}
 
-    fn end(&mut self) {}
+    fn end(&mut self) {
+        // VAO がなかったら作る
+        if self.vertex_array_object.is_none() {
+            let new_vao = self.gl.create_vertex_array().unwrap();
+            self.vertex_array_object = Some(new_vao);
+        }
+
+        // VAO の更新を開始
+        self.gl.bind_vertex_array(self.vertex_array_object.as_ref());
+
+        // 頂点ステート/頂点バッファ
+        if let Some(vertex_attribute_state_info_array) = &self.vertex_attribute_state_infos {
+            for info in vertex_attribute_state_info_array {
+                // 頂点バッファをバインド
+                let buffer = &self.vertex_buffers[info.get_buffer_index() as usize];
+                self.gl.bind_buffer(GL::ARRAY_BUFFER, buffer.as_ref());
+
+                // 頂点アトリビュートを生成
+                let slot = info.get_slot() as u32;
+                self.gl.enable_vertex_attrib_array(slot);
+
+                // 頂点アトリビュートの設定
+                let vertex_buffer_info = &self.vertex_buffer_state_infos.as_ref().unwrap()
+                    [info.get_buffer_index() as usize];
+
+                match info.get_format() {
+                    sjgfx_interface::AttributeFormat::Uint32 => {
+                        self.gl.vertex_attrib_i_pointer_with_i32(
+                            slot,
+                            1,
+                            GL::UNSIGNED_INT,
+                            2 * std::mem::size_of::<u32>() as i32,
+                            info.get_offset() as i32,
+                        )
+                    }
+                    sjgfx_interface::AttributeFormat::Float32_32 => {
+                        self.gl.vertex_attrib_pointer_with_i32(
+                            slot,
+                            2,
+                            GL::FLOAT,
+                            false,
+                            vertex_buffer_info.get_stride() as i32,
+                            info.get_offset() as i32,
+                        )
+                    }
+                    sjgfx_interface::AttributeFormat::Float32_32_32 => {
+                        self.gl.vertex_attrib_pointer_with_i32(
+                            slot,
+                            3,
+                            GL::FLOAT,
+                            false,
+                            vertex_buffer_info.get_stride() as i32,
+                            info.get_offset() as i32,
+                        )
+                    }
+                }
+
+                // 頂点バッファのバインドを解除
+                self.gl.bind_buffer(GL::ARRAY_BUFFER, None);
+            }
+        }
+    }
 
     fn clear_color(
         &mut self,

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use sjgfx_interface::IShader;
 use web_sys::WebGlRenderingContext as GL;
-use web_sys::{WebGlProgram, WebGl2RenderingContext, WebGlShader};
+use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
 
 use crate::DeviceWsys;
 
@@ -29,7 +29,14 @@ impl IShader for ShaderWsys {
             info.get_vertex_shader_source().unwrap(),
             info.get_pixel_shader_source().unwrap(),
         );
+
+        if gl.get_error() != GL::NO_ERROR {
+            panic!();
+        }
         shader.setup_program(&program);
+        if gl.get_error() != GL::NO_ERROR {
+            panic!();
+        }
 
         Self { gl, program }
     }
@@ -76,6 +83,11 @@ impl Shader {
         self.gl
             .attach_shader(program, self.pixel_shader.as_ref().unwrap());
         self.gl.link_program(program);
+
+        self.gl
+            .detach_shader(program, self.vertex_shader.as_ref().unwrap());
+        self.gl
+            .detach_shader(program, self.pixel_shader.as_ref().unwrap());
     }
 }
 
