@@ -10,6 +10,10 @@ use sjgfx_interface::{
 use sjvi::{IDisplay, IInstance};
 
 fn main() {
+    #[cfg(target_arch = "wasm32")]
+    run::<sjgfx::api::Wsys>();
+
+    #[cfg(not(target_arch = "wasm32"))]
     if cfg!(feature = "backend-wgpu") {
         run::<sjgfx::api::Wgpu>();
     } else if cfg!(feature = "backend-ash") {
