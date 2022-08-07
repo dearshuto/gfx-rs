@@ -5,14 +5,15 @@ version = "0.1.0"
 
 [dependencies]
 sjvi = { path = "../vi-rs" }
+sjgfx-interface = { path = "../gfx-interface" }
+sjgfx-wsys = { path = "../gfx-websys" }
+winit = "0.26.0"
+
+[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
 sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-glow = { path = "../gfx-glow" }
-sjgfx-interface = { path = "../gfx-interface" }
-sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx-vulkano = { path = "../gfx-vulkano" }
-sjgfx-wsys = { path = "../gfx-websys" }
-
-winit = "0.26.0"
+sjgfx-wgpu = { path = "../gfx-wgpu" }
 raw-window-handle = "0.4.0"
 
 [dev-dependencies]

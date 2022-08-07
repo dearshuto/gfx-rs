@@ -28,20 +28,6 @@ pub use vertex_state_builder::TVertexStateBuilder;
 pub mod vulkano;
 pub mod wgpu;
 
-#[cfg(feature = "backend-ash")]
-type BackendApi = api::Ash;
-
-#[cfg(all(not(feature = "backend-ash"), feature = "backend-wgpu"))]
-type BackendApi = api::Wgpu;
-
-pub type BufferBuilder = TBufferBuilder<BackendApi>;
-pub type CommandBufferBuilder = TCommandBufferBuilder<BackendApi>;
-pub type DeviceBuilder = TDeviceBuilder<BackendApi>;
-pub type QueueBuilder = TQueueBuilder<BackendApi>;
-pub type ShaderBuilder = TShaderBuilder<BackendApi>;
-pub type SwapChainBuilder = TSwapChainBuilder<BackendApi>;
-pub type VertexStateBuilder = TVertexStateBuilder<BackendApi>;
-
 pub struct FenceBuilder;
 impl FenceBuilder {
     pub fn new() -> Self {

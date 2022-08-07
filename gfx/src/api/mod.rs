@@ -1,32 +1,37 @@
-use sjgfx_ash::{
-    BufferAsh, ColorTargetViewAsh, CommandBufferAsh, DepthStencilViewAsh, DeviceAsh, FenceAsh,
-    QueueAsh, SamplerAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh,
-    VertexStateAsh,
-};
-use sjgfx_glow::{
-    BufferGlow, ColorTargetViewGlow, CommandBufferGlow, DepthStencilViewGlow, DeviceGlow,
-    FenceGlow, QueueGlow, SamplerGlow, SemaphoerGlow, ShaderGlow, SwapChainGlow, TextureGlow,
-    TextureViewGlow, VertexStateGlow,
-};
 use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
     ISampler, ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState,
 };
-use sjgfx_vulkano::{
-    BufferVk, ColorTargetViewVk, CommandBufferVk, DepthStencilViewVk, DeviceVk, FenceVk, QueueVk,
-    SamplerVk, SemaphoreVk, ShaderVk, SwapChainVk, TextureViewVk, TextureVk, VertexStateVk,
-};
-use sjgfx_wgpu::{
-    BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DepthStencilViewWgpu, DeviceWgpu,
-    FenceWgpu, QueueWgpu, SamplerWgpu, SemaphoreWgpu, ShaderWgpu, SwapChainWgpu, TextureViewWgpu,
-    TextureWgpu, VertexStateWgpu,
-};
-use sjgfx_wsys::{
-    BufferWsys, ColorTargetViewWsys, CommandBufferWsys, DepthStencilViewWsys, DeviceWsys,
-    FenceWsys, QueueWsys, SamplerWsys, SemaphoreWsys, ShaderWsys, SwapChainWsys, TextureViewWsys,
-    TextureWsys, VertexStateWsys,
-};
 use sjvi::{IDisplay, IInstance};
+
+#[cfg(not(target_arch = "wasm32"))]
+mod ash;
+
+#[cfg(not(target_arch = "wasm32"))]
+mod glow;
+
+#[cfg(not(target_arch = "wasm32"))]
+mod vulkano;
+
+#[cfg(not(target_arch = "wasm32"))]
+mod wgpu;
+
+// wasm 用のクレートだけど wasm 以外でもビルドは通るので cfg なし
+mod wsys;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use ash::Ash;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use glow::Glow;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use vulkano::Vulkano;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use wgpu::Wgpu;
+
+pub use wsys::Wsys;
 
 pub trait IApi {
     type Buffer: IBuffer<DeviceType = Self::Device>;
@@ -64,107 +69,4 @@ pub trait IApi {
 
     type Instance: IInstance<Display = Self::Display>;
     type Display: IDisplay;
-}
-
-pub struct Ash;
-impl IApi for Ash {
-    type Buffer = BufferAsh;
-    type ColorTargetView = ColorTargetViewAsh;
-    type DepthStencilView = DepthStencilViewAsh;
-    type Device = DeviceAsh;
-    type Queue = QueueAsh;
-    type CommandBuffer = CommandBufferAsh;
-    type Fence = FenceAsh;
-    type Shader = ShaderAsh;
-    type Sampler = SamplerAsh;
-    type Semaphore = SemaphoreAsh;
-    type SwapChain = SwapChainAsh;
-    type Texture = TextureAsh;
-    type TextureView = TextureViewAsh;
-    type VertexState = VertexStateAsh;
-
-    type Instance = sjvi::winit::Instance;
-    type Display = sjvi::winit::Display<()>;
-}
-
-pub struct Glow;
-impl IApi for Glow {
-    type Buffer = BufferGlow;
-    type ColorTargetView = ColorTargetViewGlow;
-    type DepthStencilView = DepthStencilViewGlow;
-    type Device = DeviceGlow;
-    type Queue = QueueGlow;
-    type CommandBuffer = CommandBufferGlow;
-    type Fence = FenceGlow;
-    type Shader = ShaderGlow;
-    type Texture = TextureGlow;
-    type TextureView = TextureViewGlow;
-    type Sampler = SamplerGlow;
-    type Semaphore = SemaphoerGlow;
-    type SwapChain = SwapChainGlow;
-    type VertexState = VertexStateGlow;
-    type Instance = sjvi::glutin::Instance;
-    type Display = sjvi::glutin::Display;
-}
-
-pub struct Wgpu;
-impl IApi for Wgpu {
-    type Buffer = BufferWgpu;
-    type ColorTargetView = ColorTargetViewWgpu;
-    type DepthStencilView = DepthStencilViewWgpu;
-    type Device = DeviceWgpu;
-    type Queue = QueueWgpu;
-    type CommandBuffer = CommandBufferWgpu;
-    type Fence = FenceWgpu;
-    type Sampler = SamplerWgpu;
-    type Shader = ShaderWgpu;
-    type Semaphore = SemaphoreWgpu;
-    type SwapChain = SwapChainWgpu;
-    type Texture = TextureWgpu;
-    type TextureView = TextureViewWgpu;
-    type VertexState = VertexStateWgpu;
-
-    type Instance = sjvi::winit::Instance;
-    type Display = sjvi::winit::Display<()>;
-}
-
-pub struct Vulkano;
-impl IApi for Vulkano {
-    type Buffer = BufferVk;
-    type ColorTargetView = ColorTargetViewVk;
-    type DepthStencilView = DepthStencilViewVk;
-    type Device = DeviceVk;
-    type Queue = QueueVk;
-    type CommandBuffer = CommandBufferVk;
-    type Fence = FenceVk;
-    type Shader = ShaderVk;
-    type Texture = TextureVk;
-    type TextureView = TextureViewVk;
-    type Sampler = SamplerVk;
-    type Semaphore = SemaphoreVk;
-    type SwapChain = SwapChainVk;
-    type VertexState = VertexStateVk;
-
-    type Instance = sjvi::winit::Instance;
-    type Display = sjvi::winit::Display<()>;
-}
-
-pub struct Wsys;
-impl IApi for Wsys {
-    type Buffer = BufferWsys;
-    type ColorTargetView = ColorTargetViewWsys;
-    type DepthStencilView = DepthStencilViewWsys;
-    type Device = DeviceWsys;
-    type Queue = QueueWsys;
-    type CommandBuffer = CommandBufferWsys;
-    type Fence = FenceWsys;
-    type Shader = ShaderWsys;
-    type Texture = TextureWsys;
-    type TextureView = TextureViewWsys;
-    type Sampler = SamplerWsys;
-    type Semaphore = SemaphoreWsys;
-    type SwapChain = SwapChainWsys;
-    type VertexState = VertexStateWsys;
-    type Instance = sjvi::web_sys::Instance;
-    type Display = sjvi::web_sys::Display;
 }

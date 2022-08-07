@@ -27,16 +27,20 @@ backend-vulkano = [ ]
 backend-glow = [ ]
 
 [dependencies]
-sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
-sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx = { path = "../gfx" }
 sjvi = { path = "../vi-rs" }
+
+[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
+sjgfx-ash = { path = "../gfx-ash" }
+sjgfx-wgpu = { path = "../gfx-wgpu" }
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 nalgebra-glm = "0.3"
 tobj = "3.2.1"
+
+[target.'cfg(any(target_arch = "wasm32"))'.dependencies]
 
 [dev-dependencies]
 winit = "0.26.0"
