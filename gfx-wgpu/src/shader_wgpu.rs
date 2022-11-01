@@ -141,320 +141,327 @@ impl ShaderWgpu {
     }
 
     fn create_bind_group_layout_entries(shader_source: &[u8]) -> Vec<wgpu::BindGroupLayoutEntry> {
-        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
-        let _entry_point_name = module.get_entry_point_name();
-        let shader_stage = module.get_shader_stage();
-        let _bindings = module.enumerate_descriptor_bindings(None).unwrap();
-        let _sets = module.enumerate_descriptor_sets(None).unwrap();
+        // Parsing
+        let mut loader = rspirv::dr::Loader::new();
+        rspirv::binary::parse_bytes(shader_source, &mut loader).unwrap();
+        let module = loader.module();
 
-        module
-            .enumerate_descriptor_bindings(None)
-            .unwrap()
-            .into_iter()
-            .map(|x| match x.descriptor_type {
-                spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::Sampler => {
-                    wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    }
-                }
-                spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::SampledImage => {
-                    wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: Self::create_texture_bind_group_entry(&x),
-                        count: None,
-                    }
-                }
-                spirv_reflect::types::ReflectDescriptorType::StorageImage => {
-                    wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: Self::create_image_bind_group_layout_entry(&x),
-                        count: None,
-                    }
-                }
-                spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
-                    wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: wgpu::BufferSize::new(x.block.size as u64),
-                        },
-                        count: None,
-                    }
-                }
-                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
-                    wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: false },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }
-                }
-                spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
-            })
-            .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
-            .to_vec()
+        vec![]
+        // let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
+        // let _entry_point_name = module.get_entry_point_name();
+        // let shader_stage = module.get_shader_stage();
+        // let _bindings = module.enumerate_descriptor_bindings(None).unwrap();
+        // let _sets = module.enumerate_descriptor_sets(None).unwrap();
+
+        // module
+        //     .enumerate_descriptor_bindings(None)
+        //     .unwrap()
+        //     .into_iter()
+        //     .map(|x| match x.descriptor_type {
+        //         spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::Sampler => {
+        //             wgpu::BindGroupLayoutEntry {
+        //                 binding: x.binding,
+        //                 visibility: Self::convert_shader_stage(shader_stage),
+        //                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+        //                 count: None,
+        //             }
+        //         }
+        //         spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::SampledImage => {
+        //             wgpu::BindGroupLayoutEntry {
+        //                 binding: x.binding,
+        //                 visibility: Self::convert_shader_stage(shader_stage),
+        //                 ty: Self::create_texture_bind_group_entry(&x),
+        //                 count: None,
+        //             }
+        //         }
+        //         spirv_reflect::types::ReflectDescriptorType::StorageImage => {
+        //             wgpu::BindGroupLayoutEntry {
+        //                 binding: x.binding,
+        //                 visibility: Self::convert_shader_stage(shader_stage),
+        //                 ty: Self::create_image_bind_group_layout_entry(&x),
+        //                 count: None,
+        //             }
+        //         }
+        //         spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
+        //             wgpu::BindGroupLayoutEntry {
+        //                 binding: x.binding,
+        //                 visibility: Self::convert_shader_stage(shader_stage),
+        //                 ty: wgpu::BindingType::Buffer {
+        //                     ty: wgpu::BufferBindingType::Uniform,
+        //                     has_dynamic_offset: false,
+        //                     min_binding_size: wgpu::BufferSize::new(x.block.size as u64),
+        //                 },
+        //                 count: None,
+        //             }
+        //         }
+        //         spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
+        //             wgpu::BindGroupLayoutEntry {
+        //                 binding: x.binding,
+        //                 visibility: Self::convert_shader_stage(shader_stage),
+        //                 ty: wgpu::BindingType::Buffer {
+        //                     ty: wgpu::BufferBindingType::Storage { read_only: false },
+        //                     has_dynamic_offset: false,
+        //                     min_binding_size: None,
+        //                 },
+        //                 count: None,
+        //             }
+        //         }
+        //         spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
+        //         spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
+        //     })
+        //     .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
+        //     .to_vec()
     }
 
     fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
-        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
-        module
-            .enumerate_input_variables(None)
-            .unwrap()
-            .into_iter()
-            .filter(|x| x.location < 31)
-            .map(|x| wgpu::VertexAttribute {
-                format: Self::convert_attribute_format(x.format),
-                offset: 0,
-                shader_location: x.location,
-            })
-            .collect::<Vec<wgpu::VertexAttribute>>()
-            .to_vec()
+        vec![]
+        // let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
+        // module
+        //     .enumerate_input_variables(None)
+        //     .unwrap()
+        //     .into_iter()
+        //     .filter(|x| x.location < 31)
+        //     .map(|x| wgpu::VertexAttribute {
+        //         format: Self::convert_attribute_format(x.format),
+        //         offset: 0,
+        //         shader_location: x.location,
+        //     })
+        //     .collect::<Vec<wgpu::VertexAttribute>>()
+        //     .to_vec()
     }
 
-    fn create_image_bind_group_layout_entry(
-        info: &spirv_reflect::types::ReflectDescriptorBinding,
-    ) -> wgpu::BindingType {
-        wgpu::BindingType::StorageTexture {
-            access: wgpu::StorageTextureAccess::ReadWrite,
-            format: Self::convert_reflect_image_format(info.image.image_format),
-            view_dimension: Self::convert_reflect_dimension(info.image.dim),
-        }
-    }
+    // fn create_image_bind_group_layout_entry(
+    //     info: &spirv_reflect::types::ReflectDescriptorBinding,
+    // ) -> wgpu::BindingType {
+    //     wgpu::BindingType::StorageTexture {
+    //         access: wgpu::StorageTextureAccess::ReadWrite,
+    //         format: Self::convert_reflect_image_format(info.image.image_format),
+    //         view_dimension: Self::convert_reflect_dimension(info.image.dim),
+    //     }
+    // }
 
-    fn create_texture_bind_group_entry(
-        info: &spirv_reflect::types::ReflectDescriptorBinding,
-    ) -> wgpu::BindingType {
-        let sample_type = if Self::is_float_format(info.image.image_format.clone()) {
-            wgpu::TextureSampleType::Float { filterable: true }
-        } else if Self::is_signed_int_format(info.image.image_format.clone()) {
-            wgpu::TextureSampleType::Sint
-        } else {
-            wgpu::TextureSampleType::Uint
-        };
-        wgpu::BindingType::Texture {
-            sample_type,
-            view_dimension: wgpu::TextureViewDimension::D2,
-            multisampled: false,
-        }
-    }
+    // fn create_texture_bind_group_entry(
+    //     info: &spirv_reflect::types::ReflectDescriptorBinding,
+    // ) -> wgpu::BindingType {
+    //     let sample_type = if Self::is_float_format(info.image.image_format.clone()) {
+    //         wgpu::TextureSampleType::Float { filterable: true }
+    //     } else if Self::is_signed_int_format(info.image.image_format.clone()) {
+    //         wgpu::TextureSampleType::Sint
+    //     } else {
+    //         wgpu::TextureSampleType::Uint
+    //     };
+    //     wgpu::BindingType::Texture {
+    //         sample_type,
+    //         view_dimension: wgpu::TextureViewDimension::D2,
+    //         multisampled: false,
+    //     }
+    // }
 
-    fn is_float_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
-        match format {
-            spirv_reflect::types::ReflectImageFormat::Undefined => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::R32_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA8 => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::R16_FLOAT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA16 => true,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2 => true,
-            spirv_reflect::types::ReflectImageFormat::RG16 => true,
-            spirv_reflect::types::ReflectImageFormat::RG8 => true,
-            spirv_reflect::types::ReflectImageFormat::R16 => true,
-            spirv_reflect::types::ReflectImageFormat::R8 => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::RG16_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::RG8_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::R16_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::R8_SNORM => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_INT => false,
-            spirv_reflect::types::ReflectImageFormat::R32_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RG32_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RG16_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RG8_INT => false,
-            spirv_reflect::types::ReflectImageFormat::R16_INT => false,
-            spirv_reflect::types::ReflectImageFormat::R8_INT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
-        }
-    }
+    // fn is_float_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
+    //     match format {
+    //         spirv_reflect::types::ReflectImageFormat::Undefined => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R32_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8 => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R16_FLOAT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16 => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2 => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG16 => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG8 => true,
+    //         spirv_reflect::types::ReflectImageFormat::R16 => true,
+    //         spirv_reflect::types::ReflectImageFormat::R8 => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::R16_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::R8_SNORM => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R32_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R8_INT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
+    //     }
+    // }
 
-    fn is_signed_int_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
-        match format {
-            spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
-            spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::R32_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA8 => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::R16_FLOAT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16 => false,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2 => false,
-            spirv_reflect::types::ReflectImageFormat::RG16 => false,
-            spirv_reflect::types::ReflectImageFormat::RG8 => false,
-            spirv_reflect::types::ReflectImageFormat::R16 => false,
-            spirv_reflect::types::ReflectImageFormat::R8 => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::RG16_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::RG8_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::R16_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::R8_SNORM => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_INT => true,
-            spirv_reflect::types::ReflectImageFormat::R32_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RG32_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RG16_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RG8_INT => true,
-            spirv_reflect::types::ReflectImageFormat::R16_INT => true,
-            spirv_reflect::types::ReflectImageFormat::R8_INT => true,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
-            spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
-        }
-    }
+    // fn is_signed_int_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
+    //     match format {
+    //         spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R32_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8 => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16_FLOAT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16 => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2 => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16 => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG8 => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16 => false,
+    //         spirv_reflect::types::ReflectImageFormat::R8 => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::R8_SNORM => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R32_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R16_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::R8_INT => true,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R16_UINT => false,
+    //         spirv_reflect::types::ReflectImageFormat::R8_UINT => false,
+    //     }
+    // }
 
-    fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
-        match format {
-            spirv_reflect::types::ReflectFormat::Undefined => todo!(),
-            spirv_reflect::types::ReflectFormat::R32_UINT => wgpu::VertexFormat::Uint32,
-            spirv_reflect::types::ReflectFormat::R32_SINT => wgpu::VertexFormat::Sint32,
-            spirv_reflect::types::ReflectFormat::R32_SFLOAT => wgpu::VertexFormat::Float32,
-            spirv_reflect::types::ReflectFormat::R32G32_UINT => wgpu::VertexFormat::Uint32x2,
-            spirv_reflect::types::ReflectFormat::R32G32_SINT => wgpu::VertexFormat::Sint32x2,
-            spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
-            spirv_reflect::types::ReflectFormat::R32G32B32_UINT => wgpu::VertexFormat::Uint32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32_SINT => wgpu::VertexFormat::Sint32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => wgpu::VertexFormat::Uint32x4,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => wgpu::VertexFormat::Sint32x4,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => {
-                wgpu::VertexFormat::Float32x4
-            }
-        }
-    }
+    // fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
+    //     match format {
+    //         spirv_reflect::types::ReflectFormat::Undefined => todo!(),
+    //         spirv_reflect::types::ReflectFormat::R32_UINT => wgpu::VertexFormat::Uint32,
+    //         spirv_reflect::types::ReflectFormat::R32_SINT => wgpu::VertexFormat::Sint32,
+    //         spirv_reflect::types::ReflectFormat::R32_SFLOAT => wgpu::VertexFormat::Float32,
+    //         spirv_reflect::types::ReflectFormat::R32G32_UINT => wgpu::VertexFormat::Uint32x2,
+    //         spirv_reflect::types::ReflectFormat::R32G32_SINT => wgpu::VertexFormat::Sint32x2,
+    //         spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32_UINT => wgpu::VertexFormat::Uint32x3,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32_SINT => wgpu::VertexFormat::Sint32x3,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => wgpu::VertexFormat::Uint32x4,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => wgpu::VertexFormat::Sint32x4,
+    //         spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => {
+    //             wgpu::VertexFormat::Float32x4
+    //         }
+    //     }
+    // }
 
-    fn convert_reflect_image_format(
-        format: spirv_reflect::types::ReflectImageFormat,
-    ) -> wgpu::TextureFormat {
-        match format {
-            spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
-            spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => {
-                wgpu::TextureFormat::Rgba32Float
-            }
-            spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => {
-                wgpu::TextureFormat::Rgba16Float
-            }
-            spirv_reflect::types::ReflectImageFormat::R32_FLOAT => wgpu::TextureFormat::R32Float,
-            spirv_reflect::types::ReflectImageFormat::RGBA8 => wgpu::TextureFormat::Rgba8Unorm,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => {
-                wgpu::TextureFormat::Rgba8Snorm
-            }
-            spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => wgpu::TextureFormat::Rg32Float,
-            spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => wgpu::TextureFormat::Rg16Float,
-            spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => {
-                wgpu::TextureFormat::Rg11b10Float
-            }
-            spirv_reflect::types::ReflectImageFormat::R16_FLOAT => wgpu::TextureFormat::R16Float,
-            spirv_reflect::types::ReflectImageFormat::RGBA16 => wgpu::TextureFormat::Rgba16Unorm,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2 => wgpu::TextureFormat::Rgb10a2Unorm,
-            spirv_reflect::types::ReflectImageFormat::RG16 => wgpu::TextureFormat::Rg16Unorm,
-            spirv_reflect::types::ReflectImageFormat::RG8 => wgpu::TextureFormat::Rg8Unorm,
-            spirv_reflect::types::ReflectImageFormat::R16 => wgpu::TextureFormat::R16Unorm,
-            spirv_reflect::types::ReflectImageFormat::R8 => wgpu::TextureFormat::R8Unorm,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => {
-                wgpu::TextureFormat::Rgba16Snorm
-            }
-            spirv_reflect::types::ReflectImageFormat::RG16_SNORM => wgpu::TextureFormat::Rg16Snorm,
-            spirv_reflect::types::ReflectImageFormat::RG8_SNORM => wgpu::TextureFormat::Rg8Snorm,
-            spirv_reflect::types::ReflectImageFormat::R16_SNORM => wgpu::TextureFormat::R16Snorm,
-            spirv_reflect::types::ReflectImageFormat::R8_SNORM => wgpu::TextureFormat::R8Snorm,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_INT => wgpu::TextureFormat::Rgba32Sint,
-            spirv_reflect::types::ReflectImageFormat::RGBA16_INT => wgpu::TextureFormat::Rgba16Sint,
-            spirv_reflect::types::ReflectImageFormat::RGBA8_INT => wgpu::TextureFormat::Rgba8Sint,
-            spirv_reflect::types::ReflectImageFormat::R32_INT => wgpu::TextureFormat::R32Sint,
-            spirv_reflect::types::ReflectImageFormat::RG32_INT => wgpu::TextureFormat::Rg32Sint,
-            spirv_reflect::types::ReflectImageFormat::RG16_INT => wgpu::TextureFormat::Rg16Sint,
-            spirv_reflect::types::ReflectImageFormat::RG8_INT => wgpu::TextureFormat::Rg8Sint,
-            spirv_reflect::types::ReflectImageFormat::R16_INT => wgpu::TextureFormat::R16Sint,
-            spirv_reflect::types::ReflectImageFormat::R8_INT => wgpu::TextureFormat::R8Sint,
-            spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => {
-                wgpu::TextureFormat::Rgba32Uint
-            }
-            spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => {
-                wgpu::TextureFormat::Rgba16Uint
-            }
-            spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => wgpu::TextureFormat::Rgba8Uint,
-            spirv_reflect::types::ReflectImageFormat::R32_UINT => wgpu::TextureFormat::R32Uint,
-            spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => todo!(),
-            spirv_reflect::types::ReflectImageFormat::RG32_UINT => wgpu::TextureFormat::Rg32Uint,
-            spirv_reflect::types::ReflectImageFormat::RG16_UINT => wgpu::TextureFormat::Rg16Uint,
-            spirv_reflect::types::ReflectImageFormat::RG8_UINT => wgpu::TextureFormat::Rg8Uint,
-            spirv_reflect::types::ReflectImageFormat::R16_UINT => wgpu::TextureFormat::R16Uint,
-            spirv_reflect::types::ReflectImageFormat::R8_UINT => wgpu::TextureFormat::R8Uint,
-        }
-    }
+    // fn convert_reflect_image_format(
+    //     format: spirv_reflect::types::ReflectImageFormat,
+    // ) -> wgpu::TextureFormat {
+    //     match format {
+    //         spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_FLOAT => {
+    //             wgpu::TextureFormat::Rgba32Float
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_FLOAT => {
+    //             wgpu::TextureFormat::Rgba16Float
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::R32_FLOAT => wgpu::TextureFormat::R32Float,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8 => wgpu::TextureFormat::Rgba8Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_SNORM => {
+    //             wgpu::TextureFormat::Rgba8Snorm
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::RG32_FLOAT => wgpu::TextureFormat::Rg32Float,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_FLOAT => wgpu::TextureFormat::Rg16Float,
+    //         spirv_reflect::types::ReflectImageFormat::R11G11B10_FLOAT => {
+    //             wgpu::TextureFormat::Rg11b10Float
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::R16_FLOAT => wgpu::TextureFormat::R16Float,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16 => wgpu::TextureFormat::Rgba16Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2 => wgpu::TextureFormat::Rgb10a2Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::RG16 => wgpu::TextureFormat::Rg16Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::RG8 => wgpu::TextureFormat::Rg8Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::R16 => wgpu::TextureFormat::R16Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::R8 => wgpu::TextureFormat::R8Unorm,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_SNORM => {
+    //             wgpu::TextureFormat::Rgba16Snorm
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::RG16_SNORM => wgpu::TextureFormat::Rg16Snorm,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_SNORM => wgpu::TextureFormat::Rg8Snorm,
+    //         spirv_reflect::types::ReflectImageFormat::R16_SNORM => wgpu::TextureFormat::R16Snorm,
+    //         spirv_reflect::types::ReflectImageFormat::R8_SNORM => wgpu::TextureFormat::R8Snorm,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_INT => wgpu::TextureFormat::Rgba32Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_INT => wgpu::TextureFormat::Rgba16Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_INT => wgpu::TextureFormat::Rgba8Sint,
+    //         spirv_reflect::types::ReflectImageFormat::R32_INT => wgpu::TextureFormat::R32Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RG32_INT => wgpu::TextureFormat::Rg32Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_INT => wgpu::TextureFormat::Rg16Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_INT => wgpu::TextureFormat::Rg8Sint,
+    //         spirv_reflect::types::ReflectImageFormat::R16_INT => wgpu::TextureFormat::R16Sint,
+    //         spirv_reflect::types::ReflectImageFormat::R8_INT => wgpu::TextureFormat::R8Sint,
+    //         spirv_reflect::types::ReflectImageFormat::RGBA32_UINT => {
+    //             wgpu::TextureFormat::Rgba32Uint
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::RGBA16_UINT => {
+    //             wgpu::TextureFormat::Rgba16Uint
+    //         }
+    //         spirv_reflect::types::ReflectImageFormat::RGBA8_UINT => wgpu::TextureFormat::Rgba8Uint,
+    //         spirv_reflect::types::ReflectImageFormat::R32_UINT => wgpu::TextureFormat::R32Uint,
+    //         spirv_reflect::types::ReflectImageFormat::RGB10A2_UINT => todo!(),
+    //         spirv_reflect::types::ReflectImageFormat::RG32_UINT => wgpu::TextureFormat::Rg32Uint,
+    //         spirv_reflect::types::ReflectImageFormat::RG16_UINT => wgpu::TextureFormat::Rg16Uint,
+    //         spirv_reflect::types::ReflectImageFormat::RG8_UINT => wgpu::TextureFormat::Rg8Uint,
+    //         spirv_reflect::types::ReflectImageFormat::R16_UINT => wgpu::TextureFormat::R16Uint,
+    //         spirv_reflect::types::ReflectImageFormat::R8_UINT => wgpu::TextureFormat::R8Uint,
+    //     }
+    // }
 
-    fn convert_reflect_dimension(
-        dimension: spirv_reflect::types::ReflectDimension,
-    ) -> wgpu::TextureViewDimension {
-        match dimension {
-            spirv_reflect::types::ReflectDimension::Undefined => todo!(),
-            spirv_reflect::types::ReflectDimension::Type1d => wgpu::TextureViewDimension::D1,
-            spirv_reflect::types::ReflectDimension::Type2d => wgpu::TextureViewDimension::D2,
-            spirv_reflect::types::ReflectDimension::Type3d => wgpu::TextureViewDimension::D3,
-            spirv_reflect::types::ReflectDimension::Cube => wgpu::TextureViewDimension::Cube,
-            spirv_reflect::types::ReflectDimension::Rect => todo!(),
-            spirv_reflect::types::ReflectDimension::Buffer => todo!(),
-            spirv_reflect::types::ReflectDimension::SubPassData => todo!(),
-        }
-    }
+    // fn convert_reflect_dimension(
+    //     dimension: spirv_reflect::types::ReflectDimension,
+    // ) -> wgpu::TextureViewDimension {
+    //     match dimension {
+    //         spirv_reflect::types::ReflectDimension::Undefined => todo!(),
+    //         spirv_reflect::types::ReflectDimension::Type1d => wgpu::TextureViewDimension::D1,
+    //         spirv_reflect::types::ReflectDimension::Type2d => wgpu::TextureViewDimension::D2,
+    //         spirv_reflect::types::ReflectDimension::Type3d => wgpu::TextureViewDimension::D3,
+    //         spirv_reflect::types::ReflectDimension::Cube => wgpu::TextureViewDimension::Cube,
+    //         spirv_reflect::types::ReflectDimension::Rect => todo!(),
+    //         spirv_reflect::types::ReflectDimension::Buffer => todo!(),
+    //         spirv_reflect::types::ReflectDimension::SubPassData => todo!(),
+    //     }
+    // }
 
-    fn convert_shader_stage(
-        stage: spirv_reflect::types::ReflectShaderStageFlags,
-    ) -> wgpu::ShaderStages {
-        if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::COMPUTE) {
-            wgpu::ShaderStages::COMPUTE
-        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::VERTEX) {
-            wgpu::ShaderStages::VERTEX
-        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::FRAGMENT) {
-            wgpu::ShaderStages::FRAGMENT
-        } else {
-            todo!()
-        }
-    }
+    // fn convert_shader_stage(
+    //     stage: spirv_reflect::types::ReflectShaderStageFlags,
+    // ) -> wgpu::ShaderStages {
+    //     if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::COMPUTE) {
+    //         wgpu::ShaderStages::COMPUTE
+    //     } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::VERTEX) {
+    //         wgpu::ShaderStages::VERTEX
+    //     } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::FRAGMENT) {
+    //         wgpu::ShaderStages::FRAGMENT
+    //     } else {
+    //         todo!()
+    //     }
+    // }
 }
 
 impl IShader for ShaderWgpu {

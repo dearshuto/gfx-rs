@@ -10,6 +10,7 @@ members = [
         "gfx-vulkano",
         "gfx-websys",
         "gfx-wgpu",
+        "run-wasm",
         "examples",
         "vi-rs",
 #	"examples/clear_color",

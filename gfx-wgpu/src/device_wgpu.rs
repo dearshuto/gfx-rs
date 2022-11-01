@@ -1,9 +1,21 @@
 use std::sync::Arc;
 
 use futures::executor;
-use raw_window_handle::HasRawWindowHandle;
 use sjgfx_interface::{DeviceInfo, IDevice};
+use wasm_bindgen::prelude::wasm_bindgen;
 use wgpu::{Adapter, Surface};
+
+#[wasm_bindgen]
+extern "C" {
+    fn alert(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn print(log: &str) {
+    unsafe {
+        alert(log);
+    }
+}
 
 pub struct DeviceWgpu {
     device: Arc<wgpu::Device>,
@@ -17,10 +29,7 @@ pub struct DeviceWgpu {
 }
 
 impl DeviceWgpu {
-    pub fn new_as_graphics<W>(_info: &DeviceInfo, window: &W) -> Self
-    where
-        W: HasRawWindowHandle,
-    {
+    pub fn new_as_graphics(_info: &DeviceInfo, window: &winit::window::Window) -> Self {
         let backend = Self::get_primary_backend_type();
         let instance = wgpu::Instance::new(backend);
         let surface = unsafe { instance.create_surface(window) };
@@ -31,6 +40,8 @@ impl DeviceWgpu {
         }))
         .unwrap();
 
+        // ここで落ちる
+        print("device, queue");
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
@@ -41,6 +52,7 @@ impl DeviceWgpu {
         ))
         .unwrap();
 
+        print("config");
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_supported_formats(&adapter)[0],
@@ -109,7 +121,7 @@ impl DeviceWgpu {
 }
 
 impl IDevice for DeviceWgpu {
-    type Display = sjvi::winit::Display<()>;
+    type Display = sjvi::web_sys::Display;
 
     fn new(_: &DeviceInfo) -> Self {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
@@ -138,7 +150,8 @@ impl IDevice for DeviceWgpu {
         }
     }
 
-    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
-        Self::new_as_graphics(info, &display.window)
+    fn new_with_surface(_info: &DeviceInfo, _display: &Self::Display) -> Self {
+        todo!()
+        // Self::new_as_graphics(info, &display.window)
     }
 }
