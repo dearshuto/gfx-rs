@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{borrow::Cow, default, sync::Arc};
 
 use sjgfx_interface::{IShader, ShaderInfo};
 use uuid::Uuid;
@@ -125,6 +125,66 @@ impl ShaderWgpu {
                 id: Uuid::new_v4(),
             },
         }
+    }
+
+    fn new_as_graphics_from_source(
+        device: &DeviceWgpu,
+        vertex_shader_glsl: &str,
+        pixel_shader_glsl: &str,
+    ) -> Self {
+        let vertex_attributes = Self::create_vertex_attributes(&vertex_shader_binary);
+        let _vertex_shader_source = wgpu::ShaderSource::Glsl {
+            shader: Cow::Borrowed(vertex_shader_glsl),
+            stage: naga::ShaderStage::Vertex,
+            defines: Default::default(),
+        };
+        let _pixel_shader_source = wgpu::ShaderSource::Glsl {
+            shader: Cow::Borrowed(pixel_shader_glsl),
+            stage: naga::ShaderStage::Fragment,
+            defines: Default::default(),
+        };
+
+        let bind_group_layout =
+            device
+                .get_device()
+                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: &entries,
+                });
+        let pipeline_layout =
+            device
+                .get_device()
+                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                    label: None,
+                    bind_group_layouts: &[&bind_group_layout],
+                    push_constant_ranges: &[],
+                });
+
+        Self {
+            shader_data: ShaderData {
+                compute_shader: None,
+                vertex_shader: Some(Arc::new(vertex_shader.unwrap())),
+                pixel_shader: Some(Arc::new(pixel_shader.unwrap())),
+                compute_pipeline: None,
+                vertex_attributes: Some(Arc::new(vertex_attributes)),
+                bind_group_layout: Arc::new(bind_group_layout),
+                pipeline_layout: Arc::new(pipeline_layout),
+                id: Uuid::new_v4(),
+            },
+        }
+    }
+
+    fn create_shader_module_source(
+        device: &wgpu::Device,
+        source: &str,
+        stage: naga::ShaderStage,
+    ) -> wgpu::ShaderSource {
+        let shader_source = wgpu::ShaderSource::Glsl {
+            shader: Cow::Borrowed(source),
+            stage: naga::ShaderStage::Vertex,
+            defines: Default::default(),
+        };
+        shader_source
     }
 
     fn create_shader_module(

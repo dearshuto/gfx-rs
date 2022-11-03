@@ -41,10 +41,10 @@ impl DeviceWgpu {
         .unwrap();
 
         // ここで落ちる
-        print("device, queue");
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+                limits:
+                    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
                 features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 label: None,
             },
@@ -52,7 +52,6 @@ impl DeviceWgpu {
         ))
         .unwrap();
 
-        print("config");
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface.get_supported_formats(&adapter)[0],
