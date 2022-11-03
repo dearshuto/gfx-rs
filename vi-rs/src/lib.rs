@@ -1,4 +1,4 @@
-#[cfg(any(not(target_arch = "wasm32")))]
+#[cfg(any(target_arch = "wasm32"))]
 pub mod glutin;
 
 #[cfg(any(not(target_arch = "wasm32")))]
