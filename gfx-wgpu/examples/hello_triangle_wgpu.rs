@@ -7,9 +7,12 @@ use sjgfx_wgpu::{
     BufferWgpu, ColorTargetViewWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu,
     SwapChainWgpu, VertexStateWgpu,
 };
+use sjvi::IDisplay;
+use sjvi::IInstance;
 
 fn main() {
     run::<
+        sjvi::winit::Instance,
         DeviceWgpu,
         QueueWgpu,
         ShaderWgpu,
@@ -22,6 +25,7 @@ fn main() {
 }
 
 fn run<
+    TInstance,
     TDevice,
     TQueue,
     TShader,
@@ -32,6 +36,7 @@ fn run<
     TBuffer,
 >()
 where
+    TInstance: IInstance<Display = TDevice::Display, DisplayId = sjvi::winit::Id>,
     TDevice: IDevice,
     TQueue: IQueue<
         DeviceType = TDevice,
@@ -50,22 +55,18 @@ where
     TColorTargetView: IColorTargetView,
     TVertexState: IVertexState<DeviceType = TDevice>,
 {
-    let mut instance = sjvi::winit::Instance::new();
+    let mut instance = TInstance::new();
     let id = instance.create_display();
 
     let mut device = {
-        let displaty = instance.try_get_display(id).unwrap();
-        TDevice::new_with_surface(
-            &DeviceInfo::new(),
-            &displaty.window,
-            instance.get_event_loop(),
-        )
+        let displaty = instance.try_get_display(&id).unwrap();
+        TDevice::new_with_surface(&DeviceInfo::new(), displaty)
     };
     let mut swap_chain = TSwapChain::new(
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
     );
-    let mut queue = TQueue::new(&device, &QueueInfo::new());
+    let mut queue = TQueue::new(&mut device, &QueueInfo::new());
     let mut command_buffer = TCommandBuffer::new(&device, &CommandBufferInfo::new());
 
     let mut compiler = sjgfx_util::ShaderCompiler::new();
@@ -78,14 +79,14 @@ where
         sjgfx_util::ShaderStage::Pixel,
     );
     let shader = TShader::new(
-        &device,
+        &mut device,
         &ShaderInfo::new()
             .set_vertex_shader_binary(&vertex_shader_binary)
             .set_pixel_shader_binary(&pixel_shader_binary),
     );
 
     while instance.try_update() {
-        let display = instance.try_get_display(id).unwrap();
+        let display = instance.try_get_display(&id).unwrap();
         if display.is_redraw_requested() {
             // スキャンバッファの取得
             let mut next_scan_buffer_view = swap_chain.acquire_next_scan_buffer_view(None, None);
