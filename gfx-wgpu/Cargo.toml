@@ -7,7 +7,8 @@ version = "0.1.0"
 sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
-wgpu = {version = "0.13.0", features = ["spirv"]}
+wgpu = {version = "0.13.0", features = ["spirv", "glsl"]}
+naga = "0.9.0" # for wgpu shader settings
 futures = "0.3.1"
 raw-window-handle = "0.4.0"
 spirv-reflect = "0.2.3"

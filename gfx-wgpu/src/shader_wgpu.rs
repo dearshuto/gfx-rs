@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, borrow::Cow};
 
 use sjgfx_interface::{IShader, ShaderInfo};
 use uuid::Uuid;
@@ -12,14 +12,19 @@ pub struct ShaderWgpu {
 
 impl ShaderWgpu {
     pub fn new(device: &DeviceWgpu, info: &ShaderInfo) -> Self {
+        
         if let Some(compute_shader_binary) = info.get_compute_shader_binary() {
             return Self::new_as_compute(device, &compute_shader_binary);
-        } else {
+        } else if let (Some(vertex_shader_binary), Some(pixel_shader_binary)) = (info.get_vertex_shader_binary(), info.get_pixel_shader_binary()) {
             return Self::new_as_graphics(
                 device,
-                info.get_vertex_shader_binary().as_ref().unwrap(),
-                info.get_pixel_shader_binary().as_ref().unwrap(),
+                &vertex_shader_binary,
+                &pixel_shader_binary,
             );
+        } else if let (Some(vertex_shader_source), Some(pixel_shader_source)) = (info.get_vertex_shader_source(), info.get_pixel_shader_source()) {
+            return Self::new_as_graphics_from_source(device, vertex_shader_source, pixel_shader_source);
+        } else {
+            panic!();
         }
     }
 
@@ -125,6 +130,23 @@ impl ShaderWgpu {
                 id: Uuid::new_v4(),
             },
         }
+    }
+
+    /// GLSL のソースコードからシェーダインスタンスを生成します。
+    fn new_as_graphics_from_source(_device: &DeviceWgpu, vertex_shader_source: &str, pixel_shader_source: &str) -> Self {
+        let _vertex_shader_source = wgpu::ShaderSource::Glsl {
+            shader: Cow::Borrowed(vertex_shader_source),
+            stage: naga::ShaderStage::Vertex,
+            defines: Default::default(),
+        };
+        let _pixel_shader_source = wgpu::ShaderSource::Glsl {
+            shader: Cow::Borrowed(pixel_shader_source),
+            stage: naga::ShaderStage::Fragment,
+            defines: Default::default(),
+        };
+        // let vertex_attributes = Self::create_vertex_attributes(&vertex_shader_binary);
+
+        panic!()
     }
 
     fn create_shader_module(
