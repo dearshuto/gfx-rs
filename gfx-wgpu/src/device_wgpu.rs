@@ -31,9 +31,14 @@ impl DeviceWgpu {
         }))
         .unwrap();
 
+        // Device の limits はウェブ版で分岐が必要
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
-                limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+                limits: if cfg!(target_arch = "wasm32") {
+                    wgpu::Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits())
+                } else {
+                    wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
+                },
                 features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                 label: None,
             },
