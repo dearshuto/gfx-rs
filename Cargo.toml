@@ -11,6 +11,7 @@ members = [
         "gfx-websys",
         "gfx-wgpu",
         "examples",
+        "run-wasm",
         "vi-rs",
 #	"examples/clear_color",
 #	"examples/hello_graphics_pipeline",
