@@ -13,7 +13,7 @@ raw-window-handle = "0.4.0"
 spirv-reflect = "0.2.3"
 winit = "0.26.0"
 bytemuck = { version = "*", features = ["derive"] }
-uuid = { version = "0.8.0", features = ["v4"] }
+uuid = { version = "1.2.1", features = ["v4", "js"] }
 futures-intrusive = "0.4"
 
 [dev-dependencies]
