@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use rspirv::binary::Disassemble;
 use sjgfx_interface::{IShader, ShaderInfo};
 use uuid::Uuid;
 use wgpu::ComputePipelineDescriptor;
@@ -144,6 +143,31 @@ impl ShaderWgpu {
 
     fn create_bind_group_layout_entries(shader_source: &[u8]) -> Vec<wgpu::BindGroupLayoutEntry> {
         let module = rspirv::dr::load_bytes(shader_source).unwrap();
+        let module_sr_result = rspirv::lift::LiftContext::convert(&module);
+        match module_sr_result {
+            Ok(_) => todo!(),
+            Err(error) => match error {
+                rspirv::lift::ConversionError::MissingHeader => todo!(),
+                rspirv::lift::ConversionError::MissingFunction => todo!(),
+                rspirv::lift::ConversionError::MissingFunctionType => todo!(),
+                rspirv::lift::ConversionError::MissingLabel => todo!(),
+                rspirv::lift::ConversionError::MissingTerminator => todo!(),
+                rspirv::lift::ConversionError::Instruction(e) => {
+                    // ここで落ちる？
+                    match e {
+                        rspirv::lift::InstructionError::WrongOpcode => {
+                            println!("Wrong");
+                        }
+                        rspirv::lift::InstructionError::MissingResult => {
+                            println!("Missing");
+                        }
+                        rspirv::lift::InstructionError::Operand(_) => {
+                            println!("operand");
+                        }
+                    };
+                }
+            },
+        };
         let aa = &module.entry_points[0].operands[0];
         match aa {
             rspirv::dr::Operand::ExecutionModel(ref operand) => {}
