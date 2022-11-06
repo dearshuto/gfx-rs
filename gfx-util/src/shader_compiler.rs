@@ -9,17 +9,11 @@ pub enum ShaderStage {
     Compute,
 }
 
-pub struct ShaderCompiler {
-    #[cfg(not(target_arch = "wasm32"))]
-    compiler: shaderc::Compiler,
-}
+pub struct ShaderCompiler {}
 
 impl ShaderCompiler {
     pub fn new() -> Self {
-        Self {
-            #[cfg(not(target_arch = "wasm32"))]
-            compiler: shaderc::Compiler::new().unwrap(),
-        }
+        Self {}
     }
 
     pub fn create_binary(
@@ -27,27 +21,38 @@ impl ShaderCompiler {
         #[allow(unused_variables)] source: &str,
         #[allow(unused_variables)] shader_stage: ShaderStage,
     ) -> Vec<u8> {
-        #[cfg(target_arch = "wasm32")]
-        {
-            // wasm ビルドでもエラーにならないように空実装を提供しておく
-            Vec::new()
-        }
+        let stage = match shader_stage {
+            ShaderStage::Vertex => naga::ShaderStage::Vertex,
+            ShaderStage::Pixel => naga::ShaderStage::Fragment,
+            ShaderStage::Compute => naga::ShaderStage::Compute,
+        };
+        let options = naga::front::glsl::Options::from(stage);
+        let module = naga::front::glsl::Parser::default()
+            .parse(&options, source)
+            .unwrap();
+        let info = naga::valid::Validator::new(
+            naga::valid::ValidationFlags::all(),
+            naga::valid::Capabilities::all(),
+        )
+        .validate(&module)
+        .unwrap();
+        let u8_data = unsafe {
+            let options = naga::back::spv::Options::default();
+            let mut data = naga::back::spv::write_vec(&module, &info, &options, None).unwrap();
 
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let vertex_shader_binary = self
-                .compiler
-                .compile_into_spirv(
-                    source,
-                    Self::convert(shader_stage),
-                    "test.glsl",
-                    "main",
-                    None,
-                )
-                .unwrap();
+            let ratio = std::mem::size_of::<u32>() / std::mem::size_of::<u8>();
+            let length = data.len() * ratio;
+            let capacity = data.capacity() * ratio;
+            let ptr = data.as_mut_ptr() as *mut u8;
+            let u8_data: Vec<u8> = Vec::from_raw_parts(ptr, length, capacity).clone();
 
-            vertex_shader_binary.as_binary_u8().to_vec()
-        }
+            // 元データが 2 重に破棄されないように、元データを破棄しないようにする
+            std::mem::forget(data);
+
+            u8_data
+        };
+
+        return u8_data;
     }
 
     pub fn build_graphics_shader<TPath: AsRef<Path>>(
@@ -55,61 +60,32 @@ impl ShaderCompiler {
         #[allow(unused_variables)] vertex_shader_path: &TPath,
         #[allow(unused_variables)] pixel_shader_path: &TPath,
     ) {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let vertex_shader_source = std::fs::read_to_string(vertex_shader_path).unwrap();
-            let pixel_shader_source = std::fs::read_to_string(pixel_shader_path).unwrap();
-            let vertex_shader_binary = self
-                .compiler
-                .compile_into_spirv(
-                    &vertex_shader_source,
-                    shaderc::ShaderKind::Vertex,
-                    "VertexShader",
-                    "main",
-                    None,
-                )
-                .unwrap();
-            let pixel_shader_binary = self
-                .compiler
-                .compile_into_spirv(
-                    &pixel_shader_source,
-                    shaderc::ShaderKind::Fragment,
-                    "PixelShader",
-                    "main",
-                    None,
-                )
-                .unwrap();
+        let vertex_shader_source = std::fs::read_to_string(vertex_shader_path).unwrap();
+        let pixel_shader_source = std::fs::read_to_string(pixel_shader_path).unwrap();
 
-            let output_directory_path = std::path::Path::new("outputs/resources/shaders");
-            let _ = std::fs::create_dir_all(&output_directory_path).expect("");
+        let vertex_shader_binary = self.create_binary(&vertex_shader_source, ShaderStage::Vertex);
+        let pixel_shader_binary = self.create_binary(&pixel_shader_source, ShaderStage::Pixel);
 
-            let vertex_shader_file_path = vertex_shader_path.as_ref().with_extension("vs.spv");
-            let pixel_shader_file_path = vertex_shader_path.as_ref().with_extension("fs.spv");
+        let output_directory_path = std::path::Path::new("outputs/resources/shaders");
+        let _ = std::fs::create_dir_all(&output_directory_path).expect("");
 
-            // 頂点シェーダ
-            std::fs::File::create(
-                output_directory_path.join(vertex_shader_file_path.file_name().unwrap()),
-            )
-            .unwrap()
-            .write_all(vertex_shader_binary.as_binary_u8())
-            .unwrap();
+        let vertex_shader_file_path = vertex_shader_path.as_ref().with_extension("vs.spv");
+        let pixel_shader_file_path = vertex_shader_path.as_ref().with_extension("fs.spv");
 
-            // ピクセルシェーダ
-            std::fs::File::create(
-                output_directory_path.join(pixel_shader_file_path.file_name().unwrap()),
-            )
-            .unwrap()
-            .write_all(pixel_shader_binary.as_binary_u8())
-            .unwrap();
-        }
-    }
+        // 頂点シェーダ
+        std::fs::File::create(
+            output_directory_path.join(vertex_shader_file_path.file_name().unwrap()),
+        )
+        .unwrap()
+        .write_all(&vertex_shader_binary)
+        .unwrap();
 
-    #[cfg(not(target_arch = "wasm32"))]
-    fn convert(shader_stage: ShaderStage) -> shaderc::ShaderKind {
-        match shader_stage {
-            ShaderStage::Vertex => shaderc::ShaderKind::Vertex,
-            ShaderStage::Pixel => shaderc::ShaderKind::Fragment,
-            ShaderStage::Compute => shaderc::ShaderKind::Compute,
-        }
+        // ピクセルシェーダ
+        std::fs::File::create(
+            output_directory_path.join(pixel_shader_file_path.file_name().unwrap()),
+        )
+        .unwrap()
+        .write_all(&pixel_shader_binary)
+        .unwrap();
     }
 }

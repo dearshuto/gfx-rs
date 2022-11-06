@@ -6,6 +6,4 @@ version = "0.1.0"
 [dependencies]
 sjgfx-interface = { path = "../gfx-interface" }
 tobj = "3.2.1"
-
-[target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
-shaderc = "0.7"
+naga = { version = "0.10.0", features = ["glsl-in", "spv-out", "wgsl-out"] }
