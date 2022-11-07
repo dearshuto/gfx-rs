@@ -214,6 +214,8 @@ impl ShaderWgpu {
     }
 
     fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
+        let binary = sjgfx_util::ShaderReflection::new_from_biinary(shader_source);
+
         let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
         module
             .enumerate_input_variables(None)
