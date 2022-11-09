@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{IShader, ShaderInfo};
+use sjgfx_interface::{AttributeFormat, IShader, ShaderInfo};
 use uuid::Uuid;
 use wgpu::ComputePipelineDescriptor;
 
@@ -214,21 +214,20 @@ impl ShaderWgpu {
     }
 
     fn create_vertex_attributes(shader_source: &[u8]) -> Vec<wgpu::VertexAttribute> {
-        let binary = sjgfx_util::ShaderReflection::new_from_biinary(shader_source);
-
-        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
-        module
-            .enumerate_input_variables(None)
-            .unwrap()
-            .into_iter()
-            .filter(|x| x.location < 31)
-            .map(|x| wgpu::VertexAttribute {
-                format: Self::convert_attribute_format(x.format),
+        let shader_reflection = sjgfx_util::ShaderReflection::new_from_biinary(shader_source);
+        let vertex_attributes = shader_reflection
+            .entry_point
+            .attribures()
+            .iter()
+            .map(|attribute| wgpu::VertexAttribute {
+                format: Self::convert_attribute_format(attribute.format()),
                 offset: 0,
-                shader_location: x.location,
+                shader_location: 0,
             })
             .collect::<Vec<wgpu::VertexAttribute>>()
-            .to_vec()
+            .to_vec();
+
+        vertex_attributes
     }
 
     fn create_image_bind_group_layout_entry(
@@ -348,23 +347,11 @@ impl ShaderWgpu {
         }
     }
 
-    fn convert_attribute_format(format: spirv_reflect::types::ReflectFormat) -> wgpu::VertexFormat {
+    fn convert_attribute_format(format: AttributeFormat) -> wgpu::VertexFormat {
         match format {
-            spirv_reflect::types::ReflectFormat::Undefined => todo!(),
-            spirv_reflect::types::ReflectFormat::R32_UINT => wgpu::VertexFormat::Uint32,
-            spirv_reflect::types::ReflectFormat::R32_SINT => wgpu::VertexFormat::Sint32,
-            spirv_reflect::types::ReflectFormat::R32_SFLOAT => wgpu::VertexFormat::Float32,
-            spirv_reflect::types::ReflectFormat::R32G32_UINT => wgpu::VertexFormat::Uint32x2,
-            spirv_reflect::types::ReflectFormat::R32G32_SINT => wgpu::VertexFormat::Sint32x2,
-            spirv_reflect::types::ReflectFormat::R32G32_SFLOAT => wgpu::VertexFormat::Float32x2,
-            spirv_reflect::types::ReflectFormat::R32G32B32_UINT => wgpu::VertexFormat::Uint32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32_SINT => wgpu::VertexFormat::Sint32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32_SFLOAT => wgpu::VertexFormat::Float32x3,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_UINT => wgpu::VertexFormat::Uint32x4,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_SINT => wgpu::VertexFormat::Sint32x4,
-            spirv_reflect::types::ReflectFormat::R32G32B32A32_SFLOAT => {
-                wgpu::VertexFormat::Float32x4
-            }
+            AttributeFormat::Uint32 => wgpu::VertexFormat::Uint32,
+            AttributeFormat::Float32_32 => wgpu::VertexFormat::Float32x2,
+            AttributeFormat::Float32_32_32 => wgpu::VertexFormat::Float32x3,
         }
     }
 
