@@ -47,6 +47,8 @@ impl ShaderReflection {
     }
 
     fn new_impl(module: &rspirv::dr::Module) -> Self {
+        assert!(module.entry_points.len() == 1);
+        assert!(2 <= module.entry_points[0].operands.len());
         let entry_point_name = match module.entry_points[0].operands[2] {
             rspirv::dr::Operand::LiteralString(ref value) => value,
             _ => panic!(),
@@ -63,11 +65,8 @@ impl ShaderReflection {
                     VariableType::Vec2 => AttributeFormat::Float32_32,
                     VariableType::Vec3 => AttributeFormat::Float32_32_32,
                 };
-                let index = module_table.input_index_table[x.0];
-                Attribute {
-                    format,
-                    location: index,
-                }
+                let location = module_table.location_table[x.0];
+                Attribute { format, location }
             })
             .collect();
 
@@ -85,23 +84,25 @@ struct ModuleTable {
     // 頂点アトリビュートのテーブル
     input_table: HashMap<u32 /*id*/, u32 /*type_ptr_id*/>,
 
-    input_index_table: HashMap<u32 /*id*/, u32 /*index*/>,
+    location_table: HashMap<u32 /*id*/, u32 /*index*/>,
 
     input_type_ptr_table: HashMap<u32 /*id */, u32 /*type_id*/>,
+
+    // 定数バッファの id
+    constant_buffer_table: Vec<u32>,
 }
 
 impl ModuleTable {
     pub fn new(module: &rspirv::dr::Module) -> Self {
-        let mut input_index = 0;
         let mut type_table = HashMap::new();
         let mut input_table = HashMap::new(); // input な変数のテーブル
-        let mut input_index_table = HashMap::new();
         let mut input_type_ptr_table = HashMap::new();
 
         for item in &module.types_global_values {
             let id = item.result_id.unwrap();
             match item.class.opcode {
                 rspirv::spirv::Op::TypeVector => {
+                    assert!(1 <= item.operands.len());
                     let size = match item.operands[1] {
                         rspirv::dr::Operand::LiteralInt32(ref v) => v,
                         _ => panic!(),
@@ -111,10 +112,6 @@ impl ModuleTable {
                         3 => type_table.insert(id, VariableType::Vec3),
                         _ => None,
                     };
-
-                    // 頂点アトリビュートのインデクスを保持
-                    input_index_table.insert(id, input_index);
-                    input_index += 1;
                 }
                 rspirv::spirv::Op::TypePointer => match item.operands[1] {
                     rspirv::dr::Operand::IdRef(id) => {
@@ -138,22 +135,49 @@ impl ModuleTable {
             }
         }
 
-        // input_table は頂点アトリビュート以外の入力変数も全て入っている
-        // そこで entry_point の入力変数に該当するものがアトリビュートと判定する
-        let mut attribute_table = HashMap::new();
-        for attribute in module.entry_points.iter().skip(3) {
-            let id = attribute.result_id.unwrap();
+        // Location の抽出
+        let mut location_table = HashMap::new();
+        for annotation in &module.annotations {
+            // Location データか判定
+            let rspirv::dr::Operand::Decoration(d) = annotation.operands[1] else {
+                continue;
+            };
+            if rspirv::spirv::Decoration::Location != d {
+                continue;
+            }
 
-            if let Some((_, target_id)) = input_table.get_key_value(&id) {
-                attribute_table.insert(id, *target_id);
+            // id
+            let rspirv::dr::Operand::IdRef(id) = annotation.operands[0] else {
+                continue;
+            };
+
+            // location
+            let rspirv::dr::Operand::LiteralInt32(location) = annotation.operands[2] else {
+                continue;
+            };
+
+            location_table.insert(id, location);
+        }
+
+        // input_table は頂点アトリビュート以外の入力変数も全て入っている
+        // そこで entry_point の中で location が設定されているものがアトリビュートと判定する
+        let mut attribute_table = HashMap::new();
+        for attribute in module.entry_points[0].operands.iter().skip(3) {
+            let rspirv::dr::Operand::IdRef( id ) = attribute else {
+                continue;
+            };
+
+            if let Some((_, target_id)) = location_table.get_key_value(&id) {
+                attribute_table.insert(*id, *target_id);
             }
         }
 
         Self {
             type_table,
             input_table: attribute_table,
-            input_index_table,
+            location_table,
             input_type_ptr_table,
+            constant_buffer_table: Vec::new(),
         }
     }
 }

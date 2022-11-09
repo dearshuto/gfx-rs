@@ -43,7 +43,7 @@ pub enum PrimitiveTopology {
     TriangleList,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AttributeFormat {
     Uint32,
     Float32_32,
