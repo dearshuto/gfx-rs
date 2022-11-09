@@ -94,7 +94,7 @@ impl ModuleTable {
     pub fn new(module: &rspirv::dr::Module) -> Self {
         let mut input_index = 0;
         let mut type_table = HashMap::new();
-        let mut input_table = HashMap::new();
+        let mut input_table = HashMap::new(); // input な変数のテーブル
         let mut input_index_table = HashMap::new();
         let mut input_type_ptr_table = HashMap::new();
 
@@ -116,9 +116,12 @@ impl ModuleTable {
                     input_index_table.insert(id, input_index);
                     input_index += 1;
                 }
-                rspirv::spirv::Op::TypePointer => {
-                    input_type_ptr_table.insert(item.result_id.unwrap(), item.result_type.unwrap());
-                }
+                rspirv::spirv::Op::TypePointer => match item.operands[1] {
+                    rspirv::dr::Operand::IdRef(id) => {
+                        input_type_ptr_table.insert(item.result_id.unwrap(), id);
+                    }
+                    _ => (),
+                },
                 rspirv::spirv::Op::Variable => {
                     match item.operands[0] {
                         rspirv::dr::Operand::StorageClass(ref class) => match class {
@@ -135,9 +138,20 @@ impl ModuleTable {
             }
         }
 
+        // input_table は頂点アトリビュート以外の入力変数も全て入っている
+        // そこで entry_point の入力変数に該当するものがアトリビュートと判定する
+        let mut attribute_table = HashMap::new();
+        for attribute in module.entry_points.iter().skip(3) {
+            let id = attribute.result_id.unwrap();
+
+            if let Some((_, target_id)) = input_table.get_key_value(&id) {
+                attribute_table.insert(id, *target_id);
+            }
+        }
+
         Self {
             type_table,
-            input_table,
+            input_table: attribute_table,
             input_index_table,
             input_type_ptr_table,
         }
