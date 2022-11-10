@@ -31,3 +31,45 @@ fn vertex_attributes() {
         }
     }
 }
+
+#[test]
+fn constant_buffer_reflection() {
+    let shader_source = "
+            #version 450
+            
+            layout(location = 0) out vec2 v_Uv;
+            
+            layout(location = 0) in vec2 i_Position;
+            
+            layout(binding = 0) uniform Block0
+            {
+                vec4 u_Data0;
+            };
+
+            layout(binding = 23) uniform Block1
+            {
+                vec4 u_Data1;
+            };
+
+            void main()
+            {
+                gl_Position = u_Data0 + u_Data1 + vec4(i_Position, 0.0, 1.0);
+            }";
+    let shader_binary =
+        ShaderCompiler::new().create_binary(&shader_source, sjgfx_util::ShaderStage::Vertex);
+    let shader_reflection = ShaderReflection::new_from_biinary(&shader_binary);
+
+    // 定数バッファをすべて抽出できていることをテスト
+    assert_eq!(shader_reflection.uniform_buffers().len(), 2);
+
+    assert!(shader_reflection
+        .uniform_buffers()
+        .iter()
+        .find(|x| x.binding == 0)
+        .is_some());
+    assert!(shader_reflection
+        .uniform_buffers()
+        .iter()
+        .find(|x| x.binding == 23)
+        .is_some());
+}
