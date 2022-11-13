@@ -44,17 +44,18 @@ fn constant_buffer_reflection() {
             layout(binding = 0) uniform Block0
             {
                 vec4 u_Data0;
+                mat4 u_Matrix0;
             };
 
             layout(binding = 23) uniform Block1
             {
                 vec4 u_Data1;
-                vec4 u_Data11;
+                float u_FloatData;
             };
 
             void main()
             {
-                gl_Position = u_Data0 + u_Data1 + u_Data11 + vec4(i_Position, 0.0, 1.0);
+                gl_Position = u_Data0 + u_Data1 + vec4(i_Position, u_FloatData, 1.0);
             }";
     let shader_binary =
         ShaderCompiler::new().create_binary(&shader_source, sjgfx_util::ShaderStage::Vertex);
@@ -77,7 +78,7 @@ fn constant_buffer_reflection() {
     // それぞれの定数バッファのサイズを取得できていることをテスト
     for uniform_buffer in shader_reflection.uniform_buffers() {
         match uniform_buffer.binding {
-            0 => assert_eq!(uniform_buffer.size, 16),
+            0 => assert_eq!(uniform_buffer.size, 80),
             23 => assert_eq!(uniform_buffer.size, 32),
             _ => assert!(false),
         }
