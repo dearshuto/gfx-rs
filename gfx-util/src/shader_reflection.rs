@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use rspirv::{
     dr::Module,
-    spirv::{Decoration, StorageClass},
+    spirv::{Decoration, Op, StorageClass},
 };
 use sjgfx_interface::AttributeFormat;
 
@@ -34,7 +34,7 @@ impl EntryPoint {
 
 pub struct UniformBlock {
     pub binding: u32,
-    _size: usize,
+    pub size: usize,
 }
 
 pub struct Attribute {
@@ -118,6 +118,106 @@ impl ShaderReflection {
                 continue;
             }
 
+            // Uniform -> TypePtr
+            let Some(result_type) = type_global_value.result_type else {
+                continue;
+            };
+            let type_ptr_id = module.types_global_values.iter().find_map(|x| {
+                if x.class.opcode != Op::TypePointer {
+                    return None;
+                }
+
+                let Some(id) = x.result_id else {
+                    return  None;
+                };
+                if id != result_type {
+                    return None;
+                }
+
+                if x.operands.len() == 0 {
+                    return None;
+                }
+                let rspirv::dr::Operand::StorageClass(s) = x.operands[0] else {
+                    return None;
+                };
+                if s != rspirv::spirv::StorageClass::Uniform {
+                    return None;
+                }
+                let rspirv::dr::Operand::IdRef(type_ptr_id) = x.operands[1] else {
+                    return None;
+                };
+
+                return Some(type_ptr_id);
+            });
+            let Some(type_ptr_id) =type_ptr_id else {
+                continue;
+            };
+
+            // TypePtr -> TypeStruct
+            let type_struct_target_id = module.types_global_values.iter().find_map(|x| {
+                // TypeStruct か
+                if x.class.opcode != Op::TypeStruct {
+                    return None;
+                }
+
+                // id が見つけたいやつか
+                let Some(id) = x.result_id else {
+                    return None;
+                };
+                if id != type_ptr_id {
+                    return None;
+                }
+
+                // id の抽出
+                if x.operands.len() == 0 {
+                    return None;
+                }
+                let rspirv::dr::Operand::IdRef(target_id) = x.operands[0] else {
+                    return None;
+                };
+
+                return Some(target_id);
+            });
+            let Some(type_struct_target_id) = type_struct_target_id else {
+                continue;
+            };
+
+            //TypeStruct -> Offset(annotation から抽出)
+            let offsets: Vec<u32> = module
+                .annotations
+                .iter()
+                .filter_map(|x| {
+                    if Op::MemberDecorate != x.class.opcode {
+                        return None;
+                    }
+
+                    let rspirv::dr::Operand::IdRef(annotation_id) = x.operands[0] else {
+                     return None;
+                   };
+                    if annotation_id != type_struct_target_id {
+                        return None;
+                    }
+
+                    let rspirv::dr::Operand::Decoration(d) = x.operands[2] else {
+                    return None;
+                };
+                    if d != Decoration::Offset {
+                        return None;
+                    }
+
+                    let rspirv::dr::Operand::LiteralInt32(offset) = x.operands[3] else {
+                    return None;
+                };
+
+                    return Some(offset);
+                })
+                .collect();
+
+            // 定数バッファのサイズ
+            // 定数バッファの最後の変数のオフセットから定数バッファのサイズを算出
+            // 16 バイトアラインメントを前提に、最後の変数のオフセットに 16 を足したら定数バッファ全体のサイズになるはず
+            let size = offsets.last().unwrap() + 16/*アラインメント */;
+
             let binding = module.annotations.iter().find_map(|x| {
                 // id が一致するかの判定
                 let rspirv::dr::Operand::IdRef(annotation_id) = x.operands[0] else {
@@ -146,7 +246,7 @@ impl ShaderReflection {
 
             let uniform_buffer = UniformBlock {
                 binding: binding.unwrap(),
-                _size: 0,
+                size: size as usize,
             };
             uniform_buffers.push(uniform_buffer);
         }
