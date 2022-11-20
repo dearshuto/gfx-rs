@@ -3,9 +3,29 @@ use sjgfx_interface::{
     TextureArrayRange,
 };
 use sjgfx_wgpu::{CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu, SwapChainWgpu};
+use wasm_bindgen::prelude::wasm_bindgen;
 use winit::event::Event;
 use winit::event::WindowEvent;
 use winit::event_loop::ControlFlow;
+
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::WindowExtWebSys;
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    fn alert(s: &str);
+}
+
+pub fn print(log: &str) {
+    #[cfg(target_arch = "wasm32")]
+    unsafe {
+        alert(log);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    println!("{}", log);
+}
 
 fn main() {
     let event_loop = winit::event_loop::EventLoop::new();
@@ -13,11 +33,22 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
+    #[cfg(target_arch = "wasm32")]
+    web_sys::window()
+        .and_then(|win| win.document())
+        .and_then(|doc| doc.body())
+        .and_then(|body| {
+            body.append_child(&web_sys::Element::from(window.canvas()))
+                .ok()
+        })
+        .expect("couldn't append canvas to document body");
+
     let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut swap_chain = SwapChainWgpu::new(
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
     );
+
     let mut queue = QueueWgpu::new(&mut device, &QueueInfo::new());
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
@@ -36,7 +67,6 @@ fn main() {
             .set_vertex_shader_binary(&vertex_shader_binary)
             .set_pixel_shader_binary(&pixel_shader_binary),
     );
-
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
