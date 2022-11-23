@@ -2,7 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use wasm_bindgen::JsCast;
 
-use crate::{IDisplay, IDisplayEventListener, IInstance};
+use crate::IInstance;
+use sjgfx_interface::{IDisplay, IDisplayEventListener};
 
 pub struct Instance {
     display_table: HashMap<DisplayId, Display>,

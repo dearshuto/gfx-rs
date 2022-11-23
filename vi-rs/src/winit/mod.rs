@@ -12,7 +12,8 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
-use crate::{IDisplay, IDisplayEventListener, IInstance};
+use crate::IInstance;
+use sjgfx_interface::{IDisplay, IDisplayEventListener};
 
 pub enum MouseEvent {
     Pressed(f64, f64, MouseButton),
