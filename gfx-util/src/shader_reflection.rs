@@ -182,8 +182,8 @@ impl ShaderReflection {
                 continue;
             };
 
-            //TypeStruct -> Offset(annotation から抽出)
-            let offsets: Vec<u32> = module
+            //TypeStruct -> (Offset(annotation から抽出), 要素数)
+            let offsets: Vec<(u32, u32)> = module
                 .annotations
                 .iter()
                 .filter_map(|x| {
@@ -209,14 +209,70 @@ impl ShaderReflection {
                     return None;
                 };
 
-                    return Some(offset);
+                    let array_size = module.types_global_values.iter().find_map(|x| {
+                        if x.class.opcode != Op::TypeStruct {
+                            return None;
+                        }
+                        if x.operands.len() == 0 {
+                            return None;
+                        }
+                        if type_struct_target_id != x.result_id.unwrap() {
+                            return None;
+                        }
+                        let rspirv::dr::Operand::IdRef( target_id) = x.operands[0] else {
+                            return None;
+                        };
+                        
+                        // TypeStruct -> TypeArray -> TypeVector
+                        let array_count =  module.types_global_values.iter().find_map(|y| {
+                            if y.class.opcode != Op::TypeArray {
+                                return None;
+                            }
+                            if y.result_id.unwrap() != target_id {
+                                return None;
+                            }
+                            if y.operands.len() == 0 {
+                                return None;
+                            }
+                            let rspirv::dr::Operand::IdRef( target_vector_id) = y.operands[0] else {
+                                return None;
+                            };
+
+                            // TypeArray -> TypeVector
+                            let array_count = module.types_global_values.iter().find_map(|z| {
+                                if z.class.opcode != Op::TypeVector {
+                                    return None;
+                                }
+                                if z.result_id.unwrap() != target_vector_id {
+                                    return None;
+                                }
+                                if z.operands.len() == 0 {
+                                    return None;
+                                }
+                                let rspirv::dr::Operand::LiteralInt32( array_count) = z.operands[1] else {
+                                    return None;
+                                };
+                                return Some(array_count);
+                            });
+
+                            return array_count;
+                        });
+                        return array_count;
+                    });
+
+                    if let Some(array_size) = array_size {
+                        return Some((offset, array_size));
+                    } else {
+                        return Some((offset, 1));
+                    }
                 })
                 .collect();
 
             // 定数バッファのサイズ
             // 定数バッファの最後の変数のオフセットから定数バッファのサイズを算出
             // 16 バイトアラインメントを前提に、最後の変数のオフセットに 16 を足したら定数バッファ全体のサイズになるはず
-            let size = offsets.last().unwrap() + 16/*アラインメント */;
+            let (offset, count) = offsets.last().unwrap();
+            let size = (offset + 16/*アラインメント*/) * count;
 
             let binding = module.annotations.iter().find_map(|x| {
                 // id が一致するかの判定

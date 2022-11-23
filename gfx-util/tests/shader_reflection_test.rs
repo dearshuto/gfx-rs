@@ -83,3 +83,27 @@ fn constant_buffer_reflection() {
         }
     }
 }
+
+#[test]
+fn constant_buffer_reflection_array() {
+    let shader_source = "
+            #version 450
+            
+            layout(location = 0) out vec2 v_Uv;
+            
+            layout(binding = 1) uniform Block0
+            {
+                vec4 u_Data[4];
+            };
+
+            void main()
+            {
+                gl_Position = u_Data[0] + u_Data[1] + u_Data[2] + u_Data[3];
+            }";
+    let shader_binary =
+        ShaderCompiler::new().create_binary(&shader_source, sjgfx_util::ShaderStage::Vertex);
+    let shader_reflection = ShaderReflection::new_from_biinary(&shader_binary);
+
+    let uniform_buffer = shader_reflection.uniform_buffers().first().unwrap();
+    assert_eq!(uniform_buffer.size, 64);
+}
