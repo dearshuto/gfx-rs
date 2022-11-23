@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use uuid::Uuid;
+use wgpu::util::DeviceExt;
 
 use crate::{DeviceWgpu, GpuAddressWgpu};
 
@@ -28,6 +29,22 @@ impl BufferWgpu {
             size: info.get_size() as u64,
             usage: Self::convert(&info.get_gpu_access_flags()),
             mapped_at_creation: false,
+        });
+
+        Self {
+            device,
+            buffer: Arc::new(buffer),
+            size: info.get_size(),
+            id: Uuid::new_v4(),
+        }
+    }
+
+    pub fn new_init(device: &DeviceWgpu, info: &BufferInfo, data: &[u8]) -> Self {
+        let device = device.close_device();
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: data,
+            usage: Self::convert(&info.get_gpu_access_flags()),
         });
 
         Self {
@@ -128,10 +145,15 @@ impl BufferWgpu {
             result |= wgpu::BufferUsages::UNIFORM;
         }
 
-        result |= wgpu::BufferUsages::MAP_READ;
-        result |= wgpu::BufferUsages::MAP_WRITE;
-        result |= wgpu::BufferUsages::COPY_SRC;
-        result |= wgpu::BufferUsages::COPY_DST;
+        // バッファを CPU に map するためのフラグ
+        // 現状の実装の web 版だと map できないので分岐
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            result |= wgpu::BufferUsages::MAP_READ;
+            result |= wgpu::BufferUsages::MAP_WRITE;
+            result |= wgpu::BufferUsages::COPY_SRC;
+            result |= wgpu::BufferUsages::COPY_DST;
+        }
 
         result
     }
