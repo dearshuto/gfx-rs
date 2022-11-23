@@ -32,6 +32,9 @@ impl DeviceWgpu {
         .unwrap();
 
         // Device の limits はウェブ版で分岐が必要
+        let optional_features = wgpu::Features::empty();
+        let required_features = wgpu::Features::empty();
+        let adapter_features = adapter.features();
         let (device, queue) = executor::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
                 limits: if cfg!(target_arch = "wasm32") {
@@ -39,7 +42,7 @@ impl DeviceWgpu {
                 } else {
                     wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits())
                 },
-                features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
+                features: (optional_features & adapter_features) | required_features,
                 label: None,
             },
             None,
