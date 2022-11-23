@@ -3,6 +3,7 @@ mod color_target_view_api;
 mod command_buffer_api;
 mod depth_stencil_view_api;
 mod device_api;
+mod display_api;
 mod enums;
 mod fence_api;
 mod queue_api;
@@ -20,6 +21,7 @@ pub use color_target_view_api::{ColorTargetViewInfo, IColorTargetView};
 pub use command_buffer_api::{CommandBufferInfo, ICommandBuffer};
 pub use depth_stencil_view_api::{DepthStencilStateInfo, IDepthStencilView};
 pub use device_api::{DeviceInfo, IDevice};
+pub use display_api::{IDisplay, IDisplayEventListener};
 pub use enums::{
     AttributeFormat, DebugMode, GpuAccess, ImageFormat, IndexFormat, PrimitiveTopology, ShaderStage,
 };

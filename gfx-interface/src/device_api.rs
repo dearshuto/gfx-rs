@@ -1,4 +1,4 @@
-use sjvi::IDisplay;
+use crate::IDisplay;
 
 use crate::enums::DebugMode;
 
