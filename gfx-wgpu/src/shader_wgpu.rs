@@ -171,7 +171,7 @@ impl ShaderWgpu {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(x.size as u64),
+                        min_binding_size: wgpu::BufferSize::new(64 as u64),
                     },
                     count: None,
                 };
@@ -257,7 +257,7 @@ impl ShaderWgpu {
             .map(|attribute| wgpu::VertexAttribute {
                 format: Self::convert_attribute_format(attribute.format()),
                 offset: 0,
-                shader_location: 0,
+                shader_location: attribute.location(),
             })
             .collect::<Vec<wgpu::VertexAttribute>>()
             .to_vec();
