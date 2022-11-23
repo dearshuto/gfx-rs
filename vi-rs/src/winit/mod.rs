@@ -1,16 +1,26 @@
 use std::collections::HashMap;
 use std::{thread::sleep, time::Duration};
-use winit::event::{ElementState, Event, MouseButton};
 
-use winit::dpi::PhysicalSize;
+#[cfg(not(target_arch = "wasm32"))]
+use winit::event::ElementState;
+use winit::event::{Event, MouseButton};
+
+#[cfg(not(target_arch = "wasm32"))]
 use winit::event::Event::{MainEventsCleared, RedrawRequested, WindowEvent};
-use winit::event::WindowEvent::Resized;
-use winit::window::WindowId;
+
+#[cfg(not(target_arch = "wasm32"))]
+use winit::event_loop::ControlFlow;
+#[cfg(not(target_arch = "wasm32"))]
+use winit::platform::run_return::EventLoopExtRunReturn;
 use winit::{
-    event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
+    event_loop::EventLoop,
     window::{Window, WindowBuilder},
 };
+
+use winit::dpi::PhysicalSize;
+#[cfg(not(target_arch = "wasm32"))]
+use winit::event::WindowEvent::Resized;
+use winit::window::WindowId;
 
 use crate::IInstance;
 use sjgfx_interface::{IDisplay, IDisplayEventListener};
@@ -75,13 +85,14 @@ impl Instance {
 
     pub fn try_update_direct_event_callback<TFunc: FnMut(&Event<()>)>(
         &mut self,
-        mut func: TFunc,
+        #[allow(unused)] mut func: TFunc,
     ) -> bool {
         for display in self.display_map.values_mut() {
             display.is_redraw_requested = false;
             display.mouse_event.clear();
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         self.event_loop.run_return(|event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -177,6 +188,8 @@ pub struct Display<T: 'static> {
 
     // マウス操作
     mouse_event: Vec<MouseEvent>,
+
+    #[allow(unused)]
     current_mouse_position: (f64, f64),
 }
 
@@ -185,7 +198,8 @@ impl<T> Display<T> {
         self.is_close_requested
     }
 
-    pub fn update<TFunc: FnMut()>(&mut self, mut updater: TFunc) {
+    pub fn update<TFunc: FnMut()>(&mut self, #[allow(unused)] mut updater: TFunc) {
+        #[cfg(not(target_arch = "wasm32"))]
         self.event_loop
             .as_mut()
             .unwrap()
