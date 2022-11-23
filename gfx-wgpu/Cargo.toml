@@ -7,10 +7,8 @@ version = "0.1.0"
 sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
-wgpu = {version = "0.13.0", features = ["spirv"]}
 futures = "0.3.1"
 raw-window-handle = "0.4.0"
-spirv-reflect = "0.2.3"
 winit = "0.26.0"
 bytemuck = { version = "*", features = ["derive"] }
 uuid = { version = "1.2.1", features = ["v4", "js"] }
@@ -21,4 +19,19 @@ sjgfx-util = { path = "../gfx-util" }
 winit = "0.26.0"
 nalgebra-glm = "0.3"
 image = "0.24.0"
-shaderc = "0.7"
+wasm-bindgen = "0.2.83"
+web-sys = { version = "0.3.60", features = [
+"Location",
+"Blob",
+"RequestInit",
+"RequestMode",
+"Request",
+"Response"
+] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wgpu = {version = "0.13.0", features = ["spirv"]}
+spirv-reflect = "0.2.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = {version = "0.13.0", features = ["spirv", "webgl"]}

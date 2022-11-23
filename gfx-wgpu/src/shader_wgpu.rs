@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{AttributeFormat, IShader, ShaderInfo};
-use sjgfx_util::ShaderReflection;
+use sjgfx_util::{ShaderReflection, ShaderStage};
 use uuid::Uuid;
 use wgpu::ComputePipelineDescriptor;
 
@@ -40,7 +40,11 @@ impl ShaderWgpu {
         let compute_shader =
             Self::create_shader_module(device.get_device(), &Some(shader_binary)).unwrap();
         let shader_reflection = ShaderReflection::new_from_biinary(&shader_binary);
-        let entries = Self::create_bind_group_layout_entries(shader_binary, &shader_reflection);
+        let entries = Self::create_bind_group_layout_entries(
+            shader_binary,
+            &shader_reflection,
+            &ShaderStage::Compute,
+        );
         let bind_group_layout =
             device
                 .get_device()
@@ -99,10 +103,12 @@ impl ShaderWgpu {
             let mut vertex_entries = Self::create_bind_group_layout_entries(
                 vertex_shader_binary,
                 &shader_reflection_vertex,
+                &ShaderStage::Vertex,
             );
             let mut pixel_entries = Self::create_bind_group_layout_entries(
                 pixel_shader_binary,
                 &shader_reflection_pixel,
+                &ShaderStage::Pixel,
             );
             vertex_entries.append(&mut pixel_entries);
             vertex_entries
@@ -153,13 +159,8 @@ impl ShaderWgpu {
     fn create_bind_group_layout_entries(
         shader_source: &[u8],
         shader_reflection: &ShaderReflection,
+        shader_stage: &ShaderStage,
     ) -> Vec<wgpu::BindGroupLayoutEntry> {
-        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
-        let _entry_point_name = module.get_entry_point_name();
-        let shader_stage = module.get_shader_stage();
-        let _bindings = module.enumerate_descriptor_bindings(None).unwrap();
-        let _sets = module.enumerate_descriptor_sets(None).unwrap();
-
         let mut uniform_buffer_enetries = shader_reflection
             .uniform_buffers()
             .iter()
@@ -179,59 +180,68 @@ impl ShaderWgpu {
             .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
             .to_vec();
 
-        let mut entries = module
-            .enumerate_descriptor_bindings(None)
-            .unwrap()
-            .into_iter()
-            .filter_map(|x| match x.descriptor_type {
-                spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::Sampler => {
-                    Some(wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                        count: None,
-                    })
-                }
-                spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::SampledImage => {
-                    Some(wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: Self::create_texture_bind_group_entry(&x),
-                        count: None,
-                    })
-                }
-                spirv_reflect::types::ReflectDescriptorType::StorageImage => {
-                    Some(wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: Self::create_image_bind_group_layout_entry(&x),
-                        count: None,
-                    })
-                }
-                spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => None/* util 実装に載せ替えた */,
-                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
-                    Some(wgpu::BindGroupLayoutEntry {
-                        binding: x.binding,
-                        visibility: Self::convert_shader_stage(shader_stage),
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: false },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    })
-                }
-                spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
-            })
-            .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
-            .to_vec();
+        #[cfg(not(target_arch = "wasm32"))]
+        let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
+
+        #[cfg(target_arch = "wasm32")]
+        let mut entries = Vec::new();
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let mut entries = {
+            module
+                .enumerate_descriptor_bindings(None)
+                .unwrap()
+                .into_iter()
+                .filter_map(|x| match x.descriptor_type {
+                    spirv_reflect::types::ReflectDescriptorType::Undefined => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::Sampler => {
+                        Some(wgpu::BindGroupLayoutEntry {
+                            binding: x.binding,
+                            visibility: Self::convert_shader_stage(shader_stage),
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                            count: None,
+                        })
+                    }
+                    spirv_reflect::types::ReflectDescriptorType::CombinedImageSampler => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::SampledImage => {
+                        Some(wgpu::BindGroupLayoutEntry {
+                            binding: x.binding,
+                            visibility: Self::convert_shader_stage(shader_stage),
+                            ty: Self::create_texture_bind_group_entry(&x),
+                            count: None,
+                        })
+                    }
+                    spirv_reflect::types::ReflectDescriptorType::StorageImage => {
+                        Some(wgpu::BindGroupLayoutEntry {
+                            binding: x.binding,
+                            visibility: Self::convert_shader_stage(shader_stage),
+                            ty: Self::create_image_bind_group_layout_entry(&x),
+                            count: None,
+                        })
+                    }
+                    spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::UniformBuffer => None/* util 実装に載せ替えた */,
+                    spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
+                        Some(wgpu::BindGroupLayoutEntry {
+                            binding: x.binding,
+                            visibility: Self::convert_shader_stage(shader_stage),
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Storage { read_only: false },
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        })
+                    }
+                    spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
+                    spirv_reflect::types::ReflectDescriptorType::AccelerationStructureNV => todo!(),
+                })
+                .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
+                .to_vec()
+        };
 
         entries.append(&mut uniform_buffer_enetries);
         entries
@@ -255,6 +265,7 @@ impl ShaderWgpu {
         vertex_attributes
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn create_image_bind_group_layout_entry(
         info: &spirv_reflect::types::ReflectDescriptorBinding,
     ) -> wgpu::BindingType {
@@ -265,6 +276,7 @@ impl ShaderWgpu {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn create_texture_bind_group_entry(
         info: &spirv_reflect::types::ReflectDescriptorBinding,
     ) -> wgpu::BindingType {
@@ -282,6 +294,7 @@ impl ShaderWgpu {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn is_float_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
         match format {
             spirv_reflect::types::ReflectImageFormat::Undefined => true,
@@ -327,6 +340,7 @@ impl ShaderWgpu {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn is_signed_int_format(format: spirv_reflect::types::ReflectImageFormat) -> bool {
         match format {
             spirv_reflect::types::ReflectImageFormat::Undefined => todo!(),
@@ -380,6 +394,7 @@ impl ShaderWgpu {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn convert_reflect_image_format(
         format: spirv_reflect::types::ReflectImageFormat,
     ) -> wgpu::TextureFormat {
@@ -441,6 +456,7 @@ impl ShaderWgpu {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn convert_reflect_dimension(
         dimension: spirv_reflect::types::ReflectDimension,
     ) -> wgpu::TextureViewDimension {
@@ -456,17 +472,11 @@ impl ShaderWgpu {
         }
     }
 
-    fn convert_shader_stage(
-        stage: spirv_reflect::types::ReflectShaderStageFlags,
-    ) -> wgpu::ShaderStages {
-        if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::COMPUTE) {
-            wgpu::ShaderStages::COMPUTE
-        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::VERTEX) {
-            wgpu::ShaderStages::VERTEX
-        } else if stage.contains(spirv_reflect::types::ReflectShaderStageFlags::FRAGMENT) {
-            wgpu::ShaderStages::FRAGMENT
-        } else {
-            todo!()
+    fn convert_shader_stage(stage: &ShaderStage) -> wgpu::ShaderStages {
+        match stage {
+            ShaderStage::Compute => wgpu::ShaderStages::COMPUTE,
+            ShaderStage::Vertex => wgpu::ShaderStages::VERTEX,
+            ShaderStage::Pixel => wgpu::ShaderStages::FRAGMENT,
         }
     }
 }
