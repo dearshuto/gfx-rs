@@ -54,6 +54,8 @@ impl StaticData {
 
 unsafe impl Sync for StaticData {}
 
+
+
 #[cfg(test)]
 mod tests {
     #[test]
