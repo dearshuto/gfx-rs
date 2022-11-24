@@ -8,6 +8,7 @@ use crate::{DeviceWgpu, GpuAddressWgpu};
 
 pub struct BufferWgpu {
     device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
     buffer: Arc<wgpu::Buffer>,
     size: usize,
     id: Uuid,
@@ -23,7 +24,9 @@ impl BufferWgpu {
     }
 
     pub fn new(device: &DeviceWgpu, info: &BufferInfo) -> Self {
+        let queue = device.clone_queue();
         let device = device.close_device();
+
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: info.get_size() as u64,
@@ -33,6 +36,7 @@ impl BufferWgpu {
 
         Self {
             device,
+            queue,
             buffer: Arc::new(buffer),
             size: info.get_size(),
             id: Uuid::new_v4(),
@@ -40,6 +44,7 @@ impl BufferWgpu {
     }
 
     pub fn new_init(device: &DeviceWgpu, info: &BufferInfo, data: &[u8]) -> Self {
+        let queue = device.clone_queue();
         let device = device.close_device();
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -49,6 +54,7 @@ impl BufferWgpu {
 
         Self {
             device,
+            queue,
             buffer: Arc::new(buffer),
             size: info.get_size(),
             id: Uuid::new_v4(),
@@ -78,21 +84,28 @@ impl BufferWgpu {
         self.buffer.unmap();
     }
 
-    pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
-        let (sender, _receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
+    pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F)
+    where
+        T: Default + Clone,
+    {
+        let mut temp_buffer = Default::default();
+        func(&mut temp_buffer);
+        let data = unsafe {
+            std::slice::from_raw_parts(
+                (&temp_buffer as *const T) as *const u8,
+                std::mem::size_of::<T>(),
+            )
+        };
 
-        self.device.poll(wgpu::Maintain::Wait);
-
-        let ptr = self.buffer.slice(..).get_mapped_range_mut().as_mut_ptr();
-        let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
-        func(casted);
-        self.buffer.unmap();
+        self.queue.write_buffer(&self.buffer, 0, &data);
     }
 
     pub fn map_as_slice<T, F: Fn(&[T])>(&self, size: usize, func: F) {
         let (sender, _receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
+        let _result = self
+            .buffer
+            .slice(..)
+            .map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
 
         self.device.poll(wgpu::Maintain::Wait);
 
@@ -107,21 +120,20 @@ impl BufferWgpu {
         self.buffer.unmap();
     }
 
-    pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, size: usize, func: F) {
-        let (sender, _receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
+    pub fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, size: usize, func: F)
+    where
+        T: Default + Clone,
+    {
+        let mut buffer = vec![Default::default(); size];
+        func(&mut buffer);
+        let data = unsafe {
+            std::slice::from_raw_parts(
+                (buffer.as_mut_ptr() as *const T) as *const u8,
+                size * std::mem::size_of::<T>(),
+            )
+        };
 
-        self.device.poll(wgpu::Maintain::Wait);
-
-        let ptr = self
-            .buffer
-            .slice(..)
-            .get_mapped_range_mut()
-            .as_mut_ptr()
-            .cast::<T>();
-        let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
-        func(slice);
-        self.buffer.unmap();
+        self.queue.write_buffer(&self.buffer, 0, &data);
     }
 
     pub fn get_gpu_address(&self) -> GpuAddressWgpu {
@@ -145,6 +157,8 @@ impl BufferWgpu {
             result |= wgpu::BufferUsages::UNIFORM;
         }
 
+        result |= wgpu::BufferUsages::COPY_DST;
+
         // バッファを CPU に map するためのフラグ
         // 現状の実装の web 版だと map できないので分岐
         #[cfg(not(target_arch = "wasm32"))]
@@ -152,7 +166,6 @@ impl BufferWgpu {
             result |= wgpu::BufferUsages::MAP_READ;
             result |= wgpu::BufferUsages::MAP_WRITE;
             result |= wgpu::BufferUsages::COPY_SRC;
-            result |= wgpu::BufferUsages::COPY_DST;
         }
 
         result
@@ -175,8 +188,8 @@ impl IBuffer for BufferWgpu {
         self.map(func);
     }
 
-    fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
-        self.map_mut(func);
+    fn map_mut<T, F: Fn(&mut T)>(&self, _func: F) {
+        todo!()
     }
 
     fn map_as_slice<T, F: Fn(&[T])>(&self, func: F) {
@@ -184,9 +197,8 @@ impl IBuffer for BufferWgpu {
         self.map_as_slice(size + 1, func);
     }
 
-    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, func: F) {
-        let size = self.size / std::mem::size_of::<T>();
-        self.map_as_slice_mut(size, func);
+    fn map_as_slice_mut<T, F: Fn(&mut [T])>(&self, _func: F) {
+        todo!()
     }
 
     fn flush_mapped_range(&self, _offset: isize, _size: usize) {}

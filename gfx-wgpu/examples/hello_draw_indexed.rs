@@ -16,6 +16,7 @@ use winit::{
 };
 
 #[repr(C)]
+#[derive(Default, Clone)]
 struct Vertex {
     #[allow(dead_code)]
     pub x: f32,
@@ -72,23 +73,33 @@ fn main() {
             .set_buffer_state_info_array(vertex_buffer_state_info_array),
     );
 
-    let vertex_data = [-0.5f32, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5];
-    let vertex_buffer = BufferWgpu::new_init(
+    let vertex_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::VERTEX_BUFFER)
             .set_size(std::mem::size_of::<Vertex>() * 4),
-        bytemuck::cast_slice(&vertex_data),
     );
+    vertex_buffer.map_as_slice_mut(4, |x: &mut [Vertex]| {
+        x[0] = Vertex { x: -0.5, y: 0.5 };
+        x[1] = Vertex { x: -0.5, y: -0.5 };
+        x[2] = Vertex { x: 0.5, y: -0.5 };
+        x[3] = Vertex { x: 0.5, y: 0.5 };
+    });
 
-    let index_data = [0, 1, 2, 0, 2, 3];
-    let index_buffer = BufferWgpu::new_init(
+    let index_buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
             .set_gpu_access_flags(GpuAccess::INDEX_BUFFER)
             .set_size(std::mem::size_of::<u32>() * 6),
-        bytemuck::cast_slice(&index_data),
     );
+    index_buffer.map_as_slice_mut(6, |x| {
+        x[0] = 0;
+        x[1] = 1;
+        x[2] = 2;
+        x[3] = 0;
+        x[4] = 2;
+        x[5] = 3;
+    });
 
     let mut swap_chain = SwapChainWgpu::new(
         &mut device,
