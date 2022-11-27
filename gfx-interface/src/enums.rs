@@ -48,6 +48,7 @@ pub enum AttributeFormat {
     Uint32,
     Float32_32,
     Float32_32_32,
+    Float32_32_32_32,
 }
 
 #[derive(Clone, PartialEq)]
