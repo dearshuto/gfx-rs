@@ -391,6 +391,7 @@ impl ShaderWgpu {
             AttributeFormat::Uint32 => wgpu::VertexFormat::Uint32,
             AttributeFormat::Float32_32 => wgpu::VertexFormat::Float32x2,
             AttributeFormat::Float32_32_32 => wgpu::VertexFormat::Float32x3,
+            AttributeFormat::Float32_32_32_32 => wgpu::VertexFormat::Float32x4,
         }
     }
 

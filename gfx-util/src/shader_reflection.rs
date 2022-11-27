@@ -54,6 +54,7 @@ impl Attribute {
 enum VariableType {
     Vec2,
     Vec3,
+    Vec4,
 }
 
 impl ShaderReflection {
@@ -81,6 +82,7 @@ impl ShaderReflection {
                 let format = match type_info {
                     VariableType::Vec2 => AttributeFormat::Float32_32,
                     VariableType::Vec3 => AttributeFormat::Float32_32_32,
+                    VariableType::Vec4 => AttributeFormat::Float32_32_32_32,
                 };
                 let location = module_table.location_table[x];
                 Attribute { format, location }
@@ -344,6 +346,7 @@ impl ModuleTable {
                     match *size {
                         2 => type_table.insert(id, VariableType::Vec2),
                         3 => type_table.insert(id, VariableType::Vec3),
+                        4 => type_table.insert(id, VariableType::Vec4),
                         _ => None,
                     };
                 }
