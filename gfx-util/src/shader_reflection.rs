@@ -40,6 +40,7 @@ pub struct UniformBlock {
 pub struct Attribute {
     format: AttributeFormat,
     location: u32,
+    offset: i32,
 }
 impl Attribute {
     pub fn format(&self) -> AttributeFormat {
@@ -48,6 +49,10 @@ impl Attribute {
 
     pub fn location(&self) -> u32 {
         self.location
+    }
+
+    pub fn offset(&self) -> i32 {
+        self.offset
     }
 }
 
@@ -85,7 +90,24 @@ impl ShaderReflection {
                     VariableType::Vec4 => AttributeFormat::Float32_32_32_32,
                 };
                 let location = module_table.location_table[x];
-                Attribute { format, location }
+
+                // 自分より若い location のサイズを足し合わせる
+                let offset = module_table.location_table
+                    .iter()
+                    .filter_map(|(key, another_location)| {
+                        if *another_location >= location { return None; }
+                        let Some(local_type_ptr_id) = module_table.attribute_type_ptr_table.get(key) else {return None; };
+
+                        let local_type_info = &module_table.type_table[&local_type_ptr_id];
+                        let count = match local_type_info {
+                            VariableType::Vec2 => 2,
+                            VariableType::Vec3 => 3,
+                            VariableType::Vec4 => 4,
+                        };
+                        return Some((std::mem::size_of::<f32>() * count) as i32);
+                    })
+                    .sum::<i32>();
+                Attribute { format, location, offset }
             })
             .collect();
 
@@ -224,7 +246,7 @@ impl ShaderReflection {
                         let rspirv::dr::Operand::IdRef( target_id) = x.operands[0] else {
                             return None;
                         };
-                        
+
                         // TypeStruct -> TypeArray -> TypeVector
                         let array_count =  module.types_global_values.iter().find_map(|y| {
                             if y.class.opcode != Op::TypeArray {

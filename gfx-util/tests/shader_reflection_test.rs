@@ -25,8 +25,14 @@ fn vertex_attributes() {
 
     for attribute in attributes.iter() {
         match attribute.location() {
-            0 => assert_eq!(attribute.format(), AttributeFormat::Float32_32_32),
-            1 => assert_eq!(attribute.format(), AttributeFormat::Float32_32),
+            0 => {
+                assert_eq!(attribute.format(), AttributeFormat::Float32_32_32);
+                assert_eq!(attribute.offset(), 0);
+            }
+            1 => {
+                assert_eq!(attribute.format(), AttributeFormat::Float32_32);
+                assert_eq!(attribute.offset(), (std::mem::size_of::<f32>() * 3) as i32);
+            }
             _ => assert!(false),
         }
     }
