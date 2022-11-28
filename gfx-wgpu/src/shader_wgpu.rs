@@ -256,7 +256,7 @@ impl ShaderWgpu {
             .iter()
             .map(|attribute| wgpu::VertexAttribute {
                 format: Self::convert_attribute_format(attribute.format()),
-                offset: 0,
+                offset: attribute.offset() as u64,
                 shader_location: attribute.location(),
             })
             .collect::<Vec<wgpu::VertexAttribute>>()
