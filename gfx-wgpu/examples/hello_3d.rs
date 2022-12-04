@@ -169,15 +169,20 @@ fn main() {
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
     );
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
 
+    let mut t: f32 = 0.0;
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
+
+        t += 1.0;
+        window.request_redraw();
         match event {
             Event::WindowEvent {
                 event: WindowEvent::Resized(_size),
                 ..
             } => {
                 // TODO
+                window.request_redraw();
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -212,6 +217,19 @@ fn main() {
                 queue.present(&mut swap_chain);
                 queue.flush();
                 queue.sync();
+
+                constant_buffer.map_mut(|x: &mut ConstantBuffer| {
+                    let position =
+                        glm::vec3(5.5 * t.to_radians().cos(), 1.0 * t.to_radians().sin(), 3.0);
+                    let at = glm::vec3(0.0, 0.0, 0.0);
+                    let up = glm::vec3(0.0, 1.0, 0.0);
+                    let view_matrix: glm::Mat4x4 = glm::look_at(&position, &at, &up);
+                    let fov = std::f32::consts::PI / 4.0;
+                    let projection_matrix: glm::Mat4x4 =
+                        glm::perspective_fov(fov, 640.0, 480.0, 0.1, 100.0);
+                    let pv = (projection_matrix * view_matrix).transpose();
+                    x.pv = pv;
+                });
             }
             _ => {}
         }
