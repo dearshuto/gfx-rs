@@ -7,4 +7,6 @@ version = "0.1.0"
 sjgfx-interface = { path = "../gfx-interface" }
 tobj = "3.2.1"
 naga = { version = "0.10.0", features = ["glsl-in", "spv-out", "wgsl-out"] }
-rspirv = "0.7.0"
+
+# rspirv-0.11.0+1.5.4
+rspirv = { git = "https://github.com/gfx-rs/rspirv.git", rev = "5fca73e"}
