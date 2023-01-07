@@ -7,13 +7,23 @@ use sjgfx_interface::{
     IQueue, ISwapChain, IVertexState, PrimitiveTopology, QueueInfo, SwapChainInfo,
     VertexAttributeStateInfo, VertexBufferStateInfo, VertexStateInfo,
 };
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
 
 fn main() {
     sjgfx_glow::initialize();
-    let mut instance = sjvi::glutin::Instance::new();
-    let id = instance.create_display();
-    let display = instance.try_get_display(id).unwrap();
-    let mut device = sjgfx_glow::DeviceGlow::new_with_display(&DeviceInfo::new(), &display);
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new()
+        .with_title("Sample")
+        .with_visible(true)
+        .with_inner_size(PhysicalSize::new(640, 480))
+        .build(&event_loop)
+        .unwrap();
+    let mut device = sjgfx_glow::DeviceGlow::new_from_handle(&DeviceInfo::new(), &window);
     let mut swap_chain = sjgfx_glow::SwapChainGlow::new(
         &mut device,
         &SwapChainInfo::new().with_width(1280).with_height(960),
@@ -67,28 +77,37 @@ fn main() {
         println!("MAP ERROR: {}", error);
     }
 
-    while instance.try_update() {
-        let scan_buffer = swap_chain.acquire_next_scan_buffer_view(None, None);
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
 
-        command_buffer.begin();
-        command_buffer.set_render_targets(&[&scan_buffer], None);
-        command_buffer.set_shader(&shader);
-        command_buffer.set_vertex_state(&vertex_state);
-        command_buffer.set_vertex_buffer(0, &vertex_buffer);
-        command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
-        command_buffer.end();
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::Resized(_size),
+                ..
+            } => {
+                // TODO
+            }
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            Event::RedrawRequested(_) => {
+                // スキャンバッファの取得
+                let scan_buffer = swap_chain.acquire_next_scan_buffer_view(None, None);
 
-        queue.execute(&command_buffer);
-        queue.present(&mut swap_chain);
-        queue.flush();
+                command_buffer.begin();
+                command_buffer.set_render_targets(&[scan_buffer], None);
+                command_buffer.set_shader(&shader);
+                command_buffer.set_vertex_state(&vertex_state);
+                command_buffer.set_vertex_buffer(0, &vertex_buffer);
+                command_buffer.draw(PrimitiveTopology::TriangleList, 3, 0);
+                command_buffer.end();
 
-        // instance
-        //     .try_get_display(id)
-        //     .unwrap()
-        //     .window
-        //     .swap_buffers()
-        //     .unwrap();
-    }
-
-    sjgfx_glow::finalize();
+                queue.execute(&command_buffer);
+                queue.present(&mut swap_chain);
+                queue.flush();
+            }
+            _ => {}
+        }
+    });
 }

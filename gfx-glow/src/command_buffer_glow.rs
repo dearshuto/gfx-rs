@@ -185,6 +185,16 @@ impl ICommandBuffer for CommandBufferGlow {
                                 info.get_offset() as i32,
                             )
                         }
+                        sjgfx_interface::AttributeFormat::Float32_32_32_32 => {
+                            self.gl.vertex_attrib_pointer_f32(
+                                slot,
+                                4,
+                                glow::FLOAT,
+                                false,
+                                vertex_buffer_info.get_stride() as i32,
+                                info.get_offset() as i32,
+                            )
+                        }
                     }
                 }
 

@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use glow::HasContext;
-use sjgfx_interface::{ISwapChain, ImageFormat};
-use sjvi::IDisplayEventListener;
+use sjgfx_interface::{IDisplayEventListener, ISwapChain, ImageFormat};
 
 use crate::{ColorTargetViewGlow, DeviceGlow, FenceGlow, SemaphoerGlow};
 
@@ -107,4 +106,6 @@ impl Drop for SwapChainGlow {
     }
 }
 
-impl IDisplayEventListener for SwapChainGlow {}
+impl IDisplayEventListener for SwapChainGlow {
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
+}

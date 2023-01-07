@@ -1,5 +1,3 @@
-use glutin::event_loop::EventLoop;
-
 mod buffer_glow;
 mod color_target_view_glow;
 mod command_buffer_glow;
@@ -41,20 +39,18 @@ pub fn initialize() {
 pub fn finalize() {}
 
 struct StaticData {
-    pub event_loop: EventLoop<()>,
+    // pub event_loop: EventLoop<()>,
 }
 
 impl StaticData {
     pub fn new() -> Self {
         Self {
-            event_loop: EventLoop::new(),
+            // event_loop: EventLoop::new(),
         }
     }
 }
 
 unsafe impl Sync for StaticData {}
-
-
 
 #[cfg(test)]
 mod tests {
