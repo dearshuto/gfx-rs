@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use futures::executor;
-use raw_window_handle::HasRawWindowHandle;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use sjgfx_interface::{DeviceInfo, IDevice};
 use wgpu::{Adapter, Surface};
 
@@ -19,7 +19,7 @@ pub struct DeviceWgpu {
 impl DeviceWgpu {
     pub fn new_as_graphics<W>(_info: &DeviceInfo, window: &W) -> Self
     where
-        W: HasRawWindowHandle,
+        W: HasRawWindowHandle + HasRawDisplayHandle,
     {
         let backend = Self::get_primary_backend_type();
         let instance = wgpu::Instance::new(backend);
@@ -55,6 +55,7 @@ impl DeviceWgpu {
             width: 1600,
             height: 1200,
             present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
         };
         surface.configure(&device, &config);
 
@@ -102,6 +103,7 @@ impl DeviceWgpu {
                 width,
                 height,
                 present_mode: wgpu::PresentMode::Fifo,
+                alpha_mode: surface.get_supported_alpha_modes(&self.adapter)[0],
             };
             surface.configure(&self.device, &config);
         }
