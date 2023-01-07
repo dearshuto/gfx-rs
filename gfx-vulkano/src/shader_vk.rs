@@ -14,33 +14,28 @@ pub struct ShaderVk {
 impl ShaderVk {
     pub fn new(device: &DeviceVk, info: &ShaderInfo) -> Self {
         // 演算シェーダ
-        let compute_shader = if let Some(compute_shader_binary) = info.get_compute_shader_binary() {
-            unsafe {
-                Some(
-                    ShaderModule::from_bytes(device.clone_device(), compute_shader_binary).unwrap(),
-                )
-            }
-        } else {
-            None
-        };
+        let compute_shader =
+            info.get_compute_shader_binary()
+                .as_ref()
+                .map(|compute_shader_binary| unsafe {
+                    ShaderModule::from_bytes(device.clone_device(), compute_shader_binary).unwrap()
+                });
 
         // 頂点シェーダ
-        let vertex_shader = if let Some(vertex_shader_binary) = info.get_vertex_shader_binary() {
-            unsafe {
-                Some(ShaderModule::from_bytes(device.clone_device(), vertex_shader_binary).unwrap())
-            }
-        } else {
-            None
-        };
+        let vertex_shader =
+            info.get_vertex_shader_binary()
+                .as_ref()
+                .map(|vertex_shader_binary| unsafe {
+                    ShaderModule::from_bytes(device.clone_device(), vertex_shader_binary).unwrap()
+                });
 
         // ピクセルシェーダ
-        let pixel_shader = if let Some(pixel_shader_binary) = info.get_pixel_shader_binary() {
-            unsafe {
-                Some(ShaderModule::from_bytes(device.clone_device(), pixel_shader_binary).unwrap())
-            }
-        } else {
-            None
-        };
+        let pixel_shader =
+            info.get_pixel_shader_binary()
+                .as_ref()
+                .map(|pixel_shader_binary| unsafe {
+                    ShaderModule::from_bytes(device.clone_device(), pixel_shader_binary).unwrap()
+                });
 
         Self {
             compute_shader,
