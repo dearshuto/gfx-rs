@@ -89,7 +89,7 @@ impl BufferWgpu {
 
     pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F)
     where
-        T: Default + Clone,
+        T: Default,
     {
         let mut temp_buffer = Default::default();
         func(&mut temp_buffer);
