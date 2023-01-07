@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use sjgfx_interface::{IDisplayEventListener, ISwapChain, SwapChainInfo};
-use wgpu::{SurfaceTexture, TextureFormat};
+use wgpu::{CompositeAlphaMode, SurfaceTexture, TextureFormat};
 
 use crate::{
     detail::SwapChainPipeline, ColorTargetViewWgpu, DeviceWgpu, FenceWgpu, QueueWgpu, SemaphoreWgpu,
@@ -99,6 +99,7 @@ impl IDisplayEventListener for SwapChainWgpu {
             width,
             height,
             present_mode: wgpu::PresentMode::Fifo,
+            alpha_mode: CompositeAlphaMode::Auto,
         };
         self.surface.configure(&self.device, &config);
         self.swap_chain_pipeline.set_size(width, height);

@@ -8,15 +8,15 @@ sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
 futures = "0.3.1"
-raw-window-handle = "0.4.0"
-winit = "0.26.0"
+raw-window-handle = "0.5.0"
+winit = "0.27.1"
 bytemuck = { version = "*", features = ["derive"] }
 uuid = { version = "1.2.1", features = ["v4", "js"] }
 futures-intrusive = "0.4"
 
 [dev-dependencies]
 sjgfx-util = { path = "../gfx-util" }
-winit = "0.26.0"
+winit = "0.27.1"
 nalgebra-glm = "0.3"
 image = "0.24.0"
 wasm-bindgen = "0.2.83"
@@ -31,8 +31,8 @@ web-sys = { version = "0.3.60", features = [
 ] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-wgpu = {version = "0.13.0", features = ["spirv"]}
+wgpu = {version = "0.14.2", features = ["spirv"]}
 spirv-reflect = "0.2.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wgpu = {version = "0.13.0", features = ["spirv", "webgl"]}
+wgpu = {version = "0.14.2", features = ["spirv", "webgl"]}
