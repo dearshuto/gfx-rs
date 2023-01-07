@@ -1,19 +1,17 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use sjvi::IDisplayEventListener;
+use sjgfx_interface::{IDisplayEventListener, ISwapChain, SwapChainInfo};
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
     swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo},
 };
-use winit::window::Window;
 
 use crate::{ColorTargetViewVk, DeviceVk, FenceVk, SemaphoreVk};
 
 pub struct SwapChainVk {
-    swap_chain: Arc<Swapchain<Window>>,
-    images: Vec<Arc<SwapchainImage<Window>>>,
-    swap_chain_acquire_future: Option<SwapchainAcquireFuture<Window>>,
+    swap_chain: Arc<Swapchain>,
+    images: Vec<Arc<SwapchainImage>>,
+    swap_chain_acquire_future: Option<SwapchainAcquireFuture>,
     index: i32,
 }
 
@@ -41,8 +39,12 @@ impl SwapChainVk {
             SwapchainCreateInfo {
                 min_image_count: capabilities.min_image_count,
                 image_format: Some(image_format),
-                image_extent: surface.window().inner_size().into(),
-                image_usage: ImageUsage::color_attachment(),
+                // image_extent: surface.window().inner_size().into(),
+                image_extent: [640, 480],
+                image_usage: ImageUsage {
+                    color_attachment: true,
+                    ..ImageUsage::empty()
+                },
                 composite_alpha,
                 ..Default::default()
             },
@@ -83,26 +85,25 @@ impl SwapChainVk {
     pub fn acquire_next_scan_buffer_view(
         &mut self,
         _semaphore: Option<&mut SemaphoreVk>,
-        _fence: Option<&mut FenceVk>,
-    ) -> &mut ColorTargetViewVk {
-        todo!()
-        // if let Some(fence) = fence {
-        //     fence.cleanup_finished();
-        // }
+        fence: Option<&mut FenceVk>,
+    ) -> ColorTargetViewVk {
+        if let Some(fence) = fence {
+            fence.cleanup_finished();
+        }
 
-        // let (image_num, _suboptimal, acquire_future) =
-        //     match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
-        //         Ok(r) => r,
-        //         Err(AcquireError::OutOfDate) => {
-        //             todo!()
-        //         }
-        //         Err(e) => panic!("Failed to acquire next image: {:?}", e),
-        //     };
+        let (image_num, _suboptimal, acquire_future) =
+            match swapchain::acquire_next_image(self.swap_chain.clone(), None) {
+                Ok(r) => r,
+                Err(AcquireError::OutOfDate) => {
+                    todo!()
+                }
+                Err(e) => panic!("Failed to acquire next image: {:?}", e),
+            };
 
-        // self.swap_chain_acquire_future = Some(acquire_future);
-        // self.index = image_num as i32;
+        self.swap_chain_acquire_future = Some(acquire_future);
+        self.index = image_num as i32;
 
-        // ColorTargetViewVk::new_from_swap_chain(self)
+        ColorTargetViewVk::new_from_swap_chain(self)
     }
 
     pub(crate) fn clone_current_image_view(&self) -> Arc<dyn ImageViewAbstract> {
@@ -110,7 +111,7 @@ impl SwapChainVk {
         ImageView::new_default(self.images[index].clone()).unwrap()
     }
 
-    pub fn unwrap_feature(&mut self) -> SwapchainAcquireFuture<Window> {
+    pub fn unwrap_feature(&mut self) -> SwapchainAcquireFuture {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.swap_chain_acquire_future);
         temp.unwrap()
@@ -120,15 +121,15 @@ impl SwapChainVk {
         self.index
     }
 
-    pub fn get_swap_chain(&self) -> &Swapchain<Window> {
+    pub fn get_swap_chain(&self) -> &Swapchain {
         self.swap_chain.as_ref()
     }
 
-    pub fn clone_swap_chain(&self) -> Arc<Swapchain<Window>> {
+    pub fn clone_swap_chain(&self) -> Arc<Swapchain> {
         self.swap_chain.clone()
     }
 
-    pub fn unwrap_acquire_future(&mut self) -> SwapchainAcquireFuture<Window> {
+    pub fn unwrap_acquire_future(&mut self) -> SwapchainAcquireFuture {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.swap_chain_acquire_future);
         temp.unwrap()
@@ -147,11 +148,14 @@ impl ISwapChain for SwapChainVk {
 
     fn acquire_next_scan_buffer_view(
         &mut self,
-        semaphore: Option<&mut Self::SemaphoreType>,
-        fence: Option<&mut Self::FenceType>,
+        _semaphore: Option<&mut Self::SemaphoreType>,
+        _fence: Option<&mut Self::FenceType>,
     ) -> &mut Self::ColorTargetViewType {
-        self.acquire_next_scan_buffer_view(semaphore, fence)
+        todo!()
+        // self.acquire_next_scan_buffer_view(semaphore, fence)
     }
 }
 
-impl IDisplayEventListener for SwapChainVk {}
+impl IDisplayEventListener for SwapChainVk {
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
+}

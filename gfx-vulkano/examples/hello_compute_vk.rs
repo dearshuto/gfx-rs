@@ -1,26 +1,27 @@
-use sjgfx_interface::{DeviceInfo, QueueInfo, CommandBufferInfo, BufferInfo, GpuAccess, ShaderInfo};
-use sjgfx_vulkano::{DeviceVk, QueueVk, CommandBufferVk, BufferVk, ShaderVk};
+use sjgfx_interface::{
+    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, QueueInfo, ShaderInfo,
+};
+use sjgfx_vulkano::{BufferVk, CommandBufferVk, DeviceVk, QueueVk, ShaderVk};
 
-fn main()
-{
+fn main() {
     let device = DeviceVk::new(&DeviceInfo::new());
     let mut queue = QueueVk::new(&device, &QueueInfo::new());
     let mut command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
 
     let shader_source = include_str!("resources/shaders/hello_compute.glsl");
-    let mut compiler = shaderc::Compiler::new().unwrap();
-    let shader_binary = compiler
-        .compile_into_spirv(
-            &shader_source,
-            shaderc::ShaderKind::Compute,
-            "test.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
-    let shader = ShaderVk::new(&device, &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()));
+    let mut compiler = sjgfx_util::ShaderCompiler::new();
+    let shader_binary = compiler.create_binary(&shader_source, sjgfx_util::ShaderStage::Compute);
+    let shader = ShaderVk::new(
+        &device,
+        &ShaderInfo::new().set_compute_shader_binary(&shader_binary),
+    );
 
-    let buffer = BufferVk::new(&device, &BufferInfo::new().set_size(std::mem::size_of::<u32>() * 64).set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER));
+    let buffer = BufferVk::new(
+        &device,
+        &BufferInfo::new()
+            .set_size(std::mem::size_of::<u32>() * 64)
+            .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER),
+    );
 
     command_buffer.begin();
     command_buffer.set_shader(&shader);
@@ -32,7 +33,7 @@ fn main()
     queue.flush();
     queue.sync();
 
-    buffer.map_as_array(|x: &[u32]|{
+    buffer.map_as_array(|x: &[u32]| {
         for item in x {
             print!("{} ", item);
         }

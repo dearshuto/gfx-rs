@@ -4,11 +4,17 @@ use sjgfx_interface::{
     CommandBufferInfo, ICommandBuffer, PrimitiveTopology, ScissorStateInfo, TextureArrayRange,
     ViewportScissorStateInfo, ViewportStateInfo,
 };
+use vulkano::command_buffer::allocator::{
+    CommandBufferAllocator, StandardCommandBufferAllocator,
+    StandardCommandBufferAllocatorCreateInfo,
+};
+use vulkano::command_buffer::{RenderPassBeginInfo, SubpassContents};
+use vulkano::descriptor_set::allocator::StandardDescriptorSetAllocator;
 use vulkano::pipeline::Pipeline;
 use vulkano::render_pass::FramebufferCreateInfo;
 use vulkano::shader::ShaderModule;
 use vulkano::{
-    command_buffer::{AutoCommandBufferBuilder, PrimaryAutoCommandBuffer, SubpassContents},
+    command_buffer::{AutoCommandBufferBuilder, PrimaryAutoCommandBuffer},
     descriptor_set::{PersistentDescriptorSet, WriteDescriptorSet},
     device::{Device, Queue},
     format::Format,
@@ -57,6 +63,8 @@ enum DrawCommand {
 pub struct CommandBufferVk {
     device: Arc<Device>,
     queue: Arc<Queue>,
+    command_buffer_allocator: StandardCommandBufferAllocator,
+    descriptor_set_allocator: StandardDescriptorSetAllocator,
 
     // シェーダ
     compute_shader_module: Option<Arc<ShaderModule>>,
@@ -86,6 +94,15 @@ pub struct CommandBufferVk {
 
 impl CommandBufferVk {
     pub fn new(device: &DeviceVk, _info: &CommandBufferInfo) -> Self {
+        let command_buffer_allocator = StandardCommandBufferAllocator::new(
+            device.clone_device(),
+            StandardCommandBufferAllocatorCreateInfo {
+                primary_buffer_count: 1,
+                secondary_buffer_count: 1,
+                ..Default::default()
+            },
+        );
+        let descriptor_set_allocator = StandardDescriptorSetAllocator::new(device.clone_device());
         let viewport_scissor_state = ViewportScissorStateVk::new(
             device,
             &ViewportScissorStateInfo::new()
@@ -100,6 +117,8 @@ impl CommandBufferVk {
         Self {
             device: device.clone_device(),
             queue: device.clone_queue(),
+            command_buffer_allocator,
+            descriptor_set_allocator,
 
             // シェーダ
             compute_shader_module: None,
@@ -240,21 +259,28 @@ impl CommandBufferVk {
     pub(crate) fn build_command_builder(
         &self,
     ) -> AutoCommandBufferBuilder<PrimaryAutoCommandBuffer> {
+        let mut builder = AutoCommandBufferBuilder::primary(
+            &self.command_buffer_allocator,
+            self.queue.queue_family_index(),
+            vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
+        )
+        .unwrap();
+
         if self.compute_shader_module.is_some() {
-            self.build_compute_command()
+            self.build_compute_command(&mut builder);
         } else if self.vertex_shader_module.is_some() {
-            self.build_graphics_command()
+            self.build_graphics_command(&mut builder);
         } else {
-            AutoCommandBufferBuilder::primary(
-                self.device.clone(),
-                self.queue.as_ref().family(),
-                vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
-            )
-            .unwrap()
+            // とくに何もしない
         }
+
+        builder
     }
 
-    fn build_compute_command(&self) -> AutoCommandBufferBuilder<PrimaryAutoCommandBuffer> {
+    fn build_compute_command<L, A>(&self, builder: &mut AutoCommandBufferBuilder<L, A>)
+    where
+        A: CommandBufferAllocator,
+    {
         let shader = self.compute_shader_module.as_ref().unwrap().clone();
         let pipeline = ComputePipeline::new(
             self.device.clone(),
@@ -265,25 +291,19 @@ impl CommandBufferVk {
         )
         .unwrap();
 
-        let mut builder = AutoCommandBufferBuilder::primary(
-            self.device.clone(),
-            self.queue.as_ref().family(),
-            vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
-        )
-        .unwrap();
-
-        self.push_descriptors(&mut builder, PipelineBindPoint::Compute, pipeline.as_ref());
+        self.push_descriptors(builder, PipelineBindPoint::Compute, pipeline.as_ref());
 
         let (x, y, z) = self.get_dispatch_count();
         builder
             .bind_pipeline_compute(pipeline)
             .dispatch([x, y, z])
             .unwrap();
-
-        builder
     }
 
-    fn build_graphics_command(&self) -> AutoCommandBufferBuilder<PrimaryAutoCommandBuffer> {
+    fn build_graphics_command<L, A>(&self, builder: &mut AutoCommandBufferBuilder<L, A>)
+    where
+        A: CommandBufferAllocator,
+    {
         let render_pass = vulkano::single_pass_renderpass!(
             self.device.clone(),
             attachments: {
@@ -341,36 +361,38 @@ impl CommandBufferVk {
         )
         .unwrap();
 
-        let clear_values = vec![[0.0, 0.5, 0.5, 1.0].into()];
-        let mut builder = AutoCommandBufferBuilder::primary(
-            self.device.clone(),
-            self.queue.as_ref().family(),
-            vulkano::command_buffer::CommandBufferUsage::OneTimeSubmit,
-        )
-        .unwrap();
+        let clear_values = vec![Some([0.0, 0.5, 0.5, 1.0].into())];
 
-        self.push_descriptors(&mut builder, PipelineBindPoint::Graphics, pipeline.as_ref());
-        self.push_viewports_and_scissors(&mut builder);
+        self.push_descriptors(builder, PipelineBindPoint::Graphics, pipeline.as_ref());
+        self.push_viewports_and_scissors(builder);
 
         builder
-            .begin_render_pass(framebuffer.clone(), SubpassContents::Inline, clear_values)
+            .begin_render_pass(
+                RenderPassBeginInfo {
+                    clear_values,
+                    ..RenderPassBeginInfo::framebuffer(framebuffer.clone())
+                },
+                SubpassContents::Inline,
+            )
             .unwrap()
             .bind_pipeline_graphics(pipeline)
             .bind_vertex_buffers(0, vertex_buffer);
 
         // 描画コマンドを積む順番大事
         // パイプラインが設定されてないとコマンド追加に失敗する
-        self.push_draw_command(&mut builder);
+        self.push_draw_command(builder);
         builder.end_render_pass().unwrap();
-        builder
     }
 
-    fn push_descriptors<TPipeline: Pipeline>(
+    fn push_descriptors<TPipeline, L, A>(
         &self,
-        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
+        command_builder: &mut AutoCommandBufferBuilder<L, A>,
         pipeline_bind_point: PipelineBindPoint,
         pipeline: &TPipeline,
-    ) {
+    ) where
+        TPipeline: Pipeline,
+        A: CommandBufferAllocator,
+    {
         if let Some(descriptor_sets) = self.create_descriptor_sets(pipeline) {
             let pipeline_layout = pipeline.layout().clone();
             command_builder.bind_descriptor_sets(
@@ -382,20 +404,22 @@ impl CommandBufferVk {
         }
     }
 
-    fn push_viewports_and_scissors(
+    fn push_viewports_and_scissors<L, A>(
         &self,
-        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
-    ) {
+        command_builder: &mut AutoCommandBufferBuilder<L, A>,
+    ) where
+        A: CommandBufferAllocator,
+    {
         if let Some(viewport_scissor_state) = &self.viewport_scissor_state {
             command_builder.set_viewport(0, viewport_scissor_state.viewports.to_vec());
             command_builder.set_scissor(0, viewport_scissor_state.scissors.to_vec());
         }
     }
 
-    fn push_draw_command(
-        &self,
-        command_builder: &mut AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>,
-    ) {
+    fn push_draw_command<L, A>(&self, command_builder: &mut AutoCommandBufferBuilder<L, A>)
+    where
+        A: CommandBufferAllocator,
+    {
         if let Some(draw_command) = &self.draw_command {
             match draw_command {
                 DrawCommand::Draw(ref info) => {
@@ -446,9 +470,12 @@ impl CommandBufferVk {
             }
         }
 
-        let set =
-            PersistentDescriptorSet::new(descriptor_set_layout.clone(), write_descriptor_sets)
-                .unwrap();
+        let set = PersistentDescriptorSet::new(
+            &self.descriptor_set_allocator,
+            descriptor_set_layout.clone(),
+            write_descriptor_sets,
+        )
+        .unwrap();
         Some(set)
     }
 }

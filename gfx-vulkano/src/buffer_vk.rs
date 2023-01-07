@@ -3,6 +3,7 @@ use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
     device::{Device, DeviceOwned},
+    memory::allocator::StandardMemoryAllocator,
     pipeline::graphics::vertex_input::VertexBuffersCollection,
     DeviceSize,
 };
@@ -16,10 +17,11 @@ pub struct BufferVk {
 
 impl BufferVk {
     pub fn new(device: &DeviceVk, info: &BufferInfo) -> Self {
+        let memory_allocator = StandardMemoryAllocator::new_default(device.clone_device());
         let length = info.get_size() / std::mem::size_of::<u8>();
         let buffer = unsafe {
             CpuAccessibleBuffer::<[u8]>::uninitialized_array(
-                device.clone_device(),
+                &memory_allocator,
                 length as DeviceSize,
                 Self::convert_usage(&info.get_gpu_access_flags()),
                 true, /*host_cached*/
@@ -99,8 +101,6 @@ impl BufferVk {
         let is_indirect_buffer = gpu_access.contains(GpuAccess::INDIRECT_BUFFER);
 
         let result = BufferUsage {
-            transfer_source: false,
-            transfer_destination: false,
             uniform_texel_buffer: false,
             storage_texel_buffer: false,
             uniform_buffer: is_uniform_buffer,
@@ -108,8 +108,7 @@ impl BufferVk {
             index_buffer: is_index_buffer,
             vertex_buffer: is_vertex_buffer,
             indirect_buffer: is_indirect_buffer,
-            device_address: true,
-            ..Default::default()
+            ..BufferUsage::empty()
         };
 
         result
@@ -200,26 +199,6 @@ unsafe impl BufferAccess for BufferView {
 
     fn size(&self) -> DeviceSize {
         self.buffer.size()
-    }
-
-    fn conflict_key(&self) -> (u64, u64) {
-        self.buffer.conflict_key()
-    }
-
-    fn try_gpu_lock(
-        &self,
-        exclusive_access: bool,
-        queue: &vulkano::device::Queue,
-    ) -> Result<(), vulkano::sync::AccessError> {
-        self.buffer.try_gpu_lock(exclusive_access, queue)
-    }
-
-    unsafe fn increase_gpu_lock(&self) {
-        self.buffer.increase_gpu_lock()
-    }
-
-    unsafe fn unlock(&self) {
-        self.buffer.unlock()
     }
 }
 

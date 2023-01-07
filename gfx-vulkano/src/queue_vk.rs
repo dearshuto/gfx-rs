@@ -3,6 +3,7 @@ use sjgfx_interface::{IQueue, QueueInfo};
 use std::sync::Arc;
 use vulkano::command_buffer::AutoCommandBufferBuilder;
 use vulkano::device::Queue;
+use vulkano::swapchain::SwapchainPresentInfo;
 use vulkano::{
     command_buffer::PrimaryAutoCommandBuffer,
     device::Device,
@@ -10,15 +11,14 @@ use vulkano::{
     sync,
     sync::{FlushError, GpuFuture},
 };
-use winit::window::Window;
 
 pub struct QueueVk {
     device: Arc<Device>,
     queue: Arc<Queue>,
     previous_frame_end: Option<Box<dyn GpuFuture>>,
     command_builder: Option<AutoCommandBufferBuilder<PrimaryAutoCommandBuffer>>,
-    swap_chain: Option<Arc<Swapchain<Window>>>,
-    swap_chain_acquire_future: Option<SwapchainAcquireFuture<Window>>,
+    swap_chain: Option<Arc<Swapchain>>,
+    swap_chain_acquire_future: Option<SwapchainAcquireFuture>,
     image_index: Option<usize>,
 }
 
@@ -79,8 +79,10 @@ impl QueueVk {
                 .unwrap()
                 .then_swapchain_present(
                     self.queue.clone(),
-                    swap_chain.unwrap(),
-                    image_index.unwrap(),
+                    SwapchainPresentInfo::swapchain_image_index(
+                        swap_chain.unwrap(),
+                        image_index.unwrap() as u32,
+                    ),
                 )
                 .then_signal_fence_and_flush();
 
@@ -138,7 +140,9 @@ impl QueueVk {
     }
 
     pub fn sync(&mut self) {
-        self.queue.wait().unwrap();
+        unsafe {
+            self.queue.device().wait_idle().unwrap();
+        }
         if let Some(future) = self.previous_frame_end.as_mut() {
             future.cleanup_finished();
         }

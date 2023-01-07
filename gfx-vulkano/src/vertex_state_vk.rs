@@ -60,6 +60,7 @@ impl VertexStateVk {
             AttributeFormat::Uint32 => vulkano::format::Format::R32_UINT,
             AttributeFormat::Float32_32 => vulkano::format::Format::R32G32_SFLOAT,
             AttributeFormat::Float32_32_32 => vulkano::format::Format::R32G32B32_SFLOAT,
+            AttributeFormat::Float32_32_32_32 => vulkano::format::Format::R32G32B32A32_SFLOAT,
         }
     }
 }
