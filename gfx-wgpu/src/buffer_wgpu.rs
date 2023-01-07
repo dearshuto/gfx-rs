@@ -159,15 +159,6 @@ impl BufferWgpu {
 
         result |= wgpu::BufferUsages::COPY_DST;
 
-        // バッファを CPU に map するためのフラグ
-        // 現状の実装の web 版だと map できないので分岐
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            result |= wgpu::BufferUsages::MAP_READ;
-            result |= wgpu::BufferUsages::MAP_WRITE;
-            result |= wgpu::BufferUsages::COPY_SRC;
-        }
-
         result
     }
 }
