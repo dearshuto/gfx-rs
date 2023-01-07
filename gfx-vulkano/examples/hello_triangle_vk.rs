@@ -12,11 +12,13 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
+    window::WindowBuilder,
 };
 
 fn main() {
     let mut event_loop = EventLoop::new();
-    let device = DeviceVk::new_as_graphics(&DeviceInfo::new(), &event_loop);
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let device = DeviceVk::new_from_handle(&DeviceInfo::new(), &window);
     let mut swap_chain = SwapChainVk::new(&device, &SwapChainInfo::new());
     let mut command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
     let mut queue = QueueVk::new(&device, &QueueInfo::new());
