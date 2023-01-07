@@ -1,3 +1,6 @@
+use raw_window_handle::{
+    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
+};
 use sjgfx_interface::{DeviceInfo, IDevice};
 use std::sync::Arc;
 use vulkano::{
@@ -9,8 +12,27 @@ use vulkano::{
     swapchain::Surface,
     Version, VulkanLibrary,
 };
-use vulkano_win::VkSurfaceBuild;
-use winit::{event_loop::EventLoop, window::WindowBuilder};
+
+#[derive(Debug)]
+struct Handler {
+    raw_window_handle: RawWindowHandle,
+    raw_display_handle: RawDisplayHandle,
+}
+
+unsafe impl Send for Handler {}
+unsafe impl Sync for Handler {}
+
+unsafe impl HasRawWindowHandle for Handler {
+    fn raw_window_handle(&self) -> raw_window_handle::RawWindowHandle {
+        self.raw_window_handle
+    }
+}
+
+unsafe impl HasRawDisplayHandle for Handler {
+    fn raw_display_handle(&self) -> raw_window_handle::RawDisplayHandle {
+        self.raw_display_handle
+    }
+}
 
 pub struct DeviceVk {
     device: Arc<vulkano::device::Device>,
@@ -28,13 +50,17 @@ impl DeviceVk {
         }
     }
 
-    pub fn new_as_graphics(_info: &DeviceInfo, event_loop: &EventLoop<()>) -> Self {
+    pub fn new_from_handle<T>(_info: &DeviceInfo, handle: &T) -> Self
+    where
+        T: HasRawWindowHandle + HasRawDisplayHandle,
+    {
+        let handler = Arc::new(Handler {
+            raw_window_handle: handle.raw_window_handle(),
+            raw_display_handle: handle.raw_display_handle(),
+        });
+
         let (instance, device, queue) = Self::create_device();
-
-        let surface = WindowBuilder::new()
-            .build_vk_surface(&event_loop, instance.clone())
-            .unwrap();
-
+        let surface = vulkano_win::create_surface_from_handle(handler, instance).unwrap();
         Self {
             device,
             queue,
@@ -139,9 +165,8 @@ impl IDevice for DeviceVk {
         }
     }
 
-    fn new_with_surface(_info: &DeviceInfo, _display: &Self::Display) -> Self {
-        todo!()
-        // Self::new_as_graphics(info, display.event_loop.as_ref().unwrap())
+    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
+        Self::new_from_handle(info, &display.window)
     }
 }
 
