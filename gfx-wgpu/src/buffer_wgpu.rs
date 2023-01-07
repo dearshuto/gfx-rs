@@ -74,7 +74,10 @@ impl BufferWgpu {
 
     pub fn map<T, F: Fn(&T)>(&self, func: F) {
         let (sender, _receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        let _result = self.buffer.slice(..).map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
+        let _result = self
+            .buffer
+            .slice(..)
+            .map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
 
         self.device.poll(wgpu::Maintain::Wait);
 
