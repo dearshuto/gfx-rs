@@ -8,7 +8,6 @@ members = [
         "gfx-egui",
         "gfx-interface",
         "gfx-vulkano",
-        "gfx-websys",
         "gfx-wgpu",
         "examples",
         "run-wasm",

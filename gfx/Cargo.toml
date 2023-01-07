@@ -10,8 +10,6 @@ sjgfx-glow = { path = "../gfx-glow" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx-vulkano = { path = "../gfx-vulkano" }
-sjgfx-wsys = { path = "../gfx-websys" }
-
 winit = "0.26.0"
 raw-window-handle = "0.4.0"
 
