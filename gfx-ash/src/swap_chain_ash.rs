@@ -1,5 +1,4 @@
-use sjgfx_interface::{ISwapChain, SwapChainInfo};
-use sjvi::IDisplayEventListener;
+use sjgfx_interface::{IDisplayEventListener, ISwapChain, SwapChainInfo};
 
 use crate::{ColorTargetViewAsh, DeviceAsh, FenceAsh, SemaphoreAsh};
 
@@ -209,7 +208,9 @@ impl Drop for SwapChainAsh {
     }
 }
 
-impl IDisplayEventListener for SwapChainAsh {}
+impl IDisplayEventListener for SwapChainAsh {
+    fn on_resized(&mut self, _width: u32, _height: u32) {}
+}
 
 #[cfg(test)]
 mod tests {
