@@ -10,13 +10,13 @@ sjgfx-glow = { path = "../gfx-glow" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx-vulkano = { path = "../gfx-vulkano" }
-winit = "0.26.0"
-raw-window-handle = "0.4.0"
+winit = "0.27.1"
+raw-window-handle = "0.5.0"
 
 [dev-dependencies]
 shaderc = "0.7"
-winit = "0.26.0"
-raw-window-handle = "0.4.0"
+winit = "0.27.1"
+raw-window-handle = "0.5.0"
 # nalgebra-glm = "0.3"
 
 [features]
