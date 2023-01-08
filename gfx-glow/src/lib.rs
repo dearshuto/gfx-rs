@@ -1,5 +1,3 @@
-use glutin::event_loop::EventLoop;
-
 mod buffer_glow;
 mod color_target_view_glow;
 mod command_buffer_glow;
@@ -31,6 +29,7 @@ pub use swap_chain_glow::SwapChainGlow;
 pub use texture_glow::TextureGlow;
 pub use texture_view_glow::TextureViewGlow;
 pub use vertex_state_glow::VertexStateGlow;
+use winit::event_loop::EventLoop;
 
 static mut GLOW_STATIC_DATA: Option<StaticData> = None;
 
@@ -53,8 +52,6 @@ impl StaticData {
 }
 
 unsafe impl Sync for StaticData {}
-
-
 
 #[cfg(test)]
 mod tests {
