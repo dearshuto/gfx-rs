@@ -1,6 +1,7 @@
 use std::ffi::{c_void, CStr};
 
 use ash::{extensions::ext::DebugUtils, vk::DebugUtilsMessengerEXT, Entry};
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use sjgfx_interface::{DebugMode, DeviceInfo, IDevice};
 
 pub struct DeviceAsh {
@@ -66,19 +67,30 @@ impl DeviceAsh {
         }
     }
 
-    pub fn new_with_surface<T: raw_window_handle::HasRawWindowHandle>(
+    pub fn new_with_surface<
+        T: raw_window_handle::HasRawWindowHandle + raw_window_handle::HasRawDisplayHandle,
+    >(
         info: &DeviceInfo,
         window: &T,
     ) -> Self {
         let entry = Entry::linked();
 
         // let extension = std::ffi::CString::new("VK_KHR_get_physical_device_properties2").unwrap();
-        let additional_ectensions = ash_window::enumerate_required_extensions(window).unwrap();
+        let additional_ectensions =
+            ash_window::enumerate_required_extensions(window.raw_display_handle()).unwrap();
         // additional_ectensions.push(&extension);
         let instance = Self::create_instance(&entry, &additional_ectensions);
 
-        let surface =
-            unsafe { ash_window::create_surface(&entry, &instance, window, None) }.unwrap();
+        let surface = unsafe {
+            ash_window::create_surface(
+                &entry,
+                &instance,
+                window.raw_display_handle(),
+                window.raw_window_handle(),
+                None,
+            )
+        }
+        .unwrap();
         let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
         let (physical_device, queue_family_index) =
             Self::find_physical_device_with_predicate(&instance, |physical_device, index| {
