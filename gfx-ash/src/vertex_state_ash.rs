@@ -53,6 +53,7 @@ impl VertexStateAsh {
             AttributeFormat::Uint32 => ash::vk::Format::R32_UINT,
             AttributeFormat::Float32_32 => ash::vk::Format::R32G32_SFLOAT,
             AttributeFormat::Float32_32_32 => ash::vk::Format::R32G32B32_SFLOAT,
+            AttributeFormat::Float32_32_32_32 => ash::vk::Format::R32G32B32A32_SFLOAT,
         }
     }
 }
