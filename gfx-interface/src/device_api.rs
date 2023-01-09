@@ -1,6 +1,5 @@
-use crate::IDisplay;
-
 use crate::enums::DebugMode;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 
 pub struct DeviceInfo {
     debug_mode: DebugMode,
@@ -24,9 +23,9 @@ impl DeviceInfo {
 }
 
 pub trait IDevice {
-    type Display: IDisplay;
-
     fn new(info: &DeviceInfo) -> Self;
 
-    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self;
+    fn new_with_handle<T>(info: &DeviceInfo, raw_handle: &T) -> Self
+    where
+        T: HasRawWindowHandle + HasRawDisplayHandle;
 }

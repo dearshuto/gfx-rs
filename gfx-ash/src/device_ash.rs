@@ -381,14 +381,15 @@ impl Drop for DeviceAsh {
 }
 
 impl IDevice for DeviceAsh {
-    type Display = sjvi::winit::Display<()>;
-
     fn new(info: &DeviceInfo) -> Self {
         Self::new(info)
     }
 
-    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
-        Self::new_with_surface(info, &display.window)
+    fn new_with_handle<T>(info: &DeviceInfo, raw_handle: &T) -> Self
+    where
+        T: HasRawWindowHandle + HasRawDisplayHandle,
+    {
+        Self::new_with_surface(info, raw_handle)
     }
 }
 
