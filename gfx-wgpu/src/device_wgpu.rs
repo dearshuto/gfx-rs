@@ -119,8 +119,6 @@ impl DeviceWgpu {
 }
 
 impl IDevice for DeviceWgpu {
-    type Display = sjvi::winit::Display<()>;
-
     fn new(_: &DeviceInfo) -> Self {
         let instance = wgpu::Instance::new(wgpu::Backends::all());
         let adapter = executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -148,7 +146,10 @@ impl IDevice for DeviceWgpu {
         }
     }
 
-    fn new_with_surface(info: &DeviceInfo, display: &Self::Display) -> Self {
-        Self::new_as_graphics(info, &display.window)
+    fn new_with_handle<T>(info: &DeviceInfo, raw_handle: &T) -> Self
+    where
+        T: HasRawWindowHandle + HasRawDisplayHandle,
+    {
+        DeviceWgpu::new_as_graphics(info, raw_handle)
     }
 }
