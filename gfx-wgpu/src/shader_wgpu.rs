@@ -180,6 +180,22 @@ impl ShaderWgpu {
             .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
             .to_vec();
 
+        let mut shader_storage_buffer_enetries = shader_reflection
+            .shader_storage_buffer()
+            .iter()
+            .map(|x| wgpu::BindGroupLayoutEntry {
+                binding: x.binding as u32,
+                visibility: Self::convert_shader_stage(shader_stage),
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            })
+            .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
+            .to_vec();
+
         #[cfg(not(target_arch = "wasm32"))]
         let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
 
@@ -222,18 +238,7 @@ impl ShaderWgpu {
                     spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
                     spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
                     spirv_reflect::types::ReflectDescriptorType::UniformBuffer => None/* util 実装に載せ替えた */,
-                    spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
-                        Some(wgpu::BindGroupLayoutEntry {
-                            binding: x.binding,
-                            visibility: Self::convert_shader_stage(shader_stage),
-                            ty: wgpu::BindingType::Buffer {
-                                ty: wgpu::BufferBindingType::Storage { read_only: false },
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
-                        })
-                    }
+                    spirv_reflect::types::ReflectDescriptorType::StorageBuffer => None/* util 実装に載せ替えた */,
                     spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
                     spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
                     spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
@@ -244,6 +249,7 @@ impl ShaderWgpu {
         };
 
         entries.append(&mut uniform_buffer_enetries);
+        entries.append(&mut shader_storage_buffer_enetries);
         entries
     }
 
