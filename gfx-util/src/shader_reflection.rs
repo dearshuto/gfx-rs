@@ -9,11 +9,16 @@ use sjgfx_interface::AttributeFormat;
 pub struct ShaderReflection {
     pub entry_point: EntryPoint,
     uniform_blocks: Vec<UniformBlock>,
+    shader_storage_buffer: Vec<ShaderStorageBuffer>,
 }
 
 impl ShaderReflection {
     pub fn uniform_buffers(&self) -> &[UniformBlock] {
         &self.uniform_blocks
+    }
+
+    pub fn shader_storage_buffer(&self) -> &[ShaderStorageBuffer] {
+        &self.shader_storage_buffer
     }
 }
 
@@ -33,8 +38,12 @@ impl EntryPoint {
 }
 
 pub struct UniformBlock {
-    pub binding: u32,
+    pub binding: i32,
     pub size: usize,
+}
+
+pub struct ShaderStorageBuffer {
+    pub binding: i32,
 }
 
 pub struct Attribute {
@@ -117,10 +126,12 @@ impl ShaderReflection {
         };
 
         let uniform_buffers = Self::reflect_uniform_buffers(module);
+        let shader_storage_buffers = Self::reflect_shader_storage_buffers(module);
 
         Self {
             entry_point,
             uniform_blocks: uniform_buffers,
+            shader_storage_buffer: shader_storage_buffers,
         }
     }
 
@@ -298,40 +309,75 @@ impl ShaderReflection {
             let (offset, count) = offsets.last().unwrap();
             let size = (offset + 16/*アラインメント*/) * count;
 
-            let binding = module.annotations.iter().find_map(|x| {
-                // id が一致するかの判定
-                let rspirv::dr::Operand::IdRef(annotation_id) = x.operands[0] else {
-                    return None;
-                };
-                let id = type_global_value.result_id.unwrap();
-                if id != annotation_id {
-                    return None;
-                }
-
-                // Binding 型かをチェック。参考；DescriptorSet とかがマッチする可能性がある
-                let rspirv::dr::Operand::Decoration(d) = x.operands[1] else {
-                    return None;
-                };
-                if d != Decoration::Binding {
-                    return None;
-                }
-
-                // binding を取得
-                let rspirv::dr::Operand::LiteralInt32(binding) = x.operands[2] else {
-                    return None;
-                };
-
-                return Some(binding);
-            });
+            let id = type_global_value.result_id.unwrap();
+            let binding = Self::reflect_binding(module, id);
 
             let uniform_buffer = UniformBlock {
-                binding: binding.unwrap(),
+                binding,
                 size: size as usize,
             };
             uniform_buffers.push(uniform_buffer);
         }
 
         uniform_buffers
+    }
+
+    fn reflect_shader_storage_buffers(module: &rspirv::dr::Module) -> Vec<ShaderStorageBuffer> {
+        let mut shader_storage_buffers = Vec::new();
+        for type_global_value in &module.types_global_values {
+            // 変数の id とアノテーションの id が一致しているので、変数型を検索する
+            if rspirv::spirv::Op::Variable != type_global_value.class.opcode {
+                continue;
+            }
+
+            // 変数がUniform かの判定
+            // 多分この実装だとテクスチャとかも含んじゃいそう
+            let rspirv::dr::Operand::StorageClass(s) = type_global_value.operands[0] else {
+                continue;
+            };
+            if StorageClass::StorageBuffer != s {
+                continue;
+            }
+
+            let id = type_global_value.result_id.unwrap();
+            let binding = Self::reflect_binding(module, id);
+            shader_storage_buffers.push(ShaderStorageBuffer { binding });
+        }
+
+        shader_storage_buffers
+    }
+
+    fn reflect_binding(module: &rspirv::dr::Module, id: u32) -> i32 {
+        let binding = module.annotations.iter().find_map(|x| {
+            // id が一致するかの判定
+            let rspirv::dr::Operand::IdRef(annotation_id) = x.operands[0] else {
+                return None;
+            };
+            if id != annotation_id {
+                return None;
+            }
+
+            // Binding 型かをチェック。参考；DescriptorSet とかがマッチする可能性がある
+            let rspirv::dr::Operand::Decoration(d) = x.operands[1] else {
+                return None;
+            };
+            if d != Decoration::Binding {
+                return None;
+            }
+
+            // binding を取得
+            let rspirv::dr::Operand::LiteralInt32(binding) = x.operands[2] else {
+                return None;
+            };
+
+            return Some(binding);
+        });
+
+        if let Some(binding) = binding {
+            binding as i32
+        } else {
+            -1
+        }
     }
 }
 
