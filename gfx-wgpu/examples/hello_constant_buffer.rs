@@ -1,5 +1,3 @@
-use std::{thread::sleep, time::Duration};
-
 use sjgfx_interface::{
     AttributeFormat, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, PrimitiveTopology,
     QueueInfo, ShaderInfo, SwapChainInfo, TextureArrayRange, VertexAttributeStateInfo,
@@ -12,11 +10,14 @@ use sjgfx_wgpu::{
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    platform::run_return::EventLoopExtRunReturn,
     window::WindowBuilder,
 };
 
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::WindowExtWebSys;
+
 #[repr(C)]
+#[derive(Debug, Default, Clone)]
 struct Vertex {
     #[allow(dead_code)]
     pub x: f32,
@@ -26,6 +27,7 @@ struct Vertex {
 }
 
 #[repr(C)]
+#[derive(Debug, Default)]
 struct ConstantBuffer {
     pub red: f32,
     pub green: f32,
@@ -34,8 +36,18 @@ struct ConstantBuffer {
 }
 
 pub fn main() {
-    let mut event_loop = EventLoop::new();
+    let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
+
+    #[cfg(target_arch = "wasm32")]
+    web_sys::window()
+        .and_then(|win| win.document())
+        .and_then(|doc| doc.body())
+        .and_then(|body| {
+            body.append_child(&web_sys::Element::from(window.canvas()))
+                .ok()
+        })
+        .expect("couldn't append canvas to document body");
 
     let mut device = DeviceWgpu::new_as_graphics(&DeviceInfo::new(), &window);
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
@@ -96,64 +108,57 @@ pub fn main() {
     );
 
     let mut frame = 0;
-    let mut should_close = false;
-    while !should_close {
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Wait;
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
 
-            frame = (frame + 1) % 360;
+        frame = (frame + 1) % 360;
 
-            constant_buffer.map_mut(|x: &mut ConstantBuffer| {
-                x.red = ((frame as f32).to_radians().sin() + 1.0) * 0.5;
-                x.green = 0.5;
-                x.blue = 0.1;
-            });
-
-            window.request_redraw();
-
-            match event {
-                Event::RedrawRequested(_) => {
-                    let mut color_target_view =
-                        swap_chain.acquire_next_scan_buffer_view(None, None);
-
-                    command_buffer.begin();
-                    command_buffer.clear_color(
-                        &mut color_target_view,
-                        0.0,
-                        0.0,
-                        1.0,
-                        1.0,
-                        TextureArrayRange::new(),
-                    );
-                    command_buffer.set_render_targets(&[&color_target_view], None);
-                    command_buffer.set_shader(&shader);
-                    command_buffer.set_constant_buffer(0, &constant_buffer);
-                    command_buffer.set_vertex_state(&vertex_state);
-                    command_buffer.set_vertex_buffer(0, &vertex_buffer);
-                    command_buffer.draw(
-                        PrimitiveTopology::TriangleList,
-                        3, /*coount*/
-                        0, /*offset*/
-                    );
-                    command_buffer.end();
-
-                    queue.execute(&command_buffer);
-
-                    queue.present(&mut swap_chain);
-                    queue.flush();
-                    queue.sync();
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => {
-                    should_close = true;
-                    *control_flow = ControlFlow::Exit;
-                }
-                _ => {}
-            }
+        constant_buffer.map_mut(|x: &mut ConstantBuffer| {
+            x.red = ((frame as f32).to_radians().sin() + 1.0) * 0.5;
+            x.green = 0.5;
+            x.blue = 0.1;
         });
 
-        sleep(Duration::from_millis(16));
-    }
+        window.request_redraw();
+
+        match event {
+            Event::RedrawRequested(_) => {
+                let color_target_view = swap_chain.acquire_next_scan_buffer_view(None, None);
+
+                command_buffer.begin();
+                command_buffer.clear_color(
+                    color_target_view,
+                    0.0,
+                    0.0,
+                    1.0,
+                    1.0,
+                    TextureArrayRange::new(),
+                );
+                command_buffer.set_render_targets(&[color_target_view], None);
+                command_buffer.set_shader(&shader);
+                command_buffer.set_constant_buffer(0, &constant_buffer);
+                command_buffer.set_vertex_state(&vertex_state);
+                command_buffer.set_vertex_buffer(0, &vertex_buffer);
+                command_buffer.draw(
+                    PrimitiveTopology::TriangleList,
+                    3, /*coount*/
+                    0, /*offset*/
+                );
+                command_buffer.end();
+
+                queue.execute(&command_buffer);
+
+                queue.present(&mut swap_chain);
+                queue.flush();
+                queue.sync();
+            }
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => {
+                *control_flow = ControlFlow::Exit;
+            }
+            _ => {}
+        }
+    });
 }
