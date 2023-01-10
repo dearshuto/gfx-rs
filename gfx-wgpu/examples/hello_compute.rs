@@ -1,5 +1,6 @@
 use sjgfx_interface::{
-    BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice, QueueInfo, ShaderInfo,
+    BufferCopyRegion, BufferInfo, CommandBufferInfo, DeviceInfo, GpuAccess, IDevice, QueueInfo,
+    ShaderInfo,
 };
 use sjgfx_wgpu::{BufferWgpu, CommandBufferWgpu, DeviceWgpu, QueueWgpu, ShaderWgpu};
 
@@ -8,26 +9,28 @@ fn main() {
     let mut queue = QueueWgpu::new(&device, &QueueInfo::new());
     let mut command_buffer = CommandBufferWgpu::new(&device, &CommandBufferInfo::new());
 
-    let mut compiler = shaderc::Compiler::new().unwrap();
-    let shader_binary = compiler
-        .compile_into_spirv(
-            &include_str!("../../resources/examples/shaders/hello_compute.glsl"),
-            shaderc::ShaderKind::Compute,
-            "compute.glsl",
-            "main",
-            None,
-        )
-        .unwrap();
+    let mut compiler = sjgfx_util::ShaderCompiler::new();
+    let shader_binary = compiler.create_binary(
+        &include_str!("../../resources/examples/shaders/hello_compute.glsl"),
+        sjgfx_util::ShaderStage::Compute,
+    );
     let shader = ShaderWgpu::new(
         &device,
-        &ShaderInfo::new().set_compute_shader_binary(shader_binary.as_binary_u8()),
+        &ShaderInfo::new().set_compute_shader_binary(&shader_binary),
     );
 
+    let buffer_size = std::mem::align_of::<u32>() * 64;
     let buffer = BufferWgpu::new(
         &device,
         &BufferInfo::new()
-            .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER)
-            .set_size(std::mem::align_of::<u32>() * 64),
+            .set_gpu_access_flags(GpuAccess::UNORDERED_ACCESS_BUFFER | GpuAccess::READ)
+            .set_size(buffer_size),
+    );
+    let mut dst_buffer = BufferWgpu::new(
+        &device,
+        &BufferInfo::new()
+            .set_gpu_access_flags(GpuAccess::WRITE)
+            .set_size(buffer_size),
     );
 
     command_buffer.begin();
@@ -36,11 +39,18 @@ fn main() {
     command_buffer.dispatch(1, 1, 1);
     command_buffer.end();
 
-    queue.execute(&mut command_buffer);
+    queue.execute(&command_buffer);
+
+    command_buffer.copy_buffer_to_buffer(
+        &mut dst_buffer,
+        &buffer,
+        &BufferCopyRegion::default().set_copy_size(buffer_size),
+    );
+
     queue.flush();
     queue.sync();
 
-    buffer.map_as_slice(64, |x: &[u32]| {
+    dst_buffer.map_as_slice(64, |x: &[u32]| {
         for value in x {
             println!("{}", value);
         }
