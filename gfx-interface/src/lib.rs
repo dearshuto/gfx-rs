@@ -1,4 +1,5 @@
 mod buffer_api;
+mod buffer_copy_region;
 mod color_target_view_api;
 mod command_buffer_api;
 mod depth_stencil_view_api;
@@ -17,6 +18,7 @@ mod vertex_state_api;
 mod viewport_scissor_state_api;
 
 pub use buffer_api::{BufferInfo, IBuffer};
+pub use buffer_copy_region::BufferCopyRegion;
 pub use color_target_view_api::{ColorTargetViewInfo, IColorTargetView};
 pub use command_buffer_api::{CommandBufferInfo, ICommandBuffer};
 pub use depth_stencil_view_api::{DepthStencilStateInfo, IDepthStencilView};
