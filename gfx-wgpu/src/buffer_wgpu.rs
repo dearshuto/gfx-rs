@@ -108,7 +108,7 @@ impl BufferWgpu {
         let _result = self
             .buffer
             .slice(..)
-            .map_async(wgpu::MapMode::Write, move |v| sender.send(v).unwrap());
+            .map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
 
         self.device.poll(wgpu::Maintain::Wait);
 
