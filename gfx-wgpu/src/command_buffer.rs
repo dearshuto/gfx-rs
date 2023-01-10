@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use sjgfx_interface::{
-    BufferTextureCopyRegion, CommandBufferInfo, ICommandBuffer, IndexFormat, PrimitiveTopology,
-    ScissorStateInfo, TextureArrayRange, ViewportStateInfo,
+    BufferCopyRegion, BufferTextureCopyRegion, CommandBufferInfo, ICommandBuffer, IndexFormat,
+    PrimitiveTopology, ScissorStateInfo, TextureArrayRange, ViewportStateInfo,
 };
-use wgpu::Extent3d;
+use wgpu::{BufferAddress, Extent3d};
 
 use crate::{
     buffer_wgpu::BufferView, shader_wgpu::ShaderView, vertex_state_wgpu::VertexStateView,
@@ -437,6 +437,30 @@ impl CommandBufferWgpu {
             },
         };
         command_encoder.copy_texture_to_buffer(image_copy, image_copy_buffer, copy_size);
+        self.queue.submit(Some(command_encoder.finish()));
+    }
+
+    pub fn copy_buffer_to_buffer(
+        &self,
+        dst_buffer: &mut BufferWgpu,
+        src_buffer: &BufferWgpu,
+        region: &BufferCopyRegion,
+    ) {
+        let source = src_buffer.get_buffer();
+        let source_offset = region.get_src_offset();
+        let destination = dst_buffer.get_buffer();
+        let destination_offset = region.get_dst_offset();
+        let copy_size = region.get_copy_size();
+        let mut command_encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        command_encoder.copy_buffer_to_buffer(
+            source,
+            source_offset as BufferAddress,
+            destination,
+            destination_offset as BufferAddress,
+            copy_size as BufferAddress,
+        );
         self.queue.submit(Some(command_encoder.finish()));
     }
 
