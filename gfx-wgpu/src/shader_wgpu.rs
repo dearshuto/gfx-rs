@@ -166,7 +166,7 @@ impl ShaderWgpu {
             .iter()
             .map(|x| {
                 let entry = wgpu::BindGroupLayoutEntry {
-                    binding: x.binding,
+                    binding: x.binding as u32,
                     visibility: Self::convert_shader_stage(shader_stage),
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
