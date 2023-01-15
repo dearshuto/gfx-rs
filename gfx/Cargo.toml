@@ -6,7 +6,7 @@ version = "0.1.0"
 [dependencies]
 sjvi = { path = "../vi-rs" }
 sjgfx-ash = { path = "../gfx-ash" }
-sjgfx-glow = { path = "../gfx-glow" }
+# sjgfx-glow = { path = "../gfx-glow" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
 sjgfx-vulkano = { path = "../gfx-vulkano" }
