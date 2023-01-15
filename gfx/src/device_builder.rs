@@ -1,3 +1,4 @@
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use sjgfx_interface::{DebugMode, DeviceInfo, IDevice};
 
 use crate::api::IApi;
@@ -19,8 +20,11 @@ impl<T: IApi> TDeviceBuilder<T> {
         T::Device::new(&DeviceInfo::new())
     }
 
-    pub fn build_with_surface(&self, display: &T::Display) -> T::Device {
-        T::Device::new_with_surface(&DeviceInfo::new(), display)
+    pub fn build_with_surface<TRawHandle>(&self, raw_handle: &TRawHandle) -> T::Device
+    where
+        TRawHandle: HasRawWindowHandle + HasRawDisplayHandle,
+    {
+        T::Device::new_with_handle(&DeviceInfo::new(), raw_handle)
     }
 
     pub fn enable_debug_assertion(self) -> Self {
