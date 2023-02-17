@@ -22,8 +22,11 @@ impl DeviceWgpu {
         W: HasRawWindowHandle + HasRawDisplayHandle,
     {
         let backend = Self::get_primary_backend_type();
-        let instance = wgpu::Instance::new(backend);
-        let surface = unsafe { instance.create_surface(window) };
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: backend,
+            dx12_shader_compiler: Default::default(),
+        });
+        let surface = unsafe { instance.create_surface(window) }.unwrap();
         let adapter = executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             force_fallback_adapter: false,
@@ -49,13 +52,16 @@ impl DeviceWgpu {
         ))
         .unwrap();
 
+        let swapchain_capabilities = surface.get_capabilities(&adapter);
+        let swapchain_format = swapchain_capabilities.formats[0];
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
+            format: swapchain_format,
             width: 1600,
             height: 1200,
             present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
+            alpha_mode: swapchain_capabilities.alpha_modes[0],
+            view_formats: vec![],
         };
         surface.configure(&device, &config);
 
@@ -96,14 +102,18 @@ impl DeviceWgpu {
     }
 
     pub fn update_surface_size(&mut self, width: u32, height: u32) {
+        let swapchain_capabilities = self.get_surface().get_capabilities(&self.adapter);
+        let swapchain_format = swapchain_capabilities.formats[0];
+
         if let Some(surface) = &self.surface_opt {
             let config = wgpu::SurfaceConfiguration {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: surface.get_supported_formats(&self.adapter)[0],
+                format: swapchain_format,
                 width,
                 height,
                 present_mode: wgpu::PresentMode::Fifo,
-                alpha_mode: surface.get_supported_alpha_modes(&self.adapter)[0],
+                alpha_mode: swapchain_capabilities.alpha_modes[0],
+                view_formats: vec![],
             };
             surface.configure(&self.device, &config);
         }
@@ -120,7 +130,10 @@ impl DeviceWgpu {
 
 impl IDevice for DeviceWgpu {
     fn new(_: &DeviceInfo) -> Self {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends: wgpu::Backends::all(),
+            dx12_shader_compiler: Default::default(),
+        });
         let adapter = executor::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             force_fallback_adapter: false,

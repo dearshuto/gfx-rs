@@ -54,6 +54,7 @@ impl TextureWgpu {
             dimension: wgpu::TextureDimension::D2,
             format: util::convert_format(info.get_image_format().clone()),
             usage: Self::convert_usage(info.get_gpu_access_flags()),
+            view_formats: Default::default(),
         }
     }
 

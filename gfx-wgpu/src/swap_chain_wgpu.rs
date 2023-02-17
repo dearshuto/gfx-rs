@@ -19,7 +19,8 @@ pub struct SwapChainWgpu {
 impl SwapChainWgpu {
     pub fn new(device: &mut DeviceWgpu, info: &SwapChainInfo) -> Self {
         let adapter = device.get_adapter();
-        let texture_format = device.get_surface().get_supported_formats(adapter)[0];
+        let swapchain_capabilities = device.get_surface().get_capabilities(&adapter);
+        let texture_format = swapchain_capabilities.formats[0];
         let swap_chain_pipeline = SwapChainPipeline::new(device.close_device(), texture_format);
 
         let mut result = Self {
@@ -100,6 +101,7 @@ impl IDisplayEventListener for SwapChainWgpu {
             height,
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: CompositeAlphaMode::Auto,
+            view_formats: vec![],
         };
         self.surface.configure(&self.device, &config);
         self.swap_chain_pipeline.set_size(width, height);
