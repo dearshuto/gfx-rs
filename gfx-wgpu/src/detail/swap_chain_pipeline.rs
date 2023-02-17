@@ -109,6 +109,7 @@ impl SwapChainPipeline {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &vec![],
         });
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 

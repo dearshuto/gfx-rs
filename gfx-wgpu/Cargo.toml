@@ -23,11 +23,11 @@ wasm-bindgen = "0.2.83"
 bytemuck = "*"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-wgpu = {version = "0.14.2", features = ["spirv"]}
+wgpu = {version = "0.15.1", features = ["spirv"]}
 spirv-reflect = "0.2.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wgpu = {version = "0.14.2", features = ["spirv", "webgl"]}
+wgpu = {version = "0.15.1", features = ["spirv", "webgl"]}
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 web-sys = { version = "0.3.60", features = [
