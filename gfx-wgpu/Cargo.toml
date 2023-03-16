@@ -7,20 +7,12 @@ version = "0.1.0"
 sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
-futures = "0.3.1"
+futures = "0.3.27"
 raw-window-handle = "0.5.0"
 winit = "0.27.1"
 bytemuck = { version = "*", features = ["derive"] }
-uuid = { version = "1.2.1", features = ["v4", "js"] }
-futures-intrusive = "0.4"
-
-[dev-dependencies]
-sjgfx-util = { path = "../gfx-util" }
-winit = "0.27.1"
-nalgebra-glm = "0.3"
-image = "0.24.0"
-wasm-bindgen = "0.2.83"
-bytemuck = "*"
+uuid = { version = "1.3.0", features = ["v4", "js"] }
+futures-intrusive = "0.5.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 wgpu = {version = "0.15.1", features = ["spirv"]}
@@ -29,8 +21,16 @@ spirv-reflect = "0.2.3"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = {version = "0.15.1", features = ["spirv", "webgl"]}
 
+[dev-dependencies]
+sjgfx-util = { path = "../gfx-util" }
+winit = "0.27.1"
+nalgebra-glm = "0.18.0"
+image = "0.24.5"
+wasm-bindgen = "0.2.84"
+bytemuck = "*"
+
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-web-sys = { version = "0.3.60", features = [
+web-sys = { version = "0.3.61", features = [
 "Location",
 "Blob",
 "RequestInit",
