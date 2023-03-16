@@ -81,6 +81,10 @@ impl ShaderReflection {
         assert!(module.entry_points.len() == 1);
         assert!(2 <= module.entry_points[0].operands.len());
 
+        // 本当はこれで一本化したい
+        // let _module: rspirv::sr::module::Module =
+        //     rspirv::lift::LiftContext::convert(module).unwrap();
+
         let entry_point_name = match module.entry_points[0].operands[2] {
             rspirv::dr::Operand::LiteralString(ref value) => value,
             _ => panic!(),
@@ -240,7 +244,7 @@ impl ShaderReflection {
                         return None;
                     }
 
-                    let rspirv::dr::Operand::LiteralInt32(offset) = x.operands[3] else {
+                    let rspirv::dr::Operand::LiteralBit32(offset) = x.operands[3] else {
                     return None;
                 };
 
@@ -284,7 +288,7 @@ impl ShaderReflection {
                                 if z.operands.len() == 0 {
                                     return None;
                                 }
-                                let rspirv::dr::Operand::LiteralInt32( array_count) = z.operands[1] else {
+                                let rspirv::dr::Operand::LiteralBit32( array_count) = z.operands[1] else {
                                     return None;
                                 };
                                 return Some(array_count);
@@ -366,7 +370,7 @@ impl ShaderReflection {
             }
 
             // binding を取得
-            let rspirv::dr::Operand::LiteralInt32(binding) = x.operands[2] else {
+            let rspirv::dr::Operand::LiteralBit32(binding) = x.operands[2] else {
                 return None;
             };
 
@@ -408,7 +412,7 @@ impl ModuleTable {
                 rspirv::spirv::Op::TypeVector => {
                     assert!(1 <= item.operands.len());
                     let size = match item.operands[1] {
-                        rspirv::dr::Operand::LiteralInt32(ref v) => v,
+                        rspirv::dr::Operand::LiteralBit32(ref v) => v,
                         _ => panic!(),
                     };
                     match *size {
@@ -466,7 +470,7 @@ impl ModuleTable {
                     };
 
             // location
-            let rspirv::dr::Operand::LiteralInt32(location) = annotation.operands[2] else {
+            let rspirv::dr::Operand::LiteralBit32(location) = annotation.operands[2] else {
                         continue;
                     };
 
