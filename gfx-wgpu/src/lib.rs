@@ -13,7 +13,7 @@ mod shader_wgpu;
 mod swap_chain_wgpu;
 mod texture_view_wgpu;
 mod texture_wgpu;
-mod util;
+pub mod util;
 mod vertex_state_wgpu;
 
 pub use buffer_wgpu::BufferWgpu;
