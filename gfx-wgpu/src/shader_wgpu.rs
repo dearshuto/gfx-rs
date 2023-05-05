@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use sjgfx_interface::{AttributeFormat, IShader, ShaderInfo};
-use sjgfx_util::{ShaderReflection, ShaderStage};
+use sjgfx_interface::{IShader, ShaderInfo, ShaderStage};
+use sjgfx_util::ShaderReflection;
 use uuid::Uuid;
 use wgpu::ComputePipelineDescriptor;
 
@@ -77,7 +77,6 @@ impl ShaderWgpu {
                 vertex_shader: None,
                 pixel_shader: None,
                 compute_pipeline: Some(Arc::new(compute_pipeline)),
-                vertex_attributes: None,
                 bind_group_layout: Arc::new(bind_group_layout),
                 pipeline_layout: Arc::new(pipeline_layout),
                 id: Uuid::new_v4(),
@@ -90,36 +89,17 @@ impl ShaderWgpu {
         vertex_shader_binary: &[u8],
         pixel_shader_binary: &[u8],
     ) -> Self {
-        let shader_reflection_vertex = ShaderReflection::new_from_biinary(&vertex_shader_binary);
-        let shader_reflection_pixel = ShaderReflection::new_from_biinary(&pixel_shader_binary);
-        let vertex_attributes = Self::create_vertex_attributes(&shader_reflection_vertex);
-
         let vertex_shader =
             Self::create_shader_module(device.get_device(), &Some(vertex_shader_binary));
         let pixel_shader =
             Self::create_shader_module(device.get_device(), &Some(pixel_shader_binary));
 
-        let entries = {
-            let mut vertex_entries = Self::create_bind_group_layout_entries(
-                vertex_shader_binary,
-                &shader_reflection_vertex,
-                &ShaderStage::Vertex,
-            );
-            let mut pixel_entries = Self::create_bind_group_layout_entries(
-                pixel_shader_binary,
-                &shader_reflection_pixel,
-                &ShaderStage::Pixel,
-            );
-            vertex_entries.append(&mut pixel_entries);
-            vertex_entries
-        };
-        let bind_group_layout =
-            device
-                .get_device()
-                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: &entries,
-                });
+        let bind_group_layout = crate::util::create_bind_group_layout(
+            device.get_device(),
+            vertex_shader_binary,
+            pixel_shader_binary,
+        );
+
         let pipeline_layout =
             device
                 .get_device()
@@ -135,7 +115,6 @@ impl ShaderWgpu {
                 vertex_shader: Some(Arc::new(vertex_shader.unwrap())),
                 pixel_shader: Some(Arc::new(pixel_shader.unwrap())),
                 compute_pipeline: None,
-                vertex_attributes: Some(Arc::new(vertex_attributes)),
                 bind_group_layout: Arc::new(bind_group_layout),
                 pipeline_layout: Arc::new(pipeline_layout),
                 id: Uuid::new_v4(),
@@ -161,41 +140,6 @@ impl ShaderWgpu {
         shader_reflection: &ShaderReflection,
         shader_stage: &ShaderStage,
     ) -> Vec<wgpu::BindGroupLayoutEntry> {
-        let mut uniform_buffer_enetries = shader_reflection
-            .uniform_buffers()
-            .iter()
-            .map(|x| {
-                let entry = wgpu::BindGroupLayoutEntry {
-                    binding: x.binding as u32,
-                    visibility: Self::convert_shader_stage(shader_stage),
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(x.size as u64),
-                    },
-                    count: None,
-                };
-                entry
-            })
-            .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
-            .to_vec();
-
-        let mut shader_storage_buffer_enetries = shader_reflection
-            .shader_storage_buffer()
-            .iter()
-            .map(|x| wgpu::BindGroupLayoutEntry {
-                binding: x.binding as u32,
-                visibility: Self::convert_shader_stage(shader_stage),
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            })
-            .collect::<Vec<wgpu::BindGroupLayoutEntry>>()
-            .to_vec();
-
         #[cfg(not(target_arch = "wasm32"))]
         let module = spirv_reflect::ShaderModule::load_u8_data(shader_source).unwrap();
 
@@ -248,27 +192,11 @@ impl ShaderWgpu {
                 .to_vec()
         };
 
-        entries.append(&mut uniform_buffer_enetries);
-        entries.append(&mut shader_storage_buffer_enetries);
+        let mut partial_entries =
+            crate::util::create_bind_group_layout_entries(shader_reflection, shader_stage);
+
+        entries.append(&mut partial_entries);
         entries
-    }
-
-    fn create_vertex_attributes(
-        shader_reflection: &ShaderReflection,
-    ) -> Vec<wgpu::VertexAttribute> {
-        let vertex_attributes = shader_reflection
-            .entry_point
-            .attribures()
-            .iter()
-            .map(|attribute| wgpu::VertexAttribute {
-                format: Self::convert_attribute_format(attribute.format()),
-                offset: attribute.offset() as u64,
-                shader_location: attribute.location(),
-            })
-            .collect::<Vec<wgpu::VertexAttribute>>()
-            .to_vec();
-
-        vertex_attributes
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -392,15 +320,6 @@ impl ShaderWgpu {
         }
     }
 
-    fn convert_attribute_format(format: AttributeFormat) -> wgpu::VertexFormat {
-        match format {
-            AttributeFormat::Uint32 => wgpu::VertexFormat::Uint32,
-            AttributeFormat::Float32_32 => wgpu::VertexFormat::Float32x2,
-            AttributeFormat::Float32_32_32 => wgpu::VertexFormat::Float32x3,
-            AttributeFormat::Float32_32_32_32 => wgpu::VertexFormat::Float32x4,
-        }
-    }
-
     #[cfg(not(target_arch = "wasm32"))]
     fn convert_reflect_image_format(
         format: spirv_reflect::types::ReflectImageFormat,
@@ -480,11 +399,7 @@ impl ShaderWgpu {
     }
 
     fn convert_shader_stage(stage: &ShaderStage) -> wgpu::ShaderStages {
-        match stage {
-            ShaderStage::Compute => wgpu::ShaderStages::COMPUTE,
-            ShaderStage::Vertex => wgpu::ShaderStages::VERTEX,
-            ShaderStage::Pixel => wgpu::ShaderStages::FRAGMENT,
-        }
+        crate::util::convert_shader_stage(stage.clone())
     }
 }
 
@@ -548,8 +463,6 @@ struct ShaderData {
     pub vertex_shader: Option<Arc<wgpu::ShaderModule>>,
     pub pixel_shader: Option<Arc<wgpu::ShaderModule>>,
     pub compute_pipeline: Option<Arc<wgpu::ComputePipeline>>,
-    #[allow(dead_code)]
-    pub vertex_attributes: Option<Arc<Vec<wgpu::VertexAttribute>>>,
     pub bind_group_layout: Arc<wgpu::BindGroupLayout>,
     pub pipeline_layout: Arc<wgpu::PipelineLayout>,
     pub id: Uuid,

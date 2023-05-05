@@ -144,34 +144,7 @@ impl BufferWgpu {
     }
 
     fn convert(gpu_access: &GpuAccess) -> wgpu::BufferUsages {
-        let mut result = wgpu::BufferUsages::empty();
-        if gpu_access.contains(GpuAccess::VERTEX_BUFFER) {
-            result |= wgpu::BufferUsages::VERTEX;
-            result |= wgpu::BufferUsages::COPY_DST;
-        }
-        if gpu_access.contains(GpuAccess::INDEX_BUFFER) {
-            result |= wgpu::BufferUsages::INDEX;
-            result |= wgpu::BufferUsages::COPY_DST;
-        }
-        if gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER) {
-            result = wgpu::BufferUsages::STORAGE;
-        }
-        if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
-            result |= wgpu::BufferUsages::UNIFORM;
-            result |= wgpu::BufferUsages::COPY_DST;
-        }
-
-        if gpu_access.contains(GpuAccess::READ) {
-            result |= wgpu::BufferUsages::COPY_SRC;
-            result |= wgpu::BufferUsages::COPY_DST;
-        }
-
-        if gpu_access.contains(GpuAccess::WRITE) {
-            result |= wgpu::BufferUsages::MAP_READ;
-            result |= wgpu::BufferUsages::COPY_DST;
-        }
-
-        result
+        crate::util::convert_to_buffer_usage(*gpu_access)
     }
 }
 
