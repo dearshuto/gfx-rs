@@ -110,7 +110,7 @@ impl DeviceAsh {
 
         // デバイスとキュー
         // let device_extension = std::ffi::CString::new("VK_KHR_portability_subset").unwrap();
-        let extensions = [ash::extensions::khr::Swapchain::name()];
+        let extensions = [ash::extensions::khr::Swapchain::NAME];
         let (device, queue) = Self::create_device_and_queue(
             &instance,
             physical_device,
@@ -177,7 +177,7 @@ impl DeviceAsh {
 
     fn create_instance(entry: &ash::Entry, additional_extensions: &[*const i8]) -> ash::Instance {
         let app_name = std::ffi::CString::new("VulkanTriangle").unwrap();
-        let appinfo = ash::vk::ApplicationInfo::builder()
+        let appinfo = ash::vk::ApplicationInfo::default()
             .application_name(&app_name)
             .application_version(0)
             .engine_name(&app_name)
@@ -191,7 +191,7 @@ impl DeviceAsh {
             .collect();
 
         let mut extension_names_raw = vec![
-            ash::extensions::ext::DebugUtils::name().as_ptr(),
+            // ash::extensions::ext::DebugUtils::name().as_ptr(),
             // unsafe {
             //     CStr::from_bytes_with_nul_unchecked(b"VK_KHR_get_physical_device_properties2\0")
             // }.as_ptr(),
@@ -200,7 +200,7 @@ impl DeviceAsh {
             extension_names_raw.push(*additional_extension);
         }
 
-        let create_info = ash::vk::InstanceCreateInfo::builder()
+        let create_info = ash::vk::InstanceCreateInfo::default()
             .application_info(&appinfo)
             .enabled_layer_names(&layers_names_raw)
             .enabled_extension_names(&extension_names_raw);
@@ -274,11 +274,10 @@ impl DeviceAsh {
             ..Default::default()
         };
         let priorities = [1.0];
-        let queue_info = [ash::vk::DeviceQueueCreateInfo::builder()
+        let queue_info = [ash::vk::DeviceQueueCreateInfo::default()
             .queue_family_index(queue_family_index)
-            .queue_priorities(&priorities)
-            .build()];
-        let device_create_info = ash::vk::DeviceCreateInfo::builder()
+            .queue_priorities(&priorities)];
+        let device_create_info = ash::vk::DeviceCreateInfo::default()
             .queue_create_infos(&queue_info)
             .enabled_extension_names(&device_extension_names_raw)
             .enabled_features(&features);
@@ -300,7 +299,7 @@ impl DeviceAsh {
     ) -> (DebugUtils, DebugUtilsMessengerEXT) {
         let debug_utils = ash::extensions::ext::DebugUtils::new(&entry, &instance);
         let debug_utils_messanger_create_info =
-            ash::vk::DebugUtilsMessengerCreateInfoEXT::builder()
+            ash::vk::DebugUtilsMessengerCreateInfoEXT::default()
                 .message_severity(
                     ash::vk::DebugUtilsMessageSeverityFlagsEXT::ERROR
                         | ash::vk::DebugUtilsMessageSeverityFlagsEXT::WARNING
@@ -312,8 +311,7 @@ impl DeviceAsh {
                         | ash::vk::DebugUtilsMessageTypeFlagsEXT::PERFORMANCE,
                 )
                 .pfn_user_callback(Some(Self::aa))
-                .user_data(debug_mode as *mut c_void)
-                .build();
+                .user_data(debug_mode as *mut c_void);
 
         let debug_utils_messanger = unsafe {
             debug_utils

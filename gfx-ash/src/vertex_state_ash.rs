@@ -8,15 +8,15 @@ pub struct VertexStateAsh {
     vertex_inpute_attribute_descriptions: Vec<ash::vk::VertexInputAttributeDescription>,
     #[allow(dead_code)]
     vertex_binding_descriptions: Vec<ash::vk::VertexInputBindingDescription>,
-
-    vertex_input_state_create_info: ash::vk::PipelineVertexInputStateCreateInfo,
+    // vertex_input_state_create_info: ash::vk::PipelineVertexInputStateCreateInfo,
 }
 
 impl VertexStateAsh {
     pub fn clone_vertex_input_state_create_info(
         &self,
     ) -> ash::vk::PipelineVertexInputStateCreateInfo {
-        self.vertex_input_state_create_info.clone()
+        todo!()
+        // self.vertex_input_state_create_info.clone()
     }
 
     fn create_vertex_inpute_attribute_descriptions(
@@ -66,15 +66,14 @@ impl IVertexState for VertexStateAsh {
             Self::create_vertex_inpute_attribute_descriptions(info);
         let vertex_binding_descriptions = Self::create_vertex_binding_descriptions(info);
 
-        let vertex_input_state_create_info = ash::vk::PipelineVertexInputStateCreateInfo::builder()
+        let vertex_input_state_create_info = ash::vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_attribute_descriptions(&vertex_inpute_attribute_descriptions)
-            .vertex_binding_descriptions(&vertex_binding_descriptions)
-            .build();
+            .vertex_binding_descriptions(&vertex_binding_descriptions);
 
         VertexStateAsh {
             vertex_inpute_attribute_descriptions,
             vertex_binding_descriptions,
-            vertex_input_state_create_info,
+            // vertex_input_state_create_info,
         }
     }
 }

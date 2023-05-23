@@ -2,13 +2,13 @@ use sjgfx_interface::{IQueue, QueueInfo};
 
 use crate::{CommandBufferAsh, DeviceAsh, FenceAsh, SwapChainAsh};
 
-pub struct QueueAsh {
+pub struct QueueAsh<'a> {
     device: ash::Device,
     queue: ash::vk::Queue,
-    queue_submit_infos: Vec<ash::vk::SubmitInfo>,
+    queue_submit_infos: Vec<ash::vk::SubmitInfo<'a>>,
 }
 
-impl QueueAsh {
+impl<'a> QueueAsh<'a> {
     pub fn new(device: &DeviceAsh, _info: &QueueInfo) -> Self {
         Self {
             device: device.get_device(),
@@ -18,11 +18,10 @@ impl QueueAsh {
     }
 
     pub fn execute(&mut self, command_buffer: &CommandBufferAsh) {
-        let submit_info = ash::vk::SubmitInfo::builder()
-            .command_buffers(&[command_buffer.get_command_buffer()])
-            .build();
+        // let submit_info =
+        //     ash::vk::SubmitInfo::default().command_buffers(&[command_buffer.get_command_buffer()]);
 
-        self.queue_submit_infos.push(submit_info);
+        // self.queue_submit_infos.push(submit_info);
 
         // flush() で execute() と present() の内容を一気に実行しようかと思ったけど、
         // present() を遅延評価するのがめんどくさそうだったから即時実行しちゃう
@@ -33,10 +32,9 @@ impl QueueAsh {
         let swap_chain_khr = swap_chain.get_swap_chain_khr();
         let swap_chains = [swap_chain_khr];
         let image_indices = [swap_chain.get_current_view_index()];
-        let present_info = ash::vk::PresentInfoKHR::builder()
+        let present_info = ash::vk::PresentInfoKHR::default()
             .swapchains(&swap_chains)
-            .image_indices(&image_indices)
-            .build();
+            .image_indices(&image_indices);
         let swap_chain_loader = swap_chain.get_swap_chain();
         unsafe { swap_chain_loader.queue_present(self.queue, &present_info) }.unwrap();
     }
@@ -55,9 +53,9 @@ impl QueueAsh {
     }
 }
 
-impl IQueue for QueueAsh {
+impl<'a> IQueue for QueueAsh<'a> {
     type DeviceType = DeviceAsh;
-    type CommandBufferType = CommandBufferAsh;
+    type CommandBufferType = CommandBufferAsh<'a>;
     type FenceType = FenceAsh;
     type SwapChainType = SwapChainAsh;
 
@@ -90,7 +88,7 @@ impl IQueue for QueueAsh {
     }
 }
 
-impl Drop for QueueAsh {
+impl<'a> Drop for QueueAsh<'a> {
     fn drop(&mut self) {
         // とくにやることない
     }

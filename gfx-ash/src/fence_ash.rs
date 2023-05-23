@@ -11,9 +11,8 @@ impl FenceAsh {
     pub fn new(device: &DeviceAsh) -> Self {
         let device = device.get_device();
 
-        let fence_create_info = ash::vk::FenceCreateInfo::builder()
-            .flags(ash::vk::FenceCreateFlags::SIGNALED)
-            .build();
+        let fence_create_info =
+            ash::vk::FenceCreateInfo::default().flags(ash::vk::FenceCreateFlags::SIGNALED);
         let fence = unsafe { device.create_fence(&fence_create_info, None) }.unwrap();
 
         Self { device, fence }

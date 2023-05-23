@@ -8,7 +8,7 @@ pub struct SamplerAsh {
 
 impl SamplerAsh {
     pub fn new(device: &DeviceAsh, _info: &SamplerInfo) -> Self {
-        let create_info = ash::vk::SamplerCreateInfo::builder().build();
+        let create_info = ash::vk::SamplerCreateInfo::default();
         let sampler = unsafe { device.get_device().create_sampler(&create_info, None) }.unwrap();
 
         Self { sampler }

@@ -6,8 +6,10 @@ version = "0.1.0"
 [dependencies]
 sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
-ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.1", default-features = false, features = ["linked", "debug"] }
-ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.1" }
+# ash = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.2", default-features = false, features = ["linked", "debug"] }
+ash = { git = "https://github.com/MaikKlein/ash.git", rev = "77e614d", default-features = false, features = ["linked", "debug"] }
+# ash-window = { git = "https://github.com/MaikKlein/ash.git", tag = "0.37.1" }
+ash-window = { git = "https://github.com/MaikKlein/ash.git", rev = "77e614d" }
 raw-window-handle = "0.5.0"
 winit = "0.27.1"
 spirv-reflect = "0.2.3"

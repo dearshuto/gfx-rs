@@ -11,28 +11,25 @@ impl TextureViewAsh {
     pub fn new(device: &DeviceAsh, info: &TextureViewInfo, texture: &TextureAsh) -> Self {
         let image = texture.get_texture();
         let format = util::convert_image_format(info.get_format().clone());
-        let create_info = ash::vk::ImageViewCreateInfo::builder()
+        let create_info = ash::vk::ImageViewCreateInfo::default()
             .image(image)
             .view_type(ash::vk::ImageViewType::TYPE_2D)
             .format(format)
             .components(
-                ash::vk::ComponentMapping::builder()
+                ash::vk::ComponentMapping::default()
                     .r(ash::vk::ComponentSwizzle::R)
                     .g(ash::vk::ComponentSwizzle::G)
                     .b(ash::vk::ComponentSwizzle::B)
-                    .a(ash::vk::ComponentSwizzle::A)
-                    .build(),
+                    .a(ash::vk::ComponentSwizzle::A),
             )
             .subresource_range(
-                ash::vk::ImageSubresourceRange::builder()
+                ash::vk::ImageSubresourceRange::default()
                     .aspect_mask(ash::vk::ImageAspectFlags::COLOR)
                     .base_mip_level(0)
                     .level_count(1)
                     .base_array_layer(0)
-                    .layer_count(1)
-                    .build(),
-            )
-            .build();
+                    .layer_count(1),
+            );
         let image_view =
             unsafe { device.get_device().create_image_view(&create_info, None) }.unwrap();
 

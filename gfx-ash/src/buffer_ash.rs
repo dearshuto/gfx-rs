@@ -14,7 +14,7 @@ pub struct BufferAsh {
 impl BufferAsh {
     pub fn new(device: &DeviceAsh, info: &BufferInfo) -> Self {
         let buffer_usage = Self::convert_gpu_access_to_ash(&info.get_gpu_access_flags());
-        let buffer_create_info = ash::vk::BufferCreateInfo::builder()
+        let buffer_create_info = ash::vk::BufferCreateInfo::default()
             .size(info.get_size() as ash::vk::DeviceSize)
             .usage(buffer_usage)
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE);
@@ -43,7 +43,7 @@ impl BufferAsh {
             })
             .unwrap();
 
-        let allocate_info = ash::vk::MemoryAllocateInfo::builder()
+        let allocate_info = ash::vk::MemoryAllocateInfo::default()
             .allocation_size(requirement.size as DeviceSize)
             .memory_type_index(memory_type_index as u32);
         let device_memory =
@@ -143,11 +143,10 @@ impl BufferAsh {
         }
         .unwrap();
 
-        let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
+        let mapped_memory_range = ash::vk::MappedMemoryRange::default()
             .memory(self.device_memory)
             .offset(offset as ash::vk::DeviceSize)
-            .size(size as ash::vk::DeviceSize)
-            .build();
+            .size(size as ash::vk::DeviceSize);
         unsafe {
             self.device
                 .flush_mapped_memory_ranges(&[mapped_memory_range])
@@ -168,11 +167,10 @@ impl BufferAsh {
         }
         .unwrap();
 
-        let mapped_memory_range = ash::vk::MappedMemoryRange::builder()
+        let mapped_memory_range = ash::vk::MappedMemoryRange::default()
             .memory(self.device_memory)
             .offset(offset as ash::vk::DeviceSize)
-            .size(size as ash::vk::DeviceSize)
-            .build();
+            .size(size as ash::vk::DeviceSize);
         unsafe {
             self.device
                 .invalidate_mapped_memory_ranges(&[mapped_memory_range])

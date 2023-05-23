@@ -1,5 +1,7 @@
 use ash::vk::{Extent2D, Framebuffer, Rect2D};
-use sjgfx_interface::{CommandBufferInfo, ICommandBuffer, PrimitiveTopology, TextureArrayRange, ScissorStateInfo};
+use sjgfx_interface::{
+    CommandBufferInfo, ICommandBuffer, PrimitiveTopology, ScissorStateInfo, TextureArrayRange,
+};
 
 use crate::{
     BufferAsh, ColorTargetViewAsh, DepthStencilViewAsh, DeviceAsh, SamplerAsh, ShaderAsh,
@@ -24,7 +26,7 @@ enum DrawCommand {
     DrawIndexed(DrawIndexedInfo),
 }
 
-pub struct CommandBufferAsh {
+pub struct CommandBufferAsh<'a> {
     device: ash::Device,
 
     #[allow(dead_code)]
@@ -68,7 +70,7 @@ pub struct CommandBufferAsh {
 
     // 頂点バッファ
     vertex_buffer: [Option<ash::vk::Buffer>; 8],
-    vertex_inpute_state_create_info: Option<ash::vk::PipelineVertexInputStateCreateInfo>,
+    vertex_inpute_state_create_info: Option<ash::vk::PipelineVertexInputStateCreateInfo<'a>>,
 
     // 描画コマンド
     draw_command: Option<DrawCommand>,
@@ -77,19 +79,18 @@ pub struct CommandBufferAsh {
     dispatch_count: Option<(u32, u32, u32)>,
 }
 
-impl CommandBufferAsh {
+impl<'a> CommandBufferAsh<'a> {
     pub fn new(device: &DeviceAsh, _info: &CommandBufferInfo) -> Self {
         let queue_family_index = device.get_queue_family_index();
         let device = device.get_device();
 
-        let command_pool_create_info = ash::vk::CommandPoolCreateInfo::builder()
+        let command_pool_create_info = ash::vk::CommandPoolCreateInfo::default()
             .flags(ash::vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
-            .queue_family_index(queue_family_index)
-            .build();
+            .queue_family_index(queue_family_index);
         let command_pool =
             unsafe { device.create_command_pool(&command_pool_create_info, None) }.unwrap();
 
-        let command_buffer_allocate_create_info = ash::vk::CommandBufferAllocateInfo::builder()
+        let command_buffer_allocate_create_info = ash::vk::CommandBufferAllocateInfo::default()
             .command_buffer_count(1)
             .command_pool(command_pool)
             .level(ash::vk::CommandBufferLevel::PRIMARY);
@@ -150,9 +151,8 @@ impl CommandBufferAsh {
     }
 
     pub fn begin(&mut self) {
-        let command_buffer_begin_info = ash::vk::CommandBufferBeginInfo::builder()
-            .flags(ash::vk::CommandBufferUsageFlags::empty())
-            .build();
+        let command_buffer_begin_info = ash::vk::CommandBufferBeginInfo::default()
+            .flags(ash::vk::CommandBufferUsageFlags::empty());
 
         unsafe {
             self.device
@@ -313,14 +313,8 @@ impl CommandBufferAsh {
 
         let width = self.width.unwrap();
         let height = self.height.unwrap();
-        let render_area = ash::vk::Rect2D::builder()
-            .extent(
-                ash::vk::Extent2D::builder()
-                    .width(width)
-                    .height(height)
-                    .build(),
-            )
-            .build();
+        let render_area = ash::vk::Rect2D::default()
+            .extent(ash::vk::Extent2D::default().width(width).height(height));
 
         // レンダーパス
         // TODO: キャッシュ
@@ -344,10 +338,10 @@ impl CommandBufferAsh {
             dst_stage_mask: ash::vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
             ..Default::default()
         }];
-        let subpass = ash::vk::SubpassDescription::builder()
+        let subpass = ash::vk::SubpassDescription::default()
             .color_attachments(&color_attachment_refs)
             .pipeline_bind_point(ash::vk::PipelineBindPoint::GRAPHICS);
-        let renderpass_create_info = ash::vk::RenderPassCreateInfo::builder()
+        let renderpass_create_info = ash::vk::RenderPassCreateInfo::default()
             .attachments(&renderpass_attachments)
             .subpasses(std::slice::from_ref(&subpass))
             .dependencies(&dependencies);
@@ -364,7 +358,7 @@ impl CommandBufferAsh {
 
         // フレームバッファ
         let frame_buffer_attachment = [self.image_view.unwrap()];
-        let frame_buffer_create_info = ash::vk::FramebufferCreateInfo::builder()
+        let frame_buffer_create_info = ash::vk::FramebufferCreateInfo::default()
             .render_pass(renderpass)
             .attachments(&frame_buffer_attachment)
             .width(width)
@@ -384,7 +378,7 @@ impl CommandBufferAsh {
         }];
 
         // レンダーパス
-        let render_pass_begin_info = ash::vk::RenderPassBeginInfo::builder()
+        let render_pass_begin_info = ash::vk::RenderPassBeginInfo::default()
             .render_pass(renderpass)
             .framebuffer(frame_buffer)
             .render_area(render_area.clone())
@@ -524,10 +518,9 @@ impl CommandBufferAsh {
             stage: ash::vk::ShaderStageFlags::COMPUTE,
             ..Default::default()
         };
-        let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::builder()
+        let compute_pipeline_create_info = ash::vk::ComputePipelineCreateInfo::default()
             .stage(shader_stage_create_info)
-            .layout(self.pipeline_layout.unwrap())
-            .build();
+            .layout(self.pipeline_layout.unwrap());
         let compute_pipeline = unsafe {
             self.device.create_compute_pipelines(
                 ash::vk::PipelineCache::null(),
@@ -607,7 +600,7 @@ impl CommandBufferAsh {
             alpha_blend_op: ash::vk::BlendOp::ADD,
             color_write_mask: ash::vk::ColorComponentFlags::RGBA,
         }];
-        let color_blend_state = ash::vk::PipelineColorBlendStateCreateInfo::builder()
+        let color_blend_state = ash::vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op(ash::vk::LogicOp::CLEAR)
             .attachments(&color_blend_attachment_states);
 
@@ -616,23 +609,22 @@ impl CommandBufferAsh {
             ash::vk::DynamicState::SCISSOR,
         ];
         let dynamic_state_info =
-            ash::vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&dynamic_state);
+            ash::vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_state);
 
-        let scissors = [Rect2D::builder().extent(Extent2D { width, height }).build()];
+        let scissors = [Rect2D::default().extent(Extent2D { width, height })];
         let vertex_input_state_info =
             if let Some(vertex_inpute_state_create_info) = self.vertex_inpute_state_create_info {
                 vertex_inpute_state_create_info
             } else {
-                ash::vk::PipelineVertexInputStateCreateInfo::builder()
+                ash::vk::PipelineVertexInputStateCreateInfo::default()
                     .vertex_attribute_descriptions(&[])
                     .vertex_binding_descriptions(&[])
-                    .build()
             };
 
-        let viewport_state_info = ash::vk::PipelineViewportStateCreateInfo::builder()
+        let viewport_state_info = ash::vk::PipelineViewportStateCreateInfo::default()
             .scissors(&scissors)
             .viewports(&viewports);
-        let graphics_pipeline_create_info = ash::vk::GraphicsPipelineCreateInfo::builder()
+        let graphics_pipeline_create_info = ash::vk::GraphicsPipelineCreateInfo::default()
             .stages(&shader_stage_create_infos)
             .vertex_input_state(&vertex_input_state_info)
             .input_assembly_state(&input_assembly_state_info)
@@ -643,8 +635,7 @@ impl CommandBufferAsh {
             .color_blend_state(&color_blend_state)
             .dynamic_state(&dynamic_state_info)
             .layout(self.pipeline_layout.unwrap())
-            .render_pass(self.render_pass.unwrap())
-            .build();
+            .render_pass(self.render_pass.unwrap());
         let graphics_pipeline = unsafe {
             self.device.create_graphics_pipelines(
                 ash::vk::PipelineCache::null(),
@@ -682,7 +673,7 @@ impl CommandBufferAsh {
                 descriptor_count: 16,
             },
         ];
-        let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::builder()
+        let descriptor_pool_info = ash::vk::DescriptorPoolCreateInfo::default()
             .pool_sizes(&descriptor_sizes)
             .max_sets(1);
         let descriptor_pool = unsafe {
@@ -695,10 +686,9 @@ impl CommandBufferAsh {
         // デスクリプタセットを作る
         // TODO: キャッシュ
         let descriptor_set_layouts = self.descriptor_set_layouts.as_ref().unwrap();
-        let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::builder()
+        let descriptor_set_allocate_info = ash::vk::DescriptorSetAllocateInfo::default()
             .descriptor_pool(descriptor_pool)
-            .set_layouts(&descriptor_set_layouts)
-            .build();
+            .set_layouts(&descriptor_set_layouts);
         let descriptor_sets = unsafe {
             self.device
                 .allocate_descriptor_sets(&descriptor_set_allocate_info)
@@ -719,10 +709,9 @@ impl CommandBufferAsh {
 
         // 定数バッファ
         if let Some(constant_buffer) = self.constant_buffers[0] {
-            let info = ash::vk::DescriptorBufferInfo::builder()
+            let info = ash::vk::DescriptorBufferInfo::default()
                 .buffer(constant_buffer)
-                .range(64)
-                .build();
+                .range(64);
             let write_descriptor_set = ash::vk::WriteDescriptorSet {
                 dst_set: descriptor_set,
                 descriptor_count: 1,
@@ -735,10 +724,9 @@ impl CommandBufferAsh {
         }
 
         if let Some(unordered_access_buffer) = self.unordered_accss_buffer[0] {
-            let info = ash::vk::DescriptorBufferInfo::builder()
+            let info = ash::vk::DescriptorBufferInfo::default()
                 .buffer(unordered_access_buffer)
-                .range(128)
-                .build();
+                .range(128);
             let write_descriptor_set = ash::vk::WriteDescriptorSet {
                 dst_set: descriptor_set,
                 descriptor_count: 1,
@@ -755,9 +743,7 @@ impl CommandBufferAsh {
         {
             for image_opt in &self.images {
                 if let Some(image) = image_opt {
-                    let info = ash::vk::DescriptorImageInfo::builder()
-                        .image_view(*image)
-                        .build();
+                    let info = ash::vk::DescriptorImageInfo::default().image_view(*image);
                     image_infos.push(info);
                 }
             }
@@ -781,7 +767,7 @@ impl CommandBufferAsh {
     }
 }
 
-impl Drop for CommandBufferAsh {
+impl<'a> Drop for CommandBufferAsh<'a> {
     fn drop(&mut self) {
         // 解放しなくてもいいっぽい
         // if let Some(descriptor_set) = self.descriptor_set {
@@ -816,7 +802,7 @@ impl Drop for CommandBufferAsh {
     }
 }
 
-impl ICommandBuffer for CommandBufferAsh {
+impl<'a> ICommandBuffer for CommandBufferAsh<'a> {
     type DeviceType = DeviceAsh;
     type BufferType = BufferAsh;
     type ColorTargetViewType = ColorTargetViewAsh;
@@ -896,8 +882,9 @@ impl ICommandBuffer for CommandBufferAsh {
     }
 
     fn set_vertex_state(&mut self, vertex_state: &Self::VertexStateType) {
-        self.vertex_inpute_state_create_info =
-            Some(vertex_state.clone_vertex_input_state_create_info());
+        todo!();
+        // self.vertex_inpute_state_create_info =
+        //     Some(vertex_state.clone_vertex_input_state_create_info());
     }
 
     fn set_scissor(&mut self, _scissor_state_info: &ScissorStateInfo) {
@@ -995,7 +982,8 @@ mod tests {
 
     #[test]
     fn set_image() {
-        let mut device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let mut device =
+            DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let texture = TextureAsh::new(
             &mut device,
             &TextureInfo::new()

@@ -48,7 +48,7 @@ impl SwapChainAsh {
 
         let desired_image_count = surface_capabilities.min_image_count;
 
-        let swap_chain_create_info = ash::vk::SwapchainCreateInfoKHR::builder()
+        let swap_chain_create_info = ash::vk::SwapchainCreateInfoKHR::default()
             .surface(surface)
             .min_image_count(desired_image_count)
             .image_color_space(surface_format.color_space)
@@ -75,7 +75,7 @@ impl SwapChainAsh {
         let image_views = images
             .iter()
             .map(|&image| {
-                let create_view_info = ash::vk::ImageViewCreateInfo::builder()
+                let create_view_info = ash::vk::ImageViewCreateInfo::default()
                     .view_type(ash::vk::ImageViewType::TYPE_2D)
                     .format(surface_format.format)
                     .components(ash::vk::ComponentMapping {
@@ -85,16 +85,14 @@ impl SwapChainAsh {
                         a: ash::vk::ComponentSwizzle::A,
                     })
                     .subresource_range(
-                        ash::vk::ImageSubresourceRange::builder()
+                        ash::vk::ImageSubresourceRange::default()
                             .aspect_mask(ash::vk::ImageAspectFlags::COLOR)
                             .base_mip_level(0)
                             .level_count(1)
                             .base_array_layer(0)
-                            .layer_count(1)
-                            .build(),
+                            .layer_count(1),
                     )
-                    .image(image)
-                    .build();
+                    .image(image);
 
                 unsafe { device.create_image_view(&create_view_info, None) }.unwrap()
             })

@@ -38,7 +38,7 @@ impl DeviceMemory {
             })
             .unwrap();
 
-        let allocate_info = ash::vk::MemoryAllocateInfo::builder()
+        let allocate_info = ash::vk::MemoryAllocateInfo::default()
             .allocation_size(size as DeviceSize)
             .memory_type_index(memory_type_index as u32);
         let device_memory =

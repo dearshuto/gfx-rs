@@ -119,9 +119,8 @@ impl ShaderAsh {
         let mut compute_shader_binary = std::io::Cursor::new(shader_binary);
         let shader_code = ash::util::read_spv(&mut compute_shader_binary).expect("");
 
-        let shader_module_create_info = ash::vk::ShaderModuleCreateInfo::builder()
-            .code(&shader_code)
-            .build();
+        let shader_module_create_info =
+            ash::vk::ShaderModuleCreateInfo::default().code(&shader_code);
 
         let shader_module = unsafe {
             device
@@ -149,8 +148,12 @@ impl ShaderAsh {
                 spirv_reflect::types::ReflectDescriptorType::StorageImage => image_count += 1,
                 spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => constant_buffer_count += 1,
-                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => unordered_access_buffer_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
+                    constant_buffer_count += 1
+                }
+                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
+                    unordered_access_buffer_count += 1
+                }
                 spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
@@ -163,7 +166,7 @@ impl ShaderAsh {
             constant_buffer_count,
             unordered_access_buffer_count,
             sampler_count,
-            image_count
+            image_count,
         }
     }
 
@@ -182,17 +185,16 @@ impl ShaderAsh {
         });
 
         let mut descriptor_set_layout_bindings = Vec::new();
-        for table in tables {
-            for binding in table.get_descriptor_set_layout_bindings() {
-                descriptor_set_layout_bindings.push(*binding);
-            }
-        }
+        // for table in tables {
+        //     for binding in table.get_descriptor_set_layout_bindings() {
+        //         descriptor_set_layout_bindings.push(*binding);
+        //     }
+        // }
 
         let descriptor_set_layout = unsafe {
             device.get_device().create_descriptor_set_layout(
-                &ash::vk::DescriptorSetLayoutCreateInfo::builder()
-                    .bindings(&descriptor_set_layout_bindings)
-                    .build(),
+                &ash::vk::DescriptorSetLayoutCreateInfo::default()
+                    .bindings(&descriptor_set_layout_bindings),
                 None,
             )
         }
@@ -200,9 +202,7 @@ impl ShaderAsh {
 
         let pipeline_layout = unsafe {
             device.get_device().create_pipeline_layout(
-                &ash::vk::PipelineLayoutCreateInfo::builder()
-                    .set_layouts(&[descriptor_set_layout])
-                    .build(),
+                &ash::vk::PipelineLayoutCreateInfo::default().set_layouts(&[descriptor_set_layout]),
                 None,
             )
         }
@@ -267,11 +267,11 @@ impl Drop for ShaderAsh {
     }
 }
 
-pub struct LayoutTable {
-    _descriptor_set_layout_bindings: Vec<ash::vk::DescriptorSetLayoutBinding>,
+pub struct LayoutTable<'a> {
+    _descriptor_set_layout_bindings: Vec<ash::vk::DescriptorSetLayoutBinding<'a>>,
 }
 
-impl LayoutTable {
+impl<'a> LayoutTable<'a> {
     pub fn new(
         shader_stage: ash::vk::ShaderStageFlags,
         uniform_block_count: u32,
@@ -284,33 +284,30 @@ impl LayoutTable {
         // Uniform Block
         if uniform_block_count > 0 {
             descriptor_set_layout_bindings.push(
-                ash::vk::DescriptorSetLayoutBinding::builder()
+                ash::vk::DescriptorSetLayoutBinding::default()
                     .descriptor_type(ash::vk::DescriptorType::UNIFORM_BUFFER)
                     .descriptor_count(uniform_block_count)
                     .stage_flags(shader_stage)
-                    .binding(0)
-                    .build(),
+                    .binding(0),
             );
         }
 
         // Shader Storage Block
         if shader_storage_block_count > 0 {
             descriptor_set_layout_bindings.push(
-                ash::vk::DescriptorSetLayoutBinding::builder()
+                ash::vk::DescriptorSetLayoutBinding::default()
                     .descriptor_type(ash::vk::DescriptorType::STORAGE_BUFFER)
                     .descriptor_count(shader_storage_block_count)
-                    .stage_flags(shader_stage)
-                    .build(),
+                    .stage_flags(shader_stage),
             );
         }
 
         // Image
         if image_count > 0 {
-            let binding = ash::vk::DescriptorSetLayoutBinding::builder()
+            let binding = ash::vk::DescriptorSetLayoutBinding::default()
                 .descriptor_type(ash::vk::DescriptorType::STORAGE_IMAGE)
                 .descriptor_count(image_count)
-                .stage_flags(shader_stage)
-                .build();
+                .stage_flags(shader_stage);
             descriptor_set_layout_bindings.push(binding);
         }
 

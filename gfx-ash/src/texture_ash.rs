@@ -19,7 +19,7 @@ impl TextureAsh {
         let format = util::convert_image_format(info.get_image_format().clone());
         let usage = Self::convert_usage(info.get_gpu_access_flags().clone());
 
-        let image_create_info = ash::vk::ImageCreateInfo::builder()
+        let image_create_info = ash::vk::ImageCreateInfo::default()
             .image_type(ash::vk::ImageType::TYPE_2D)
             .format(format)
             .sharing_mode(ash::vk::SharingMode::EXCLUSIVE)
@@ -33,8 +33,7 @@ impl TextureAsh {
             .array_layers(1)
             .samples(ash::vk::SampleCountFlags::TYPE_1)
             .tiling(ash::vk::ImageTiling::OPTIMAL)
-            .usage(usage)
-            .build();
+            .usage(usage);
         unsafe { device.create_image(&image_create_info, None).unwrap() }
     }
 
@@ -152,7 +151,8 @@ mod tests {
     }
 
     fn new_impl(image_format: ImageFormat, gpu_access: GpuAccess) {
-        let mut device = DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
+        let mut device =
+            DeviceAsh::new(&DeviceInfo::new().set_debug_mode(DebugMode::FullAssertion));
         let _ = TextureAsh::new(
             &mut device,
             &TextureInfo::new()
