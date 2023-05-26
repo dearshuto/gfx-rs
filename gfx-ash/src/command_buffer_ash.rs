@@ -207,15 +207,15 @@ impl<'a> CommandBufferAsh<'a> {
         }
 
         // シェーダをもとにパイプラインを作る必要があるのでコマンドの作成は end() が呼ばれるまで遅延する
-        if shader.is_compute() {
-            self.compute_shader_module = Some(shader.get_compute_shader_module());
-            self.vertex_shader_module = None;
-            self.pixel_shader_module = None;
-        } else {
-            self.compute_shader_module = None;
-            self.vertex_shader_module = Some(shader.get_vertex_shader_module());
-            self.pixel_shader_module = Some(shader.get_pixel_shader_module());
-        }
+        // if shader.is_compute() {
+        //     self.compute_shader_module = Some(shader.get_compute_shader_module());
+        //     self.vertex_shader_module = None;
+        //     self.pixel_shader_module = None;
+        // } else {
+        //     self.compute_shader_module = None;
+        //     self.vertex_shader_module = Some(shader.get_vertex_shader_module());
+        //     self.pixel_shader_module = Some(shader.get_pixel_shader_module());
+        // }
 
         self.pipeline_layout = Some(shader.get_pipeline_layout());
         self.descriptor_set_layouts = Some(shader.get_descriptor_set_layouts().to_vec());

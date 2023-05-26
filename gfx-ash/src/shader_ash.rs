@@ -15,9 +15,8 @@ pub struct ShaderAsh {
     device: ash::Device,
     descriptor_set_layouts: Vec<ash::vk::DescriptorSetLayout>,
     pipeline_layout: ash::vk::PipelineLayout,
-    compute_shader_module: Option<ash::vk::ShaderModule>,
-    vertex_shader_module: Option<ash::vk::ShaderModule>,
-    pixel_shader_module: Option<ash::vk::ShaderModule>,
+    compute_shader_object: Option<ash::extensions::ext::ShaderObject>,
+    render_shader_object: Option<ash::extensions::ext::ShaderObject>,
     id: uuid::Uuid,
     // vertex_stage_descriptor_info: Option<DescriptorInfo>,
     // pixel_stage_descriptor_info: Option<DescriptorInfo>,
@@ -34,19 +33,15 @@ impl ShaderAsh {
     }
 
     pub fn is_compute(&self) -> bool {
-        self.compute_shader_module.is_some()
+        self.compute_shader_object.is_some()
     }
 
-    pub fn get_compute_shader_module(&self) -> ash::vk::ShaderModule {
-        self.compute_shader_module.unwrap()
+    pub fn get_compute_shader_object(&self) -> ash::extensions::ext::ShaderObject {
+        self.compute_shader_object.as_ref().unwrap().clone()
     }
 
-    pub fn get_vertex_shader_module(&self) -> ash::vk::ShaderModule {
-        self.vertex_shader_module.unwrap()
-    }
-
-    pub fn get_pixel_shader_module(&self) -> ash::vk::ShaderModule {
-        self.pixel_shader_module.unwrap()
+    pub fn get_render_shader_object(&self) -> ash::extensions::ext::ShaderObject {
+        self.render_shader_object.as_ref().unwrap().clone()
     }
 
     pub fn get_pipeline_layout(&self) -> ash::vk::PipelineLayout {
@@ -78,15 +73,8 @@ impl ShaderAsh {
 
         Self {
             device: device.get_device(),
-            compute_shader_module: None,
-            vertex_shader_module: Some(Self::crate_shader_module(
-                device,
-                info.get_vertex_shader_binary().as_ref().unwrap(),
-            )),
-            pixel_shader_module: Some(Self::crate_shader_module(
-                device,
-                info.get_pixel_shader_binary().as_ref().unwrap(),
-            )),
+            compute_shader_object: None,
+            render_shader_object: Some(Self::create_shader_object(device, &[])),
             descriptor_set_layouts: vec![descriptor_set_layout],
             pipeline_layout,
             id: uuid::Uuid::new_v4(),
@@ -103,16 +91,32 @@ impl ShaderAsh {
 
         Self {
             device: device.get_device(),
-            compute_shader_module: Some(Self::crate_shader_module(
+            compute_shader_object: Some(Self::create_shader_object(
                 device,
-                info.get_compute_shader_binary().as_ref().unwrap(),
+                // &[info.get_compute_shader_binary().unwrap()],
+                &[],
             )),
-            vertex_shader_module: None,
-            pixel_shader_module: None,
+            render_shader_object: None,
             descriptor_set_layouts: vec![descriptor_set_layout],
             pipeline_layout,
             id: uuid::Uuid::new_v4(),
         }
+    }
+
+    fn create_shader_object(
+        device: &DeviceAsh,
+        shader_binary: &[&[u8]],
+    ) -> ash::extensions::ext::ShaderObject {
+        let instance = device.get_instance();
+        let device = device.get_device_ref();
+        let mut shader_object = ash::extensions::ext::ShaderObject::new(instance, device);
+
+        let shader_create_info_array = shader_binary
+            .iter()
+            .map(|binary| ash::vk::ShaderCreateInfoEXT::default().code(binary))
+            .collect::<Vec<ash::vk::ShaderCreateInfoEXT>>();
+        unsafe { shader_object.create_shaders(&shader_create_info_array, None) };
+        shader_object
     }
 
     fn crate_shader_module(device: &DeviceAsh, shader_binary: &[u8]) -> ash::vk::ShaderModule {
@@ -245,24 +249,13 @@ impl Drop for ShaderAsh {
         }
 
         // 演算シェーダの破棄
-        if let Some(compute_shader_module) = self.compute_shader_module {
-            unsafe {
-                self.device
-                    .destroy_shader_module(compute_shader_module, None)
-            }
+        if let Some(_compute_shader_object) = &self.compute_shader_object {
+            // unsafe { compute_shader_object.destroy_shader(shader, allocator) }
         }
 
-        // 頂点シェーダの破棄
-        if let Some(vertex_shader_module) = self.vertex_shader_module {
-            unsafe {
-                self.device
-                    .destroy_shader_module(vertex_shader_module, None)
-            }
-        }
-
-        // ピクセルシェーダの破棄
-        if let Some(pixel_shader_module) = self.pixel_shader_module {
-            unsafe { self.device.destroy_shader_module(pixel_shader_module, None) }
+        // 描画シェーダの破棄
+        if let Some(_render_shader_object) = &self.render_shader_object {
+            // unsafe { compute_shader_object.destroy_shader(shader, allocator) }
         }
     }
 }
