@@ -149,8 +149,12 @@ impl ShaderAsh {
                 spirv_reflect::types::ReflectDescriptorType::StorageImage => image_count += 1,
                 spirv_reflect::types::ReflectDescriptorType::UniformTexelBuffer => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::StorageTexelBuffer => todo!(),
-                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => constant_buffer_count += 1,
-                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => unordered_access_buffer_count += 1,
+                spirv_reflect::types::ReflectDescriptorType::UniformBuffer => {
+                    constant_buffer_count += 1
+                }
+                spirv_reflect::types::ReflectDescriptorType::StorageBuffer => {
+                    unordered_access_buffer_count += 1
+                }
                 spirv_reflect::types::ReflectDescriptorType::UniformBufferDynamic => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::StorageBufferDynamic => todo!(),
                 spirv_reflect::types::ReflectDescriptorType::InputAttachment => todo!(),
@@ -163,7 +167,7 @@ impl ShaderAsh {
             constant_buffer_count,
             unordered_access_buffer_count,
             sampler_count,
-            image_count
+            image_count,
         }
     }
 
@@ -212,11 +216,7 @@ impl ShaderAsh {
     }
 
     pub fn to_ash(shader_stage: ShaderStage) -> ash::vk::ShaderStageFlags {
-        match shader_stage {
-            ShaderStage::Vertex => ash::vk::ShaderStageFlags::VERTEX,
-            ShaderStage::Pixel => ash::vk::ShaderStageFlags::FRAGMENT,
-            ShaderStage::Compute => ash::vk::ShaderStageFlags::COMPUTE,
-        }
+        crate::util::convert_shader_stage(shader_stage)
     }
 }
 

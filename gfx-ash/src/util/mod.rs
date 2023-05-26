@@ -1,4 +1,12 @@
-use sjgfx_interface::ImageFormat;
+use sjgfx_interface::{ImageFormat, ShaderStage};
+
+pub fn convert_shader_stage(shader_stage: ShaderStage) -> ash::vk::ShaderStageFlags {
+    match shader_stage {
+        ShaderStage::Vertex => ash::vk::ShaderStageFlags::VERTEX,
+        ShaderStage::Pixel => ash::vk::ShaderStageFlags::FRAGMENT,
+        ShaderStage::Compute => ash::vk::ShaderStageFlags::COMPUTE,
+    }
+}
 
 pub fn convert_image_format(format: ImageFormat) -> ash::vk::Format {
     match format {
