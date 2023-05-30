@@ -3,7 +3,9 @@ use std::sync::Arc;
 use sjgfx_interface::{IDisplayEventListener, ISwapChain, SwapChainInfo};
 use vulkano::{
     image::{view::ImageView, ImageUsage, ImageViewAbstract, SwapchainImage},
-    swapchain::{self, AcquireError, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo},
+    swapchain::{
+        self, AcquireError, CompositeAlpha, Swapchain, SwapchainAcquireFuture, SwapchainCreateInfo,
+    },
 };
 
 use crate::{ColorTargetViewVk, DeviceVk, FenceVk, SemaphoreVk};
@@ -23,11 +25,10 @@ impl SwapChainVk {
         let capabilities = physical_device
             .surface_capabilities(&surface, Default::default())
             .unwrap();
-        let composite_alpha = capabilities
-            .supported_composite_alpha
-            .iter()
-            .next()
-            .unwrap();
+
+        // MEMO: Swapchain がサポートしているかのチェックをした方がいいと思う
+        let _composite_alpha = capabilities.supported_composite_alpha;
+
         let image_format = physical_device
             .surface_formats(&surface, Default::default())
             .unwrap()[0]
@@ -41,11 +42,8 @@ impl SwapChainVk {
                 image_format: Some(image_format),
                 // image_extent: surface.window().inner_size().into(),
                 image_extent: [640, 480],
-                image_usage: ImageUsage {
-                    color_attachment: true,
-                    ..ImageUsage::empty()
-                },
-                composite_alpha,
+                image_usage: ImageUsage::COLOR_ATTACHMENT,
+                composite_alpha: CompositeAlpha::Opaque,
                 ..Default::default()
             },
         )

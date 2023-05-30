@@ -376,7 +376,7 @@ impl CommandBufferVk {
             )
             .unwrap()
             .bind_pipeline_graphics(pipeline)
-            .bind_vertex_buffers(0, vertex_buffer);
+            .bind_vertex_buffers(0, vertex_buffer.buffer.clone());
 
         // 描画コマンドを積む順番大事
         // パイプラインが設定されてないとコマンド追加に失敗する
@@ -427,7 +427,7 @@ impl CommandBufferVk {
                 }
                 DrawCommand::DrawIndexed(ref info) => {
                     command_builder
-                        .bind_index_buffer(info.index_buffer.clone())
+                        .bind_index_buffer(info.index_buffer.buffer.clone())
                         .draw_indexed(
                             info.index_count,
                             info.instance_count,
@@ -455,7 +455,7 @@ impl CommandBufferVk {
             if let Some(buffer) = &self.constant_buffers[index] {
                 write_descriptor_sets.push(WriteDescriptorSet::buffer(
                     index as u32,
-                    buffer.clone_buffer(),
+                    buffer.buffer.clone(),
                 ));
             }
         }
@@ -465,7 +465,7 @@ impl CommandBufferVk {
             if let Some(buffer) = &self.unordered_access_buffer[index] {
                 write_descriptor_sets.push(WriteDescriptorSet::buffer(
                     index as u32,
-                    buffer.clone_buffer(),
+                    buffer.buffer.clone(),
                 ));
             }
         }
