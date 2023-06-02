@@ -1,33 +1,37 @@
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer};
 use std::sync::Arc;
 use vulkano::{
-    buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer, TypedBufferAccess},
-    device::{Device, DeviceOwned},
-    memory::allocator::StandardMemoryAllocator,
+    buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
+    device::Device,
+    memory::allocator::{AllocationCreateInfo, MemoryUsage, StandardMemoryAllocator},
     pipeline::graphics::vertex_input::VertexBuffersCollection,
-    DeviceSize,
 };
 
 use crate::DeviceVk;
 
 pub struct BufferVk {
     device: Arc<Device>,
-    buffer: Arc<CpuAccessibleBuffer<[u8]>>,
+    buffer: Subbuffer<[u8]>,
 }
 
 impl BufferVk {
     pub fn new(device: &DeviceVk, info: &BufferInfo) -> Self {
-        let memory_allocator = StandardMemoryAllocator::new_default(device.clone_device());
-        let length = info.get_size() / std::mem::size_of::<u8>();
-        let buffer = unsafe {
-            CpuAccessibleBuffer::<[u8]>::uninitialized_array(
-                &memory_allocator,
-                length as DeviceSize,
-                Self::convert_usage(&info.get_gpu_access_flags()),
-                true, /*host_cached*/
-            )
-            .unwrap()
-        };
+        let memory_allocator =
+            Arc::new(StandardMemoryAllocator::new_default(device.clone_device()));
+        let buffer_usage = Self::convert_usage(&info.get_gpu_access_flags());
+        let buffer = Buffer::from_iter(
+            &memory_allocator,
+            BufferCreateInfo {
+                usage: buffer_usage,
+                ..Default::default()
+            },
+            AllocationCreateInfo {
+                usage: MemoryUsage::Upload,
+                ..Default::default()
+            },
+            vec![0u8; info.get_size()],
+        )
+        .unwrap();
 
         Self {
             device: device.clone_device(),
@@ -36,57 +40,30 @@ impl BufferVk {
     }
 
     pub fn map<T, F: Fn(&T)>(&self, func: F) {
-        let mapped_data = self
-            .buffer
-            .read()
-            .map(|x| {
-                let ptr = x.as_ptr();
-                let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
-                casted
-            })
-            .unwrap();
-        func(&mapped_data);
+        let data = self.buffer.read().unwrap();
+        let ptr = data.as_ptr();
+        let casted = unsafe { (ptr as *const T).as_ref().unwrap() };
+        func(casted);
     }
 
     pub fn map_mut<T, F: Fn(&mut T)>(&self, func: F) {
-        let mapped_data = self
-            .buffer
-            .write()
-            .map(|mut x| {
-                let ptr = x.as_mut_ptr();
-                let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
-                casted
-            })
-            .unwrap();
-        func(mapped_data);
+        let ptr = self.buffer.mapped_ptr().unwrap().as_ptr();
+        let casted = unsafe { (ptr as *mut T).as_mut().unwrap() };
+        func(casted);
     }
 
     pub fn map_as_array<T, F: Fn(&[T])>(&self, func: F) {
-        let mapped_data = self
-            .buffer
-            .read()
-            .map(|x| {
-                let ptr = x.as_ptr() as *const T;
-                let size = x.len() / std::mem::size_of::<T>();
-                let slice = unsafe { std::slice::from_raw_parts::<T>(ptr, size) };
-                slice
-            })
-            .unwrap();
-        func(&mapped_data);
+        let ptr = self.buffer.mapped_ptr().unwrap().as_ptr() as *mut T;
+        let size = (self.buffer.len() as usize) / std::mem::size_of::<T>();
+        let slice = unsafe { std::slice::from_raw_parts::<T>(ptr, size) };
+        func(slice);
     }
 
     pub fn map_as_array_mut<T, F: Fn(&mut [T])>(&self, func: F) {
-        let mapped_data = self
-            .buffer
-            .write()
-            .map(|mut x| {
-                let ptr = x.as_mut_ptr() as *mut T;
-                let size = x.len() / std::mem::size_of::<T>();
-                let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
-                slice
-            })
-            .unwrap();
-        func(mapped_data);
+        let ptr = self.buffer.mapped_ptr().unwrap().as_ptr() as *mut T;
+        let size = (self.buffer.len() as usize) / std::mem::size_of::<T>();
+        let slice = unsafe { std::slice::from_raw_parts_mut::<T>(ptr, size) };
+        func(slice);
     }
 
     pub fn view(&self) -> BufferView {
@@ -94,27 +71,27 @@ impl BufferVk {
     }
 
     fn convert_usage(gpu_access: &GpuAccess) -> BufferUsage {
-        let is_uniform_buffer = gpu_access.contains(GpuAccess::CONSTANT_BUFFER);
-        let is_storage_buffer = gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER);
-        let is_index_buffer = gpu_access.contains(GpuAccess::INDEX_BUFFER);
-        let is_vertex_buffer = gpu_access.contains(GpuAccess::VERTEX_BUFFER);
-        let is_indirect_buffer = gpu_access.contains(GpuAccess::INDIRECT_BUFFER);
+        let mut buffer_usage = Default::default();
+        if gpu_access.contains(GpuAccess::CONSTANT_BUFFER) {
+            buffer_usage |= BufferUsage::UNIFORM_BUFFER;
+        }
+        if gpu_access.contains(GpuAccess::UNORDERED_ACCESS_BUFFER) {
+            buffer_usage |= BufferUsage::STORAGE_BUFFER;
+        }
+        if gpu_access.contains(GpuAccess::INDEX_BUFFER) {
+            buffer_usage |= BufferUsage::INDEX_BUFFER;
+        }
+        if gpu_access.contains(GpuAccess::VERTEX_BUFFER) {
+            buffer_usage |= BufferUsage::VERTEX_BUFFER;
+        }
+        if gpu_access.contains(GpuAccess::INDIRECT_BUFFER) {
+            buffer_usage |= BufferUsage::INDIRECT_BUFFER;
+        }
 
-        let result = BufferUsage {
-            uniform_texel_buffer: false,
-            storage_texel_buffer: false,
-            uniform_buffer: is_uniform_buffer,
-            storage_buffer: is_storage_buffer,
-            index_buffer: is_index_buffer,
-            vertex_buffer: is_vertex_buffer,
-            indirect_buffer: is_indirect_buffer,
-            ..BufferUsage::empty()
-        };
-
-        result
+        buffer_usage
     }
 
-    fn clone_buffer(&self) -> Arc<CpuAccessibleBuffer<[u8]>> {
+    fn clone_buffer(&self) -> Subbuffer<[u8]> {
         self.buffer.clone()
     }
 }
@@ -149,7 +126,7 @@ impl IBuffer for BufferVk {
 
 pub struct BufferView {
     device: Arc<Device>,
-    buffer: Arc<CpuAccessibleBuffer<[u8]>>,
+    pub buffer: Subbuffer<[u8]>,
 }
 
 impl BufferView {
@@ -158,18 +135,6 @@ impl BufferView {
             device: buffer.device.clone(),
             buffer: buffer.clone_buffer(),
         }
-    }
-
-    pub fn clone_buffer(&self) -> Arc<dyn BufferAccess> {
-        self.buffer.clone()
-    }
-
-    pub fn clone_buffer_view(&self) -> Arc<dyn BufferAccess> {
-        self.buffer.clone()
-    }
-
-    pub fn clone_index_buffer(&self) -> Arc<CpuAccessibleBuffer<[u32]>> {
-        todo!()
     }
 
     pub fn clone(&self) -> Self {
@@ -181,29 +146,9 @@ impl BufferView {
 }
 
 impl VertexBuffersCollection for BufferView {
-    fn into_vec(self) -> Vec<Arc<dyn BufferAccess>> {
-        vec![self.buffer.clone()]
+    fn into_vec(self) -> Vec<Subbuffer<[u8]>> {
+        vec![]
     }
-}
-
-unsafe impl DeviceOwned for BufferView {
-    fn device(&self) -> &Arc<vulkano::device::Device> {
-        &self.device
-    }
-}
-
-unsafe impl BufferAccess for BufferView {
-    fn inner(&self) -> vulkano::buffer::BufferInner {
-        self.buffer.inner()
-    }
-
-    fn size(&self) -> DeviceSize {
-        self.buffer.size()
-    }
-}
-
-unsafe impl TypedBufferAccess for BufferView {
-    type Content = [u32];
 }
 
 #[cfg(test)]

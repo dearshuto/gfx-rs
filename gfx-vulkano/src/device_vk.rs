@@ -6,7 +6,7 @@ use std::sync::Arc;
 use vulkano::{
     device::{
         physical::{PhysicalDevice, PhysicalDeviceType},
-        Device, DeviceCreateInfo, DeviceExtensions, Queue, QueueCreateInfo,
+        Device, DeviceCreateInfo, DeviceExtensions, Queue, QueueCreateInfo, QueueFlags,
     },
     instance::{Instance, InstanceCreateInfo},
     swapchain::Surface,
@@ -117,7 +117,7 @@ impl DeviceVk {
                     .iter()
                     .enumerate()
                     .position(|(_i, q)| {
-                        q.queue_flags.graphics
+                        q.queue_flags.contains(QueueFlags::GRAPHICS)
                         //&& p.surface_support(i as u32, &surface).unwrap_or(false)
                     })
                     .map(|q| (p, q as u32))
