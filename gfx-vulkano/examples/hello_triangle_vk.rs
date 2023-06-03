@@ -9,6 +9,7 @@ use sjgfx_vulkano::{
     ViewportScissorStateVk,
 };
 use winit::{
+    dpi::PhysicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     platform::run_return::EventLoopExtRunReturn,
@@ -17,7 +18,10 @@ use winit::{
 
 fn main() {
     let mut event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(PhysicalSize::new(1280, 960))
+        .build(&event_loop)
+        .unwrap();
     let device = DeviceVk::new_from_handle(&DeviceInfo::new(), &window);
     let mut swap_chain = SwapChainVk::new(&device, &SwapChainInfo::new());
     let mut command_buffer = CommandBufferVk::new(&device, &CommandBufferInfo::new());
