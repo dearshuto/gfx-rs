@@ -2,6 +2,8 @@ use std::io::Write;
 
 use std::path::Path;
 
+use crate::{Glsl, ShaderConverter, SpirV, Wgsl};
+
 pub enum ShaderStage {
     Vertex,
     Pixel,
@@ -20,38 +22,14 @@ impl ShaderCompiler {
         #[allow(unused_variables)] source: &str,
         #[allow(unused_variables)] shader_stage: ShaderStage,
     ) -> Vec<u8> {
-        let stage = match shader_stage {
-            ShaderStage::Vertex => naga::ShaderStage::Vertex,
-            ShaderStage::Pixel => naga::ShaderStage::Fragment,
-            ShaderStage::Compute => naga::ShaderStage::Compute,
-        };
-        let options = naga::front::glsl::Options::from(stage);
-        let module = naga::front::glsl::Frontend::default()
-            .parse(&options, source)
-            .unwrap();
-        let info = naga::valid::Validator::new(
-            naga::valid::ValidationFlags::all(),
-            naga::valid::Capabilities::all(),
-        )
-        .validate(&module)
-        .unwrap();
-        let u8_data = unsafe {
-            let options = naga::back::spv::Options::default();
-            let mut data = naga::back::spv::write_vec(&module, &info, &options, None).unwrap();
-
-            let ratio = std::mem::size_of::<u32>() / std::mem::size_of::<u8>();
-            let length = data.len() * ratio;
-            let capacity = data.capacity() * ratio;
-            let ptr = data.as_mut_ptr() as *mut u8;
-            let u8_data: Vec<u8> = Vec::from_raw_parts(ptr, length, capacity).clone();
-
-            // 元データが 2 重に破棄されないように、元データを破棄しないようにする
-            std::mem::forget(data);
-
-            u8_data
-        };
-
-        return u8_data;
+        match shader_stage {
+            ShaderStage::Vertex => self.create_binary_impl(source, shader_stage),
+            ShaderStage::Pixel => self.create_binary_impl(source, shader_stage),
+            ShaderStage::Compute => {
+                let wglsl = ShaderConverter::<Wgsl, Glsl>::convert_glsl_to_wgsl(source);
+                ShaderConverter::<SpirV, Wgsl>::convert_wgsl_to_spirv(&wglsl)
+            }
+        }
     }
 
     pub fn build_graphics_shader<TPath: AsRef<Path>>(
@@ -86,5 +64,44 @@ impl ShaderCompiler {
         .unwrap()
         .write_all(&pixel_shader_binary)
         .unwrap();
+    }
+
+    pub fn create_binary_impl(
+        &mut self,
+        #[allow(unused_variables)] source: &str,
+        #[allow(unused_variables)] shader_stage: ShaderStage,
+    ) -> Vec<u8> {
+        let stage = match shader_stage {
+            ShaderStage::Vertex => naga::ShaderStage::Vertex,
+            ShaderStage::Pixel => naga::ShaderStage::Fragment,
+            ShaderStage::Compute => panic!(),
+        };
+        let options = naga::front::glsl::Options::from(stage);
+        let module = naga::front::glsl::Frontend::default()
+            .parse(&options, source)
+            .unwrap();
+        let info = naga::valid::Validator::new(
+            naga::valid::ValidationFlags::all(),
+            naga::valid::Capabilities::all(),
+        )
+        .validate(&module)
+        .unwrap();
+        let u8_data = unsafe {
+            let options = naga::back::spv::Options::default();
+            let mut data = naga::back::spv::write_vec(&module, &info, &options, None).unwrap();
+
+            let ratio = std::mem::size_of::<u32>() / std::mem::size_of::<u8>();
+            let length = data.len() * ratio;
+            let capacity = data.capacity() * ratio;
+            let ptr = data.as_mut_ptr() as *mut u8;
+            let u8_data: Vec<u8> = Vec::from_raw_parts(ptr, length, capacity).clone();
+
+            // 元データが 2 重に破棄されないように、元データを破棄しないようにする
+            std::mem::forget(data);
+
+            u8_data
+        };
+
+        return u8_data;
     }
 }
