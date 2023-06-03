@@ -1,7 +1,9 @@
 mod shader_compiler;
+mod shader_converter;
 mod shader_reflection;
 
 pub use shader_compiler::{ShaderCompiler, ShaderStage};
+pub use shader_converter::{Glsl, Hlsl, ShaderConverter, SpirV, Wgsl};
 pub use shader_reflection::ShaderReflection;
 
 use sjgfx_interface::{BufferInfo, GpuAccess, IBuffer, IDevice};
