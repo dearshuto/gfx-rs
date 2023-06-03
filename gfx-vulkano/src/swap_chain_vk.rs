@@ -41,7 +41,7 @@ impl SwapChainVk {
                 min_image_count: capabilities.min_image_count,
                 image_format: Some(image_format),
                 // image_extent: surface.window().inner_size().into(),
-                image_extent: [640, 480],
+                image_extent: [1280, 960],
                 image_usage: ImageUsage::COLOR_ATTACHMENT,
                 composite_alpha: CompositeAlpha::Opaque,
                 ..Default::default()
