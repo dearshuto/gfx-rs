@@ -51,12 +51,7 @@ impl VertexStateWgpu {
     }
 
     fn convert_format_to_wgpu(format: &AttributeFormat) -> wgpu::VertexFormat {
-        match format {
-            AttributeFormat::Uint32 => wgpu::VertexFormat::Uint32,
-            AttributeFormat::Float32_32 => wgpu::VertexFormat::Float32x2,
-            AttributeFormat::Float32_32_32 => wgpu::VertexFormat::Float32x3,
-            AttributeFormat::Float32_32_32_32 => wgpu::VertexFormat::Float32x4,
-        }
+        crate::util::convert_attribute_format(format.clone())
     }
 }
 

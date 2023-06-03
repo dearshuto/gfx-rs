@@ -5,7 +5,7 @@ pub fn create_bind_group_layout(
     device: &wgpu::Device,
     vertex_shader_binary: &[u8],
     pixel_shader_binary: &[u8],
-) -> wgpu::BindGroupLayout {
+) -> Option<wgpu::BindGroupLayout> {
     let shader_reflection_vertex = ShaderReflection::new_from_biinary(vertex_shader_binary);
     let shader_reflection_pixel = ShaderReflection::new_from_biinary(pixel_shader_binary);
 
@@ -17,10 +17,16 @@ pub fn create_bind_group_layout(
         vertex_entries.append(&mut pixel_entries);
         vertex_entries
     };
-    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: None,
-        entries: &entries,
-    })
+    if entries.is_empty() {
+        None
+    } else {
+        Some(
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: None,
+                entries: &entries,
+            }),
+        )
+    }
 }
 
 pub fn create_pipeline_layout(
@@ -30,11 +36,19 @@ pub fn create_pipeline_layout(
 ) -> wgpu::PipelineLayout {
     let bind_group_layout =
         create_bind_group_layout(device, vertex_shader_binary, pixel_shader_binary);
-    device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: None,
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
-    })
+    if let Some(bind_group_layout) = bind_group_layout {
+        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        })
+    } else {
+        device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        })
+    }
 }
 
 pub fn create_bind_group_layout_entries(

@@ -94,11 +94,14 @@ impl ShaderWgpu {
         let pixel_shader =
             Self::create_shader_module(device.get_device(), &Some(pixel_shader_binary));
 
+        // TODO: unwrap() しない
+        // entry がない場合は bind_group_layout が存在しない
         let bind_group_layout = crate::util::create_bind_group_layout(
             device.get_device(),
             vertex_shader_binary,
             pixel_shader_binary,
-        );
+        )
+        .unwrap();
 
         let pipeline_layout =
             device
