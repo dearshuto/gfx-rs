@@ -26,7 +26,7 @@ impl ShaderCompiler {
             ShaderStage::Compute => naga::ShaderStage::Compute,
         };
         let options = naga::front::glsl::Options::from(stage);
-        let module = naga::front::glsl::Parser::default()
+        let module = naga::front::glsl::Frontend::default()
             .parse(&options, source)
             .unwrap();
         let info = naga::valid::Validator::new(
