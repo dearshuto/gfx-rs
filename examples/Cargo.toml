@@ -27,7 +27,6 @@ backend-vulkano = [ ]
 backend-glow = [ ]
 
 [dependencies]
-sjgfx-ash = { path = "../gfx-ash" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-util = { path = "../gfx-util" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }

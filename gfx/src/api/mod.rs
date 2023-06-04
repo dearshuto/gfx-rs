@@ -1,13 +1,3 @@
-use sjgfx_ash::{
-    BufferAsh, ColorTargetViewAsh, CommandBufferAsh, DepthStencilViewAsh, DeviceAsh, FenceAsh,
-    QueueAsh, SamplerAsh, SemaphoreAsh, ShaderAsh, SwapChainAsh, TextureAsh, TextureViewAsh,
-    VertexStateAsh,
-};
-// use sjgfx_glow::{
-//     BufferGlow, ColorTargetViewGlow, CommandBufferGlow, DepthStencilViewGlow, DeviceGlow,
-//     FenceGlow, QueueGlow, SamplerGlow, SemaphoerGlow, ShaderGlow, SwapChainGlow, TextureGlow,
-//     TextureViewGlow, VertexStateGlow,
-// };
 use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
     ISampler, ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState,
@@ -56,44 +46,6 @@ pub trait IApi {
     >;
     type VertexState: IVertexState<DeviceType = Self::Device>;
 }
-
-pub struct Ash;
-impl IApi for Ash {
-    type Buffer = BufferAsh;
-    type ColorTargetView = ColorTargetViewAsh;
-    type DepthStencilView = DepthStencilViewAsh;
-    type Device = DeviceAsh;
-    type Queue = QueueAsh;
-    type CommandBuffer = CommandBufferAsh;
-    type Fence = FenceAsh;
-    type Shader = ShaderAsh;
-    type Sampler = SamplerAsh;
-    type Semaphore = SemaphoreAsh;
-    type SwapChain = SwapChainAsh;
-    type Texture = TextureAsh;
-    type TextureView = TextureViewAsh;
-    type VertexState = VertexStateAsh;
-}
-
-// pub struct Glow;
-// impl IApi for Glow {
-//     type Buffer = BufferGlow;
-//     type ColorTargetView = ColorTargetViewGlow;
-//     type DepthStencilView = DepthStencilViewGlow;
-//     type Device = DeviceGlow;
-//     type Queue = QueueGlow;
-//     type CommandBuffer = CommandBufferGlow;
-//     type Fence = FenceGlow;
-//     type Shader = ShaderGlow;
-//     type Texture = TextureGlow;
-//     type TextureView = TextureViewGlow;
-//     type Sampler = SamplerGlow;
-//     type Semaphore = SemaphoerGlow;
-//     type SwapChain = SwapChainGlow;
-//     type VertexState = VertexStateGlow;
-//     type Instance = sjvi::glutin::Instance;
-//     type Display = sjvi::glutin::Display;
-// }
 
 pub struct Wgpu;
 impl IApi for Wgpu {
