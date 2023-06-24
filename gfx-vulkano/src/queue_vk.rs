@@ -41,6 +41,8 @@ impl QueueVk {
     }
 
     pub fn flush(&mut self) {
+        let _c: ash::vk::CommandBuffer = ash::vk::CommandBuffer::null();
+
         self.previous_frame_end.as_mut().unwrap().cleanup_finished();
 
         if self.command_builder.is_none() {
