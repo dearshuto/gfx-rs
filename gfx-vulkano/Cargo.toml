@@ -14,3 +14,4 @@ raw-window-handle = "0.5.0"
 
 [dev-dependencies]
 sjgfx-util = { path = "../gfx-util" }
+ash = "*"
