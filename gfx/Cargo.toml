@@ -7,7 +7,7 @@ version = "0.1.0"
 sjvi = { path = "../vi-rs" }
 sjgfx-interface = { path = "../gfx-interface" }
 sjgfx-wgpu = { path = "../gfx-wgpu" }
-sjgfx-vulkano = { path = "../gfx-vulkano" }
+sjgfx-vulkano = { path = "../gfx-vulkano", optional = true }
 winit = "0.27.1"
 raw-window-handle = "0.5.0"
 
@@ -21,3 +21,4 @@ raw-window-handle = "0.5.0"
 default = [ "backend-wgpu" ]
 backend-ash = []
 backend-wgpu = []
+backend-vulkano = [ "sjgfx-vulkano" ]

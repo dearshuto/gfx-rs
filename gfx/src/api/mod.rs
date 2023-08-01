@@ -2,6 +2,7 @@ use sjgfx_interface::{
     IBuffer, IColorTargetView, ICommandBuffer, IDepthStencilView, IDevice, IFence, IQueue,
     ISampler, ISemaphore, IShader, ISwapChain, ITexture, ITextureView, IVertexState,
 };
+#[cfg(feature = "backend-vulkano")]
 use sjgfx_vulkano::{
     BufferVk, ColorTargetViewVk, CommandBufferVk, DepthStencilViewVk, DeviceVk, FenceVk, QueueVk,
     SamplerVk, SemaphoreVk, ShaderVk, SwapChainVk, TextureViewVk, TextureVk, VertexStateVk,
@@ -65,7 +66,9 @@ impl IApi for Wgpu {
     type VertexState = VertexStateWgpu;
 }
 
+#[cfg(feature = "backend-vulkano")]
 pub struct Vulkano;
+#[cfg(feature = "backend-vulkano")]
 impl IApi for Vulkano {
     type Buffer = BufferVk;
     type ColorTargetView = ColorTargetViewVk;

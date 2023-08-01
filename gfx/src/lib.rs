@@ -25,6 +25,7 @@ pub use texture_builder::TTextureBuilder;
 pub use texture_view_builder::TTextureViewBuilder;
 pub use vertex_state_builder::TVertexStateBuilder;
 
+#[cfg(feature = "backend-vulkano")]
 pub mod vulkano;
 pub mod wgpu;
 
