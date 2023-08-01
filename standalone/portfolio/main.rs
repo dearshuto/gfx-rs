@@ -1,3 +1,4 @@
+use core::panic;
 use std::sync::Arc;
 
 use eframe::CreationContext;
@@ -31,9 +32,7 @@ fn main() {
     });
 }
 
-struct App {
-    renderer: eframe::Renderer,
-}
+struct App {}
 
 impl App {
     pub fn new(context: &CreationContext) -> Self {
@@ -49,15 +48,9 @@ impl App {
                 .write()
                 .paint_callback_resources
                 .insert(demo_manager);
-            Self {
-                renderer: eframe::Renderer::Wgpu,
-            }
+            Self {}
         } else {
-            todo!()
-            /*
-            Self {
-                renderer: eframe::Renderer::Glow,
-            }*/
+            panic!()
         }
     }
 }
@@ -75,24 +68,22 @@ impl eframe::App for App {
                     eframe::egui::Sense::drag(),
                 );
 
-                let callback = match self.renderer {
-                    eframe::Renderer::Wgpu => {
-                        let function = eframe::egui_wgpu::CallbackFn::new()
-                            .prepare(move |_device, _queue, _command_encoder, render_resources| {
-                                let demo_manager: &mut demolib::DemoManager =
-                                    render_resources.get_mut().unwrap();
-                                demo_manager.update();
-                                Vec::default()
-                            })
-                            .paint(move |_info, render_pass, render_resources| {
-                                let demo_manager: &demolib::DemoManager =
-                                    render_resources.get().unwrap();
-                                demo_manager.draw(render_pass);
-                            });
-                        eframe::egui::PaintCallback {
-                            rect,
-                            callback: Arc::new(function),
-                        }
+                let callback = {
+                    let function = eframe::egui_wgpu::CallbackFn::new()
+                        .prepare(move |_device, _queue, _command_encoder, render_resources| {
+                            let demo_manager: &mut demolib::DemoManager =
+                                render_resources.get_mut().unwrap();
+                            demo_manager.update();
+                            Vec::default()
+                        })
+                        .paint(move |_info, render_pass, render_resources| {
+                            let demo_manager: &demolib::DemoManager =
+                                render_resources.get().unwrap();
+                            demo_manager.draw(render_pass);
+                        });
+                    eframe::egui::PaintCallback {
+                        rect,
+                        callback: Arc::new(function),
                     }
                 };
 
