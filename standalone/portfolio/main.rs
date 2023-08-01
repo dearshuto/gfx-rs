@@ -17,7 +17,8 @@ fn main() {
     // Redirect `log` message to `console.log` and friends:
     // eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
-    let web_options = eframe::WebOptions::default();
+    let mut web_options = eframe::WebOptions::default();
+    web_options.wgpu_options.supported_backends = wgpu::Backend::BrowserWebGpu.into();
 
     wasm_bindgen_futures::spawn_local(async {
         eframe::WebRunner::new()
@@ -31,21 +32,31 @@ fn main() {
     });
 }
 
-struct App {}
+struct App {
+    renderer: eframe::Renderer,
+}
 
 impl App {
     pub fn new(context: &CreationContext) -> Self {
-        let device = context.wgpu_render_state.as_ref().unwrap().device.clone();
-        let demo_manager = demolib::DemoManager::new(device.clone());
-        let _ = context
-            .wgpu_render_state
-            .as_ref()
-            .unwrap()
-            .renderer
-            .write()
-            .paint_callback_resources
-            .insert(demo_manager);
-        Self {}
+        if let Some(render_state) = &context.wgpu_render_state {
+            let device = render_state.device.clone();
+            let demo_manager = demolib::DemoManager::new(device.clone());
+            let _ = context
+                .wgpu_render_state
+                .as_ref()
+                .unwrap()
+                .renderer
+                .write()
+                .paint_callback_resources
+                .insert(demo_manager);
+            Self {
+                renderer: eframe::Renderer::Wgpu,
+            }
+        } else {
+            Self {
+                renderer: eframe::Renderer::Glow,
+            }
+        }
     }
 }
 
@@ -62,10 +73,15 @@ impl eframe::App for App {
                     eframe::egui::Sense::drag(),
                 );
 
-                let callback = eframe::egui::PaintCallback {
-                    rect,
-                    callback: Arc::new(
-                        eframe::egui_wgpu::CallbackFn::new()
+                let callback = match self.renderer {
+                    eframe::Renderer::Glow => eframe::egui::PaintCallback {
+                        rect,
+                        callback: Arc::new(eframe::egui_glow::CallbackFn::new(
+                            move |_info, _painter| {},
+                        )),
+                    },
+                    eframe::Renderer::Wgpu => {
+                        let function = eframe::egui_wgpu::CallbackFn::new()
                             .prepare(move |_device, _queue, _command_encoder, render_resources| {
                                 let demo_manager: &mut demolib::DemoManager =
                                     render_resources.get_mut().unwrap();
@@ -76,9 +92,14 @@ impl eframe::App for App {
                                 let demo_manager: &demolib::DemoManager =
                                     render_resources.get().unwrap();
                                 demo_manager.draw(render_pass);
-                            }),
-                    ),
+                            });
+                        eframe::egui::PaintCallback {
+                            rect,
+                            callback: Arc::new(function),
+                        }
+                    }
                 };
+
                 ui.painter().add(callback);
             });
         });
