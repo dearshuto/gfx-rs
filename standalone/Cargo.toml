@@ -17,6 +17,7 @@ eframe = { version = "0.22.0", features = ["wgpu"] }
 # wgpu の webgl 指定を明示しないとウェブむけビルドが通らない
 wgpu = { version = "0.16.0", features = ["spirv", "webgl"] }
 
+
 # eframe に合わせる
 wasm-bindgen-futures = "*"
 
