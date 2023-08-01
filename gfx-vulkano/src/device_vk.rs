@@ -92,11 +92,12 @@ impl DeviceVk {
         let vulkan_library = VulkanLibrary::new().unwrap();
 
         let required_extensions = vulkano_win::required_extensions(&vulkan_library);
+        vulkano::instance::InstanceExtensions;
         let instance = Instance::new(
             vulkan_library,
             InstanceCreateInfo {
                 enabled_extensions: required_extensions,
-                engine_version: Version::V1_2,
+                engine_version: Version::V1_3,
                 ..Default::default()
             },
         )

@@ -16,6 +16,8 @@ use winit::{
     window::WindowBuilder,
 };
 
+use vulkano::VulkanObject;
+
 fn main() {
     let mut event_loop = EventLoop::new();
     let window = WindowBuilder::new()
@@ -53,6 +55,18 @@ fn main() {
             .set_vertex_shader_binary(&vertex_shader_binary)
             .set_pixel_shader_binary(&pixel_shader_binary),
     );
+
+    {
+        let device = device.clone_device();
+        let device_handle = device.handle();
+        let instance = device.instance().clone();
+        //        let shader_object =
+        //            ash::extensions::ext::ShaderObject::new(&instance.handle(), &device.handle());
+
+        let command_buffer: Option<vulkano::command_buffer::PrimaryAutoCommandBuffer> = None;
+        let command_buffer_handle = command_buffer.unwrap().handle();
+        command_buffer_handle;
+    }
 
     // 頂点バッファ
     let vertex_buffer = BufferVk::new(

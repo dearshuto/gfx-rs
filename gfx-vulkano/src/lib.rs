@@ -2,6 +2,7 @@ mod buffer_vk;
 mod color_target_view_vk;
 mod command_buffer_vk;
 mod depth_stencil_view_vk;
+mod detail;
 mod device_vk;
 mod fence_vk;
 mod interop;
