@@ -9,7 +9,7 @@ pub struct Triangle<'a> {
 }
 
 impl<'a> IDemoImpl<'a> for Triangle<'a> {
-    fn new(device: &wgpu::Device) -> Self {
+    fn new(device: &wgpu::Device, target_format: wgpu::TextureFormat) -> Self {
         let vertex_shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::util::make_spirv(include_bytes!("outputs/triangle.vs.spv")),
@@ -39,7 +39,7 @@ impl<'a> IDemoImpl<'a> for Triangle<'a> {
                 module: &pixel_shader_module,
                 entry_point: "main",
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: wgpu::TextureFormat::Bgra8Unorm,
+                    format: target_format,
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
                 })],

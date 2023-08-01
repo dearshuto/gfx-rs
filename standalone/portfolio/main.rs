@@ -17,8 +17,7 @@ fn main() {
     // Redirect `log` message to `console.log` and friends:
     // eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
-    let mut web_options = eframe::WebOptions::default();
-    web_options.wgpu_options.supported_backends = wgpu::Backend::BrowserWebGpu.into();
+    let web_options = eframe::WebOptions::default();
 
     wasm_bindgen_futures::spawn_local(async {
         eframe::WebRunner::new()
@@ -39,8 +38,9 @@ struct App {
 impl App {
     pub fn new(context: &CreationContext) -> Self {
         if let Some(render_state) = &context.wgpu_render_state {
+            let target_format = render_state.target_format;
             let device = render_state.device.clone();
-            let demo_manager = demolib::DemoManager::new(device.clone());
+            let demo_manager = demolib::DemoManager::new(device.clone(), target_format);
             let _ = context
                 .wgpu_render_state
                 .as_ref()
@@ -53,9 +53,11 @@ impl App {
                 renderer: eframe::Renderer::Wgpu,
             }
         } else {
+            todo!()
+            /*
             Self {
                 renderer: eframe::Renderer::Glow,
-            }
+            }*/
         }
     }
 }
@@ -74,12 +76,6 @@ impl eframe::App for App {
                 );
 
                 let callback = match self.renderer {
-                    eframe::Renderer::Glow => eframe::egui::PaintCallback {
-                        rect,
-                        callback: Arc::new(eframe::egui_glow::CallbackFn::new(
-                            move |_info, _painter| {},
-                        )),
-                    },
                     eframe::Renderer::Wgpu => {
                         let function = eframe::egui_wgpu::CallbackFn::new()
                             .prepare(move |_device, _queue, _command_encoder, render_resources| {

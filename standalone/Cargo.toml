@@ -12,7 +12,7 @@ name = "portfolio"
 path = "portfolio/main.rs"
 
 [dependencies]
-eframe = { version = "0.22.0", features = ["wgpu"] }
+eframe = { version = "0.22.0", default-features=false, features = ["wgpu", "accesskit", "default_fonts"] }
 
 # wgpu の webgl 指定を明示しないとウェブむけビルドが通らない
 wgpu = { version = "0.16.0", features = ["spirv", "webgl"] }
