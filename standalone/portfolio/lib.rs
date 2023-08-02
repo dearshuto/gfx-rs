@@ -1,43 +1,51 @@
+use std::sync::{Arc, Mutex};
+
 mod mandelbrot;
 mod triangle;
-use std::sync::Arc;
+mod workspace;
 
 pub use mandelbrot::Mandelbrot;
 pub use triangle::Triangle;
+pub use workspace::Workspace;
 
+#[derive(PartialEq, Clone, Copy)]
 pub enum DemoType {
-    None,
     Triangle,
+    Model3d,
+    Physics,
+    Tetris,
 }
 
 pub struct DemoManager<'a> {
-    demo_type: DemoType,
+    workspace: Arc<Mutex<Workspace>>,
     triangle: Demo<'a, Triangle<'a>>,
 }
 
 impl<'a> DemoManager<'a> {
-    pub fn new(device: Arc<wgpu::Device>, target: wgpu::TextureFormat) -> Self {
+    pub fn new(
+        workspace: Arc<Mutex<Workspace>>,
+        device: Arc<wgpu::Device>,
+        target: wgpu::TextureFormat,
+    ) -> Self {
         Self {
-            demo_type: DemoType::Triangle,
+            workspace,
             triangle: Demo::<Triangle>::new(device, target),
         }
     }
 
-    pub fn switch(&mut self, demo_type: DemoType) {
-        self.demo_type = demo_type;
-    }
-
     pub fn update(&mut self) {
-        match self.demo_type {
-            DemoType::None => {}
+        let workspace = self.workspace.lock().unwrap();
+        match workspace.get_current_demo_type() {
             DemoType::Triangle => self.triangle.update(),
+            _ => {}
         }
     }
 
     pub fn draw(&'a self, render_pass: &mut wgpu::RenderPass<'a>) {
-        match self.demo_type {
-            DemoType::None => {}
+        let workspace = self.workspace.lock().unwrap();
+        match workspace.get_current_demo_type() {
             DemoType::Triangle => self.triangle.draw(render_pass),
+            _ => {}
         }
     }
 }

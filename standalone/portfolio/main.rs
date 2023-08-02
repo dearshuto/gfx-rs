@@ -1,6 +1,7 @@
 use core::panic;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+use demolib::Workspace;
 use eframe::CreationContext;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -32,14 +33,19 @@ fn main() {
     });
 }
 
-struct App {}
+struct App {
+    workspace: Arc<Mutex<Workspace>>,
+}
 
 impl App {
     pub fn new(context: &CreationContext) -> Self {
         if let Some(render_state) = &context.wgpu_render_state {
+            let workspace = Arc::new(Mutex::new(Workspace::new()));
+
             let target_format = render_state.target_format;
             let device = render_state.device.clone();
-            let demo_manager = demolib::DemoManager::new(device.clone(), target_format);
+            let demo_manager =
+                demolib::DemoManager::new(workspace.clone(), device.clone(), target_format);
             let _ = context
                 .wgpu_render_state
                 .as_ref()
@@ -48,7 +54,7 @@ impl App {
                 .write()
                 .paint_callback_resources
                 .insert(demo_manager);
-            Self {}
+            Self { workspace }
         } else {
             panic!()
         }
@@ -58,7 +64,13 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         eframe::egui::SidePanel::left("Demo List").show(ctx, |ui| {
-            ui.label("Triangle");
+            let mut binding = self.workspace.lock();
+            let workspace = binding.as_mut().unwrap();
+            let mut current_demo_type = workspace.get_current_demo_type();
+            for (demo_type, lanel) in Workspace::get_demo_types() {
+                ui.radio_value(&mut current_demo_type, *demo_type, *lanel);
+            }
+            workspace.set_demo_type(current_demo_type);
         });
 
         eframe::egui::CentralPanel::default().show(ctx, |ui| {
