@@ -1,6 +1,10 @@
 mod device_ash;
+mod queue_ash;
+mod shader_ash;
 
 pub use device_ash::DeviceAsh;
+pub use queue_ash::QueueAsh;
+pub use shader_ash::ShaderAsh;
 
 struct SharedData {
     #[allow(dead_code)]
@@ -9,10 +13,6 @@ struct SharedData {
 }
 
 static SHARED_INSTANCE: std::sync::OnceLock<SharedData> = std::sync::OnceLock::new();
-
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
 
 pub fn initialize() {
     SHARED_INSTANCE.get_or_init(|| {
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        initialize();
+        finalize();
     }
 }

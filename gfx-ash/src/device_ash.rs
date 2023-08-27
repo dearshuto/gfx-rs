@@ -45,7 +45,12 @@ impl DeviceAsh {
                 .unwrap()
         };
 
+
         Self { device }
+    }
+
+pub fn handle(&self) -> ash::Device {
+        self.device.clone()
     }
 }
 
