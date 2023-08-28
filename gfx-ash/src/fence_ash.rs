@@ -1,9 +1,9 @@
-use crate::{DeviceAsh, ShaderAsh};
+use crate::DeviceAsh;
 
 pub struct FenceAsh {
     handle: ash::vk::Fence,
 
-    shader: Option<ShaderAsh>,
+    device: ash::Device,
 }
 
 impl FenceAsh {
@@ -12,7 +12,10 @@ impl FenceAsh {
             .flags(ash::vk::FenceCreateFlags::default())
             .build();
         let handle = unsafe { device.handle().create_fence(&fence_create_info, None) }.unwrap();
-        Self { handle }
+        Self {
+            handle,
+            device: device.handle(),
+        }
     }
 
     pub fn begin(&self) {}
@@ -21,5 +24,13 @@ impl FenceAsh {
 
     pub fn handle(&self) -> ash::vk::Fence {
         self.handle.clone()
+    }
+}
+
+impl Drop for FenceAsh {
+    fn drop(&mut self) {
+        unsafe {
+            self.device.destroy_fence(self.handle, None);
+        }
     }
 }

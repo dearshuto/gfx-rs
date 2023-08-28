@@ -1,12 +1,16 @@
+mod buffer_ash;
 mod command_buffer_ash;
 mod device_ash;
 mod fence_ash;
+mod memory_pool_ash;
 mod queue_ash;
 mod shader_ash;
 
+pub use buffer_ash::BufferAsh;
 pub use command_buffer_ash::CommandBufferAsh;
 pub use device_ash::DeviceAsh;
 pub use fence_ash::FenceAsh;
+pub use memory_pool_ash::MemoryPoolAsh;
 pub use queue_ash::QueueAsh;
 pub use shader_ash::ShaderAsh;
 

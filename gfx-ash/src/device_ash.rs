@@ -2,6 +2,8 @@ use sjgfx_interface::DeviceInfo;
 
 pub struct DeviceAsh {
     device: ash::Device,
+
+    physical_device: ash::vk::PhysicalDevice,
 }
 
 impl DeviceAsh {
@@ -46,10 +48,14 @@ impl DeviceAsh {
         };
 
 
-        Self { device }
+        Self { device , physical_device}
     }
 
-pub fn handle(&self) -> ash::Device {
+    pub fn get_physical_device_handle(&self) -> ash::vk::PhysicalDevice {
+        self.physical_device
+    }
+
+    pub fn handle(&self) -> ash::Device {
         self.device.clone()
     }
 }
