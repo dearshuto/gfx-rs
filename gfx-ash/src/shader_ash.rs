@@ -2,6 +2,10 @@ use sjgfx_interface::ShaderInfo;
 
 use crate::DeviceAsh;
 
+pub struct CommandData {
+    pub command_buffer: ash::vk::CommandBuffer,
+}
+
 pub struct ShaderAsh {
     handle: ash::extensions::ext::ShaderObject,
     vertex_shader: Option<ash::vk::ShaderEXT>,
@@ -44,6 +48,23 @@ impl ShaderAsh {
             sjgfx_interface::ShaderStage::Vertex => self.vertex_shader,
             sjgfx_interface::ShaderStage::Pixel => todo!(),
             sjgfx_interface::ShaderStage::Compute => self.compute_shader,
+        }
+    }
+
+    pub fn push_command(&self, data: CommandData) {
+        let Some(compute_shader) = self.compute_shader else {
+          return;
+        };
+
+        let command_buffer = data.command_buffer;
+
+        // 演算シェーダー
+        unsafe {
+            self.handle.cmd_bind_shaders(
+                command_buffer,
+                &[ash::vk::ShaderStageFlags::COMPUTE],
+                &[compute_shader],
+            );
         }
     }
 

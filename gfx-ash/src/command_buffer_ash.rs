@@ -1,6 +1,6 @@
 use sjgfx_interface::CommandBufferInfo;
 
-use crate::DeviceAsh;
+use crate::{BufferAsh, DeviceAsh, ShaderAsh};
 
 pub struct CommandBufferAsh {
     command_pool: ash::vk::CommandPool,
@@ -38,6 +38,21 @@ impl CommandBufferAsh {
             command_pool,
             handle: command_buffers[0],
             device: device.handle(),
+        }
+    }
+
+    pub fn set_shader(&mut self, shader: &ShaderAsh) {
+        shader.push_command(crate::shader_ash::CommandData {
+            command_buffer: self.handle,
+        })
+    }
+
+    pub fn set_buffer(&mut self, _buffer: &BufferAsh) {}
+
+    pub fn dispatch(&mut self, count_x: i32, count_y: i32, count_z: i32) {
+        unsafe {
+            self.device
+                .cmd_dispatch(self.handle, count_x as u32, count_y as u32, count_z as u32);
         }
     }
 

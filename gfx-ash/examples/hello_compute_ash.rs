@@ -15,8 +15,10 @@ pub fn main() {
         );
         buffer.map_mut(|_data: &mut i32| {});
 
-        let _command_buffer =
+        let mut command_buffer =
             sjgfx_ash::CommandBufferAsh::new(&device, &sjgfx_interface::CommandBufferInfo::new());
+        command_buffer.set_buffer(&buffer);
+
         let _queue = sjgfx_ash::QueueAsh::new(&device, &QueueInfo::new());
     }
     sjgfx_ash::finalize();
