@@ -23,11 +23,12 @@ impl ShaderAsh {
         let instance = &shared_data.instance;
         let shader_object = ash::extensions::ext::ShaderObject::new(instance, &device.handle());
 
-        let vertex_shader = Self::create_shader_ext(
-            shader_object.clone(),
-            ash::vk::ShaderStageFlags::VERTEX,
-            Some(info.get_vertex_shader_binary().unwrap()),
-        );
+        // let vertex_shader = Self::create_shader_ext(
+        //     shader_object.clone(),
+        //     ash::vk::ShaderStageFlags::VERTEX,
+        //     Some(info.get_vertex_shader_binary().unwrap()),
+        // );
+        let vertex_shader = None;
         let compute_shader = Self::create_shader_ext(
             shader_object.clone(),
             ash::vk::ShaderStageFlags::COMPUTE,
@@ -53,7 +54,7 @@ impl ShaderAsh {
 
     pub fn push_command(&self, data: CommandData) {
         let Some(compute_shader) = self.compute_shader else {
-          return;
+            return;
         };
 
         let command_buffer = data.command_buffer;

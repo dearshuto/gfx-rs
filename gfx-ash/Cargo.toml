@@ -9,3 +9,6 @@ edition = "2021"
 ash = { version = "0.37.3", features = ["linked"] }
 
 sjgfx-interface = { path = "../gfx-interface" }
+
+[build-dependencies]
+sjgfx-util = { path = "../gfx-util" }
