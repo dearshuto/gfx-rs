@@ -7,9 +7,15 @@ edition = "2021"
 
 [dependencies]
 # [target.'cfg(target_arch = "wasm32")'.dependencies]
-web-sys = { version = "0.3.58", features=[ "GpuBuffer", "HtmlCanvasElement", "WebGl2RenderingContext", "Window", "Document"] }
-wasm-bindgen = { version = "0.2" }
-winit = "0.27.1"
+web-sys = { version = "0.3.58", features = [
+    "GpuBuffer",
+    "HtmlCanvasElement",
+    "WebGl2RenderingContext",
+    "Window",
+    "Document",
+] }
+wasm-bindgen.workspace = true
+winit.workspace = true
 sjgfx-interface = { path = "../gfx-interface" }
 
 [target.'cfg(not(any(target_arch = "wasm32")))'.dependencies]
