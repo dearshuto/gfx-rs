@@ -1,15 +1,19 @@
-use ash::prelude::VkResult;
+mod ash_bindings;
 
 pub trait Interface {
     type Entry: Entry;
 }
 
-pub trait Entry {
+pub trait Entry: Sized {
     type Instance;
 
-    fn loaded() -> Self;
+    fn loaded() -> Result<Self, ash::LoadingError>;
 
-    fn instance(&self) -> Self::Instance;
+    fn create_instance(
+        &self,
+        create_info: &ash::vk::InstanceCreateInfo,
+        allocator: Option<&ash::vk::AllocationCallbacks>,
+    ) -> Result<Self::Instance, ash::vk::Result>;
 }
 
 pub trait Instance {
