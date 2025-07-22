@@ -9,7 +9,7 @@ members = [
         "gfx-wgpu",
         "examples",
         "run-wasm",
-        "vi-rs",
+        "vi-rs", "vulkapi",
 #	"examples/clear_color",
 #	"examples/hello_graphics_pipeline",
 #	"examples/hello_3d",
