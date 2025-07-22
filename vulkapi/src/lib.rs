@@ -1,4 +1,5 @@
 mod ash_bindings;
+mod wgpu_bindings;
 
 pub trait Interface {
     type Entry: Entry;
@@ -28,6 +29,7 @@ pub trait Instance {
     ) -> Vec<ash::vk::QueueFamilyProperties>;
 
     fn create_device(
+        &self,
         physical_device: ash::vk::PhysicalDevice,
         create_info: &ash::vk::DeviceCreateInfo,
         allocator: Option<&ash::vk::AllocationCallbacks>,
@@ -37,7 +39,7 @@ pub trait Instance {
 pub trait Device {
     type Queue: Copy;
     type CommandPool;
-    type CommandBuffer: Copy;
+    type CommandBuffer;
     type ImageView;
     type RenderPass: Copy;
     type Pipeline: Copy;
@@ -50,18 +52,18 @@ pub trait Device {
         &self,
         create_info: &ash::vk::CommandPoolCreateInfo,
         allocator: Option<&ash::vk::AllocationCallbacks>,
-    ) -> Self::CommandPool;
+    ) -> Result<Self::CommandPool, ash::vk::Result>;
 
     fn allocate_command_buffers(
         &self,
         allocate_info: &ash::vk::CommandBufferAllocateInfo,
-    ) -> Result<Vec<Self::CommandPool>, ash::vk::Result>;
+    ) -> Result<Vec<Self::CommandBuffer>, ash::vk::Result>;
 
     fn create_image_view(
         &self,
-        create_info: &ash::vk::ImageCreateInfo,
+        create_info: &ash::vk::ImageViewCreateInfo,
         allocator: Option<&ash::vk::AllocationCallbacks>,
-    ) -> Result<Vec<Self::ImageView>, ash::vk::Result>;
+    ) -> Result<Self::ImageView, ash::vk::Result>;
 
     // 描画コマンド
 
@@ -79,18 +81,14 @@ pub trait Device {
         pipeline: Self::Pipeline,
     );
 
-    fn cmd_draw(&self);
+    fn cmd_draw(
+        &self,
+        command_buffer: Self::CommandBuffer,
+        vertex_count: u32,
+        instance_count: u32,
+        first_vertex: u32,
+        first_instance: u32,
+    );
 
     fn cmd_end_render_pass(&self, command_buffer: Self::CommandBuffer);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }

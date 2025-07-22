@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 ash = "*"
+wgpu = { version = "26.0", features = ["spirv"] }
